@@ -204,6 +204,9 @@ textarea.input{resize:none;min-height:60px}
 .leaflet-container{background:var(--mapabg);font-family:Inter}
 .leaflet-control-attribution{background:var(--velo)!important;color:var(--dim)!important;font-size:10px}
 .leaflet-control-attribution a{color:var(--muted)!important}
+/* Los créditos del mapa se ven, pero no se pueden tocar: un toque sin querer
+   sacaba al usuario de la app hacia la página de Leaflet o de OpenStreetMap. */
+.leaflet-control-attribution,.leaflet-control-attribution *{pointer-events:none!important;cursor:default!important;text-decoration:none!important}
 .leaflet-bar{border:1px solid var(--line)!important;box-shadow:var(--sombra)!important}
 .leaflet-bar a{background:var(--panel)!important;color:var(--text)!important;border-bottom-color:var(--line)!important}
 .leaflet-tooltip{background:var(--text);border:0;color:#fff;font-size:12px;box-shadow:none}
@@ -599,6 +602,7 @@ textarea.input{resize:none;min-height:60px}
 .plazo{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;
   background:var(--azul-suave);color:var(--azul-2);border:1px solid var(--azul-borde);white-space:nowrap}
 .plazo.poco{background:#FDF6EA;color:var(--warn);border-color:#F5E2C4}
+.plazo .crono{font-variant-numeric:tabular-nums;font-family:"Space Grotesk",Inter,sans-serif}
 .plazo.tarde{background:#FDF3F2;color:var(--bad);border-color:#F6D8D7;animation:pulso-tarde 1.2s ease-in-out infinite}
 @keyframes pulso-tarde{50%{opacity:.6}}
 
@@ -636,7 +640,14 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
 .cam .guia{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center}
 .cam .guia .ovalo{width:62%;aspect-ratio:3/4;border-radius:50%;border:3px dashed rgba(255,255,255,.85);box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s}
 .cam .guia .ovalo.bien{border-color:#2BC275;border-style:solid}
-.cam .guia .rect{width:88%;aspect-ratio:1.58;border-radius:14px;border:3px dashed rgba(255,255,255,.85);box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.cam .guia .rect{width:88%;aspect-ratio:1.58;border-radius:14px;border:3px dashed rgba(255,255,255,.85);box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s}
+.cam .guia .rect.bien{border-color:#2BC275;border-style:solid}
+.cam img.previa{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.cam canvas.marco{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pasos-cam{display:flex;gap:6px;margin:4px 0 0}
+.pasos-cam span{flex:1;font-size:11.5px;text-align:center;padding:5px 4px;border-radius:9px;background:var(--panel2);color:var(--dim);font-weight:600}
+.pasos-cam span.on{background:var(--azul-suave);color:var(--azul-2)}
+.pasos-cam span.ok{background:#EDFAF2;color:var(--ok)}
 .cam .msg-cam{position:absolute;left:10px;right:10px;bottom:12px;text-align:center;color:#fff;font-weight:600;font-size:15px;
   background:rgba(0,0,0,.55);border-radius:12px;padding:9px 12px}
 .foto-ok{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:#EDFAF2;border:1px solid #C7EBD6;color:var(--ok);font-weight:600;font-size:13.5px}
@@ -754,6 +765,13 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
     </div>
 
     <div class="auth-card">
+      <!-- Google va primero: es lo que se ve apenas se abre la app, sin
+           tener que bajar ni elegir pestaña. -->
+        <button class="btn google full" style="margin-top:0" id="btn-google">
+          <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2.5 24 .5 14.6.5 6.5 5.9 2.6 13.7l7.8 6.1C12.3 13.9 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.2c-.5-1.4-.8-2.9-.8-4.2s.3-2.9.8-4.2l-7.8-6.1C.9 16.9 0 20.3 0 24s.9 7.1 2.6 10.3l7.8-6.1z"/><path fill="#34A853" d="M24 47.5c6.2 0 11.5-2 15.4-5.5l-7.5-5.8c-2.1 1.4-4.7 2.3-7.9 2.3-6.4 0-11.7-4.4-13.6-10.3l-7.8 6.1C6.5 42.1 14.6 47.5 24 47.5z"/></svg>
+          Entrar con Google
+        </button>
+      <div class="sep" style="margin:14px 0">o con tu correo y PIN</div>
       <div class="segmented" id="authtabs" style="margin-bottom:18px">
         <button data-tab="login" class="on">Ingresar</button>
         <button data-tab="registro">Crear cuenta</button>
@@ -769,11 +787,6 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
         </div>
         <button class="btn primary full" id="btn-login" style="margin-top:14px">Ingresar</button>
         <button class="btn ghost full" id="btn-olvide">Olvidé mi PIN</button>
-        <div class="sep">o</div>
-        <button class="btn google full" id="btn-google">
-          <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2.5 24 .5 14.6.5 6.5 5.9 2.6 13.7l7.8 6.1C12.3 13.9 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.2c-.5-1.4-.8-2.9-.8-4.2s.3-2.9.8-4.2l-7.8-6.1C.9 16.9 0 20.3 0 24s.9 7.1 2.6 10.3l7.8-6.1z"/><path fill="#34A853" d="M24 47.5c6.2 0 11.5-2 15.4-5.5l-7.5-5.8c-2.1 1.4-4.7 2.3-7.9 2.3-6.4 0-11.7-4.4-13.6-10.3l-7.8 6.1C6.5 42.1 14.6 47.5 24 47.5z"/></svg>
-          Continuar con Google
-        </button>
       </div>
 
       <div id="tab-registro" class="hidden">
@@ -812,7 +825,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
         </div>
         <label class="check" for="rg-terminos">
           <input type="checkbox" id="rg-terminos">
-          <span>Leí y acepto los <button type="button" id="rg-ver-terminos" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y Condiciones y la Política de Privacidad</button>, incluido el uso de mi foto y la de mi cédula para verificar mi identidad.</span>
+          <span>Leí y acepto los <button type="button" id="rg-ver-terminos" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y Condiciones y la Política de Privacidad</button>, incluido el uso de mi foto y la de mi cédula para verificar mi identidad, y que Ruta me contacte por correo o WhatsApp sobre mi cuenta.</span>
         </label>
         <p class="fine" style="margin:0 0 8px">Después de crear la cuenta te pediremos una foto de tu rostro y de tu cédula (parte frontal). Puedes dejarlo para después, pero tu cuenta quedará <b>inactiva</b> hasta que las envíes.</p>
         <button class="btn primary full" id="btn-registro" style="margin-top:6px">Crear cuenta</button>
@@ -1009,14 +1022,42 @@ const enApp = () => !!(window.RutaNativo && window.RutaNativo.postMessage);
 function nativo(msg) {
   try { if (enApp()) window.RutaNativo.postMessage(JSON.stringify(msg)); } catch (e) {}
 }
-function avisar(titulo, cuerpo, tonoAviso) {
-  vibrar(tonoAviso === 'nueva' || tonoAviso === 'aceptado' ? RING_VIBRA : [50, 70, 50]);
-  if (tonoAviso) sonido(tonoAviso);
-  nativo({ tipo: 'aviso', titulo, cuerpo, fuerte: tonoAviso === 'nueva' || tonoAviso === 'aceptado' });
-  if (document.visibilityState === 'visible') { toast(cuerpo ? `${titulo}: ${cuerpo}` : titulo); return; }
+/* Cada aviso lleva una clave (p. ej. 'nueva:<id>'). El servicio de segundo
+   plano del APK usa las mismas claves, así un mismo hecho suena una sola
+   vez aunque lo detecten la página y el servicio a la vez. */
+const AVISOS_FUERTES = ['nueva', 'aceptado', 'llegada'];
+function avisar(titulo, cuerpo, tonoAviso, clave) {
+  const fuerte = AVISOS_FUERTES.includes(tonoAviso);
+  const visible = document.visibilityState === 'visible';
+  vibrar(fuerte ? RING_VIBRA : [50, 70, 50]);
+  /* En el APK con la app en segundo plano suena la notificación del
+     sistema (tono propio del canal); si sonara también la página se
+     escucharían dos tonos encimados. */
+  if (tonoAviso && (visible || !enApp())) {
+    if (tonoAviso === 'nueva') sonarAlerta('nueva', visible ? 6 : 10);
+    else if (tonoAviso === 'aceptado' || tonoAviso === 'llegada') sonarAlerta(tonoAviso === 'llegada' ? 'nueva' : 'aceptado', 2);
+    else sonido(tonoAviso);
+  }
+  nativo({ tipo: 'aviso', titulo, cuerpo, fuerte, clave: clave || null });
+  if (visible) { toast(cuerpo ? `${titulo}: ${cuerpo}` : titulo); return; }
+  notificarWeb(titulo, cuerpo, fuerte, clave);
+}
+/* Notificación del navegador. Con service worker (sw.js junto a esta
+   página) queda fija hasta que se toca y vibra aunque la pestaña esté
+   atrás; sin él se usa la Notification simple. */
+let swReg = null;
+function registrarSW() {
+  if (enApp() || !('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(() => {});
+}
+function notificarWeb(titulo, cuerpo, fuerte, clave) {
+  if (enApp()) return;
   try {
-    if ('Notification' in window && Notification.permission === 'granted')
-      new Notification(titulo, { body: cuerpo, icon: ICONO, tag: 'ruta', renotify: true });
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const opts = { body: cuerpo || '', icon: ICONO, badge: ICONO, tag: clave || 'ruta', renotify: true,
+                   requireInteraction: !!fuerte, vibrate: fuerte ? RING_VIBRA : [60, 60, 60], silent: false };
+    if (swReg && swReg.showNotification) swReg.showNotification(titulo, opts).catch(() => new Notification(titulo, opts));
+    else new Notification(titulo, opts);
   } catch (e) {}
 }
 
@@ -1032,13 +1073,13 @@ function tonoCtx() {
   try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
   return audioCtx;
 }
-function tono(freq, ms, vol = .16, retraso = 0) {
+function tono(freq, ms, vol = .16, retraso = 0, forma = 'sine') {
   const ctx = tonoCtx(); if (!ctx) return;
   if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   const t0 = ctx.currentTime + retraso;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.type = 'sine'; osc.frequency.value = freq;
+  osc.type = forma; osc.frequency.value = freq;
   gain.gain.setValueAtTime(0, t0);
   gain.gain.linearRampToValueAtTime(vol, t0 + .015);
   gain.gain.setValueAtTime(vol, Math.max(t0 + .02, t0 + ms / 1000 - .05));
@@ -1049,12 +1090,17 @@ function tono(freq, ms, vol = .16, retraso = 0) {
 const RING_VIBRA = [280, 120, 280, 120, 280, 120, 280];
 /* Cada sonido es una lista de notas [frecuencia, ms, volumen, retraso s].
    La misma lista sirve para Web Audio y para el WAV de respaldo. */
-const notasTimbre = v => Array.from({ length: v }, (_, i) => [[1000, 230, .4, i * .72], [760, 230, .4, i * .72 + .26]]).flat();
+/* La alerta de "hay algo que atender": ráfagas rápidas de dos tonos
+   agudos (como un buscapersonas), con un poco de onda cuadrada para que
+   corte el ruido de la calle. Se repite hasta que el usuario toca la
+   pantalla (ver sonarAlerta). */
+const rafaga = (t0, a, b) => [0, 1, 2].flatMap(i => [[a, 95, .34, t0 + i * .22, 'square'], [b, 95, .34, t0 + i * .22 + .11, 'square']]);
 const NOTAS = {
   enviado:  [[880, 90, .16, 0]],
   mensaje:  [[660, 110, .22, 0], [880, 140, .24, .11]],
-  nueva:    notasTimbre(4),
-  aceptado: [[784, 160, .4, 0], [988, 160, .4, .18], [1175, 320, .45, .36], ...notasTimbre(2).map(n => [n[0], n[1], n[2], n[3] + .8])]
+  nueva:    [...rafaga(0, 1568, 1175), ...rafaga(.85, 1568, 1175), [2093, 320, .38, 1.7, 'triangle']],
+  aceptado: [[784, 150, .42, 0, 'triangle'], [988, 150, .42, .17, 'triangle'], [1319, 150, .42, .34, 'triangle'],
+             [1568, 380, .45, .51, 'triangle'], ...rafaga(1.05, 1568, 1175)]
 };
 /* WAV sintetizado en memoria: suena aunque el AudioContext siga
    suspendido (pasa en el WebView al volver de segundo plano). */
@@ -1064,11 +1110,14 @@ function wavDe(notas) {
   const fin = Math.max(...notas.map(n => n[3] + n[1] / 1000)) + .05;
   const len = Math.ceil(fin * sr);
   const pcm = new Float32Array(len);
-  notas.forEach(([f, ms, vol, ret]) => {
+  notas.forEach(([f, ms, vol, ret, forma]) => {
     const i0 = Math.floor(ret * sr), n = Math.floor(ms / 1000 * sr);
     for (let i = 0; i < n && i0 + i < len; i++) {
-      const env = Math.min(1, i / (sr * .015), (n - i) / (sr * .05));
-      pcm[i0 + i] += Math.sin(2 * Math.PI * f * i / sr) * vol * env;
+      const env = Math.min(1, i / (sr * .008), (n - i) / (sr * .03));
+      const w = 2 * Math.PI * f * i / sr;
+      const onda = forma === 'square' ? (Math.sin(w) + Math.sin(3 * w) / 3 + Math.sin(5 * w) / 5) * .8
+                 : forma === 'triangle' ? Math.sin(w) + Math.sin(3 * w) / 9 : Math.sin(w);
+      pcm[i0 + i] += onda * vol * env;
     }
   });
   const buf = new ArrayBuffer(44 + len * 2), dv = new DataView(buf);
@@ -1086,7 +1135,7 @@ function sonido(tipo) {
   if (!notas) return;
   const ctx = tonoCtx();
   if (ctx && ctx.state === 'running') {
-    try { notas.forEach(([f, ms, vol, ret]) => tono(f, ms, vol, ret)); return; } catch (e) {}
+    try { notas.forEach(([f, ms, vol, ret, forma]) => tono(f, ms, vol, ret, forma || 'sine')); return; } catch (e) {}
   }
   try {
     if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
@@ -1094,10 +1143,27 @@ function sonido(tipo) {
     a.play().catch(() => {});
   } catch (e) {}
 }
+/* Alerta insistente: repite el sonido cada 2.6 s hasta `veces` o hasta que
+   el usuario toque la pantalla. Así el conductor que tiene el teléfono en
+   el soporte se entera aunque no esté mirando. */
+let alertaT = null;
+function sonarAlerta(tipo, veces) {
+  detenerAlerta();
+  let n = 0;
+  const uno = () => {
+    if (n++ >= veces) return detenerAlerta();
+    sonido(tipo);
+    alertaT = setTimeout(uno, 2600);
+  };
+  uno();
+}
+function detenerAlerta() { clearTimeout(alertaT); alertaT = null; }
+
 /* Se despierta el audio en cada toque, no solo en el primero: el WebView
    lo vuelve a suspender cada vez que la app pasa a segundo plano. */
 (() => {
   const despertar = () => { const c = tonoCtx(); if (c && c.state === 'suspended') c.resume().catch(() => {}); };
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, detenerAlerta, { passive: true }));
   ['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, despertar, { passive: true }));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') despertar(); });
 })();
@@ -1211,6 +1277,9 @@ function haversine(a, b) {
   return 2 * R * Math.asin(Math.sqrt(x));
 }
 const kmRuta  = (a, b) => +(haversine(a, b) * 1.32).toFixed(2);
+/* El conductor ve viajes a menos de 5 km en línea recta; los envíos le
+   aparecen desde cualquier distancia (se recogen de paso). */
+const RADIO_VIAJES_KM = 5;
 const minRuta = km => Math.max(4, Math.round(km / 21 * 60 + 2));
 
 /* ---- 3. Tarifas ---- */
@@ -1228,7 +1297,9 @@ const URGENCIAS = {
 const URG_LEGADO = { '1h': { d: 0.20, t: 'Dentro de 1 hora', s: '', i: 'reloj' } };
 const urgDe = k => URGENCIAS[k] || URG_LEGADO[k] || URGENCIAS.urgente;
 /* Cupos del conductor, los mismos que aplica la base (conductor_puede_tomar). */
-const MAX_ENVIOS_2H = 3, MAX_ENVIOS_PASAJERO = 10, PLAZO_ENVIO_MIN = 60;
+const MAX_ENVIOS_2H = 3, MAX_ENVIOS_PASAJERO = 10;
+/* Botones + y − del precio (pasajero y contraoferta del conductor) */
+const PASO_PRECIO = 0.05;
 const ACTIVOS = ['buscando', 'aceptado', 'en_camino', 'a_bordo'];
 const EN_CURSO = ['aceptado', 'en_camino', 'a_bordo'];
 function fechaQuito(f = new Date()) {
@@ -1426,6 +1497,7 @@ const mapa = {
       maxBoundsViscosity: .9,
       minZoom: 6
     }).setView([QUITO.lat, QUITO.lng], 14);
+    this.m.attributionControl.setPrefix('Leaflet');
     this.pintarTeselas();
     setTimeout(() => this.m.invalidateSize(), 250);
     this.vigilarTamano();
@@ -1877,7 +1949,12 @@ function almacenSeguro() {
 function crearAPI(url, key) {
   if (!window.supabase || !window.supabase.createClient) throw new Error('No se pudo cargar la librería de Supabase. Revisa tu conexión a internet.');
   const sb = window.supabase.createClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit', storage: almacenSeguro() }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit', storage: almacenSeguro() },
+    /* En el navegador el latido del realtime va en un Web Worker: los
+       navegadores frenan los temporizadores de las pestañas en segundo
+       plano y sin esto la conexión se caía y las solicitudes llegaban tarde.
+       En el APK no hace falta: el servicio nativo cubre el segundo plano. */
+    realtime: enApp() ? { heartbeatIntervalMs: 15000 } : { worker: true, heartbeatIntervalMs: 15000 }
   });
   const yo = () => S.user && S.user.id;
 
@@ -1886,7 +1963,19 @@ function crearAPI(url, key) {
     async crearSolicitud(d) {
       const { data, error } = await sb.from('solicitudes').insert({ ...d, pasajero_id: yo() }).select().single();
       if (error) throw error;
+      this.anunciarNueva(data.id);
       return { ...data, pasajero_nombre: S.perfil.nombre, pasajero_calificacion: S.perfil.calificacion, pasajero_tel: S.perfil.celular };
+    },
+    /* Aviso directo a los conductores conectados (broadcast de Realtime):
+       llega en milisegundos, sin esperar a que la base publique el cambio.
+       Si falla no pasa nada: los conductores igual la ven por postgres_changes
+       y por la consulta periódica. */
+    anunciarNueva(id) {
+      try {
+        const ch = sb.channel('ruta-nuevas');
+        const p = ch.httpSend ? ch.httpSend('nueva', { id }) : ch.send({ type: 'broadcast', event: 'nueva', payload: { id } });
+        Promise.resolve(p).catch(() => {}).finally(() => sb.removeChannel(ch));
+      } catch (e) {}
     },
     async cancelarSolicitud(id, motivo) {
       const { error } = await sb.from('solicitudes')
@@ -1945,23 +2034,64 @@ function crearAPI(url, key) {
       const { error } = await sb.from('solicitudes').update(campos).eq('id', id);
       if (error) throw error;
     },
+    /* Solicitudes que ve el conductor en línea: viajes a menos de
+       RADIO_VIAJES_KM de él y envíos de cualquier distancia.
+       Llegan por tres caminos, el primero que llegue gana:
+         1. broadcast 'ruta-nuevas' que manda el pasajero al publicar
+         2. INSERT de postgres_changes (se trae solo esa fila)
+         3. consulta completa cada 6 s, que además limpia las ya tomadas */
     cercanas(cb) {
+      let lista = [], vivo = true, tPronto = null;
+      const sirve = s => s.estado === 'buscando' &&
+        (s.tipo === 'paquete' || haversine(S.pos, { lat: +s.origen_lat, lng: +s.origen_lng }) <= RADIO_VIAJES_KM);
+      const emitir = () => { if (vivo) cb(lista.filter(sirve)); };
       const cargar = async () => {
         const { data, error } = await sb.from('solicitudes_detalle').select('*')
-          .eq('estado', 'buscando').order('creado_en', { ascending: false }).limit(30);
-        if (error) return;
-        cb((data || []).filter(s => haversine(S.pos, { lat: s.origen_lat, lng: s.origen_lng }) <= 12));
+          .eq('estado', 'buscando').order('creado_en', { ascending: false }).limit(80);
+        if (error || !vivo) return;
+        lista = data || [];
+        emitir();
+      };
+      const pronto = () => { clearTimeout(tPronto); tPronto = setTimeout(cargar, 250); };
+      const traerUna = async id => {
+        if (!id || lista.some(s => s.id === id)) return;
+        const { data } = await sb.from('solicitudes_detalle').select('*').eq('id', id).maybeSingle();
+        if (!vivo || !data || data.estado !== 'buscando' || lista.some(s => s.id === id)) return;
+        lista = [data, ...lista];
+        emitir();
       };
       cargar();
       const ch = sb.channel('cercanas')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes' }, cargar).subscribe();
-      const t = setInterval(cargar, 10000);
-      return () => { clearInterval(t); sb.removeChannel(ch); };
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'solicitudes' }, p => traerUna(p.new && p.new.id))
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'solicitudes' }, p => {
+          const n = p.new || {};
+          if (n.id && n.estado && n.estado !== 'buscando') {
+            const antes = lista.length;
+            lista = lista.filter(s => s.id !== n.id);
+            if (lista.length !== antes) emitir();
+          } else pronto();
+        })
+        .subscribe();
+      const chB = sb.channel('ruta-nuevas')
+        .on('broadcast', { event: 'nueva' }, m => traerUna(m && m.payload && m.payload.id))
+        .subscribe();
+      const t = setInterval(cargar, 6000);
+      return () => { vivo = false; clearInterval(t); clearTimeout(tPronto); sb.removeChannel(ch); sb.removeChannel(chB); };
     },
     async setEnLinea(on, pos) {
       await sb.from('conductores_estado').upsert({
         conductor_id: yo(), en_linea: on, lat: pos.lat, lng: pos.lng, actualizado_en: new Date().toISOString()
       });
+    },
+    /* Señal de vida para el panel de administración: quién tiene la app
+       abierta, en qué modo y dónde está. */
+    async presencia(d) {
+      if (!yo()) return;
+      await sb.from('presencia').upsert({ usuario_id: yo(), ...d, visto_en: new Date().toISOString() });
+    },
+    async quitarPresencia() {
+      if (!yo()) return;
+      await sb.from('presencia').delete().eq('usuario_id', yo());
     },
     async estabaEnLinea() {
       const { data } = await sb.from('conductores_estado').select('en_linea').eq('conductor_id', yo()).maybeSingle();
@@ -2209,7 +2339,7 @@ function pintarEstadoCfg() {
 
 /* Cambia la versión cuando cambie el texto: a quien aceptó una versión
    anterior se le vuelve a pedir que acepte. */
-const TERMINOS_VERSION = '2026-09';
+const TERMINOS_VERSION = '2026-09-b';
 const CORREO_SOPORTE = 'abulingo.help@gmail.com';
 const TEXTO_TERMINOS = `
   <p><b>Versión ${TERMINOS_VERSION}.</b> Al crear una cuenta o usar Ruta aceptas estas condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
@@ -2226,6 +2356,13 @@ const TEXTO_TERMINOS = `
     <li>Tu PIN es personal. Eres responsable de lo que se haga con tu cuenta.</li>
   </ul>
 
+  <h4>2.1 Comunicación contigo</h4>
+  <ul>
+    <li>Al crear tu cuenta <b>autorizas a Ruta a comunicarse contigo por correo electrónico y por WhatsApp</b>, al correo y al celular que registraste, para informarte sobre tu cuenta (activación, verificación, habilitación, suspensión), tus servicios, cambios en estas condiciones u otros asuntos relacionados con Ruta.</li>
+    <li>Ruta nunca te pedirá tu PIN, contraseñas ni datos de tarjetas por correo ni por WhatsApp.</li>
+    <li>Si prefieres no recibir mensajes que no sean indispensables para tu cuenta, escríbenos a <a href="mailto:${CORREO_SOPORTE}" style="color:var(--azul)">${CORREO_SOPORTE}</a>.</li>
+  </ul>
+
   <h4>3. Precios y pago</h4>
   <ul>
     <li>Viajes: el pasajero propone el precio (mínimo $1.50 USD) y el conductor lo acepta o contraoferta. Envíos: tarifa fija calculada por distancia, tiempo, tamaño y urgencia.</li>
@@ -2236,7 +2373,7 @@ const TEXTO_TERMINOS = `
   <ul>
     <li>Está prohibido enviar dinero en efectivo, joyas, armas, municiones, explosivos, drogas o sustancias sujetas a control, animales vivos, productos perecibles sin embalaje adecuado, documentos o bienes de origen ilícito y cualquier objeto prohibido por la ley ecuatoriana.</li>
     <li>El remitente declara con veracidad qué contiene el paquete y lo entrega bien embalado. El conductor puede negarse a llevar un paquete sospechoso o mal embalado.</li>
-    <li>El conductor tiene un plazo referencial de 1 hora desde que acepta un envío para entregarlo; es una meta de servicio, no una garantía.</li>
+    <li>Plazos de entrega, contados desde que el conductor acepta el envío: <b>urgente</b>, el tiempo que tarde en llegar al punto de recogida más el del recorrido hasta la entrega; <b>dentro de 2 horas</b> y <b>dentro de 5 horas</b>, esa franja completa. Son metas de servicio, no una garantía.</li>
   </ul>
 
   <h4>5. Limitación de responsabilidad</h4>
@@ -2252,7 +2389,7 @@ const TEXTO_TERMINOS = `
   <h4>7. Protección de datos personales</h4>
   <ul>
     <li>Tratamos tus datos conforme a la <b>Ley Orgánica de Protección de Datos Personales (LOPDP)</b> del Ecuador. Responsable del tratamiento: César Santana, ${CORREO_SOPORTE}.</li>
-    <li>Datos que tratamos: identificación y contacto, fotos de rostro y cédula, un patrón numérico de tu rostro, ubicación durante los servicios, historial de servicios, mensajes y calificaciones.</li>
+    <li>Datos que tratamos: identificación y contacto, fotos de rostro y cédula, un patrón numérico de tu rostro, ubicación (también con la app en segundo plano mientras tengas la sesión abierta: los conductores en línea para recibir solicitudes cercanas y los pasajeros para el seguimiento de sus servicios), historial de servicios, mensajes y calificaciones.</li>
     <li>Los datos biométricos (rostro) son <b>datos sensibles</b>: al aceptar das tu <b>consentimiento expreso</b> para usarlos solo para verificar tu identidad y prevenir suplantaciones y fraudes. Se guardan en almacenamiento privado al que solo accede la administración.</li>
     <li>Tu ubicación se comparte con la otra parte solo mientras hay un servicio en curso: el pasajero ve al conductor en viajes y envíos; el conductor ve al pasajero solo en viajes.</li>
     <li>Conservamos los datos mientras tengas una cuenta y el tiempo que exija la ley o la atención de reclamos. No vendemos tus datos.</li>
@@ -2613,6 +2750,14 @@ async function olvidePin() {
 async function entrarConGoogle() {
   const api = conectar();
   if (!api) return;
+  /* Google no deja iniciar sesión dentro de un WebView: en el APK lo hace
+     la parte nativa (cuenta del teléfono) y devuelve un idToken que se
+     canjea aquí con signInWithIdToken (ver rutaNativo.google). */
+  if (enApp()) {
+    const b = $('#btn-google'); if (b) b.disabled = true;
+    setTimeout(() => { if (b) b.disabled = false; }, 20000);
+    return nativo({ tipo: 'google' });
+  }
   const { error } = await api.sb.auth.signInWithOAuth({
     provider: 'google', options: { redirectTo: location.href.split('#')[0] }
   });
@@ -2703,8 +2848,11 @@ async function arrancarApp() {
   cargarRecientes().then(repintar);
   escucharSoporte();
   pedirAvisos();
+  registrarSW();
   vigilarPlazos();
   await restaurarServicios();
+  informarNativo();
+  iniciarLatido();
   if (S.perfil && !S.perfil.desdeCache && S.perfil.terminos_version !== TERMINOS_VERSION) {
     if (await modalTerminos(true)) {
       try { await S.api.aceptarTerminos(); toast('Gracias, términos aceptados'); }
@@ -2728,7 +2876,7 @@ async function restaurarServicios() {
     S.paso = 'solicitudes';
     try {
       if (await S.api.estabaEnLinea() && estadoConductor().ok) {
-        S.enLinea = true; pintarTop(); escucharCercanas();
+        S.enLinea = true; pintarTop(); escucharCercanas(); mantenerPantalla(true);
       }
     } catch (e) {}
   } else if (S.activos.length === 1) {
@@ -2787,19 +2935,19 @@ function alAparecer(s) {
   if (S.modo === 'conductor') {
     if (S.ofertaEnviada && S.ofertaEnviada.solicitud_id === s.id) S.ofertaEnviada = null;
     S.cercanas = S.cercanas.filter(x => x.id !== s.id);
-    avisar('¡Servicio asignado!', `${nombreCorto(s.pasajero_nombre) || 'Un pasajero'} te asignó su ${queEs(s)} · ${money(s.precio_final || s.precio_ofrecido)}`, 'aceptado');
+    avisar('¡Servicio asignado!', `${nombreCorto(s.pasajero_nombre) || 'Un pasajero'} te asignó su ${queEs(s)} · ${money(s.precio_final || s.precio_ofrecido)}`, 'aceptado', `asignado:${s.id}`);
   }
 }
 function alCambiar(a, s) {
   if (propio(s, s.estado)) return;
   if (S.modo === 'pasajero') {
     if (a.estado === 'buscando' && EN_CURSO.includes(s.estado)) {
-      avisar('¡Conductor asignado!', `${nombreCorto(s.conductor_nombre) || 'Un conductor'} tomó tu ${queEs(s)}${s.placa ? ' · ' + s.placa : ''}`, 'aceptado');
+      avisar('¡Conductor asignado!', `${nombreCorto(s.conductor_nombre) || 'Un conductor'} tomó tu ${queEs(s)}${s.placa ? ' · ' + s.placa : ''}`, 'aceptado', `estado:${s.id}:aceptado`);
     } else if (s.estado === 'en_camino') {
-      avisar('Tu conductor va en camino', s.tipo === 'paquete' ? 'Va a recoger tu paquete' : 'Prepárate para salir', 'nueva');
+      avisar('Tu conductor va en camino', s.tipo === 'paquete' ? 'Va a recoger tu paquete' : 'Prepárate para salir', 'aceptado', `estado:${s.id}:en_camino`);
     } else if (s.estado === 'a_bordo') {
       avisar(s.tipo === 'paquete' ? 'Paquete recogido' : 'Viaje en curso',
-        s.tipo === 'paquete' ? `Va rumbo a ${s.destinatario || 'la entrega'}` : 'Rumbo a tu destino', 'mensaje');
+        s.tipo === 'paquete' ? `Va rumbo a ${s.destinatario || 'la entrega'}` : 'Rumbo a tu destino', 'mensaje', `estado:${s.id}:a_bordo`);
     }
   }
 }
@@ -2811,12 +2959,12 @@ async function alSalir(a) {
   if (fin.estado === 'finalizado') {
     if (!propio(fin, 'finalizado')) {
       avisar(fin.tipo === 'paquete' ? 'Envío entregado' : 'Viaje finalizado',
-        fin.tipo === 'paquete' ? `Tu paquete llegó a ${fin.destinatario || 'su destino'}` : 'Gracias por viajar con Ruta', 'mensaje');
+        fin.tipo === 'paquete' ? `Tu paquete llegó a ${fin.destinatario || 'su destino'}` : 'Gracias por viajar con Ruta', 'mensaje', `estado:${fin.id}:finalizado`);
     }
     if (S.modo === 'pasajero' || fin.tipo === 'viaje') S.porCalificar.push(fin);
   } else if (fin.estado === 'cancelado' && !propio(fin, 'cancelado')) {
     avisar(`${fin.tipo === 'paquete' ? 'Envío' : 'Viaje'} cancelado`,
-      fin.motivo_cancelacion || 'La otra parte canceló el servicio', 'mensaje');
+      fin.motivo_cancelacion || 'La otra parte canceló el servicio', 'mensaje', `estado:${fin.id}:cancelado`);
   }
 }
 
@@ -2863,37 +3011,80 @@ function sincronizarSeguimiento() {
   seguirMiGps(gps || (S.modo === 'pasajero' && act.length > 0));
 }
 
-/* Plazo de 1 hora para entregar un envío desde que el conductor lo acepta.
-   Se revisa cada 20 s: aviso fuerte a los 15 min y otro al vencerse. */
+/* Plazo para entregar un envío, contado desde que el conductor lo acepta:
+     urgente → lo que tarda en llegar a recoger + el recorrido (+5 min para
+               la entrega en mano). No es una franja fija: es "ya".
+     2 h / 5 h → esa franja completa.
+   La base calcula lo mismo en solicitudes_detalle.entrega_limite; esto es
+   el respaldo si el dato aún no llegó. */
+const MIN_URGENCIA = { '1h': 60, '2h': 120, '5h': 300 };
+function limiteEntrega(s) {
+  if (s.tipo !== 'paquete' || !s.aceptado_en) return null;
+  if (s.entrega_limite) return new Date(s.entrega_limite).getTime();
+  const u = s.urgencia || 'urgente';
+  const min = u === 'urgente'
+    ? (+s.eta_recogida_min || 10) + (+s.duracion_min || 15) + 5
+    : (MIN_URGENCIA[u] || 60);
+  return new Date(s.aceptado_en).getTime() + min * 60000;
+}
+function textoPlazoUrgencia(u) {
+  if ((u || 'urgente') === 'urgente') return 'Llegar a recoger + el recorrido';
+  return `${(MIN_URGENCIA[u] || 60) / 60} h desde que lo acepten`;
+}
 function plazoDe(s) {
-  if (s.tipo !== 'paquete' || !s.aceptado_en || s.estado === 'finalizado') return null;
-  const limite = s.entrega_limite ? new Date(s.entrega_limite).getTime()
-    : new Date(s.aceptado_en).getTime() + PLAZO_ENVIO_MIN * 60000;
-  return Math.round((limite - Date.now()) / 60000);
+  if (s.estado === 'finalizado') return null;
+  const lim = limiteEntrega(s);
+  return lim == null ? null : Math.floor((lim - Date.now()) / 60000);
+}
+const dos = n => String(n).padStart(2, '0');
+/* Cronómetro: "1 h 57 min 08 s" o "12 min 40 s" */
+function crono(ms) {
+  const t = Math.abs(ms);
+  const h = Math.floor(t / 3600000), m = Math.floor(t % 3600000 / 60000), sg = Math.floor(t % 60000 / 1000);
+  return h ? `${h} h ${dos(m)} min ${dos(sg)} s` : `${m} min ${dos(sg)} s`;
+}
+function estadoCrono(s) {
+  const lim = limiteEntrega(s);
+  if (lim == null || s.estado === 'finalizado') return null;
+  const ms = lim - Date.now();
+  return {
+    cls: ms < 0 ? 'tarde' : ms <= 15 * 60000 ? 'poco' : '',
+    txt: ms < 0 ? 'Atrasado ' : ((s.urgencia || 'urgente') === 'urgente' ? 'Entrega urgente en ' : 'Entregar en '),
+    val: crono(ms)
+  };
 }
 function chipPlazo(s) {
-  const m = plazoDe(s);
-  if (m == null) return '';
-  const cls = m < 0 ? 'tarde' : m <= 15 ? 'poco' : '';
-  const txt = m < 0 ? `Atrasado ${-m} min` : `Entregar en ${m} min`;
-  return `<span class="plazo ${cls}" data-plazo="${s.id}">${IC.reloj('sm')}${txt}</span>`;
+  const e = estadoCrono(s);
+  if (!e) return '';
+  return `<span class="plazo ${e.cls}" data-plazo="${s.id}">${IC.reloj('sm')}<span class="pl-t">${e.txt}</span><b class="crono">${e.val}</b></span>`;
 }
+/* Los cronómetros en pantalla avanzan cada segundo sin repintar el panel */
+setInterval(() => {
+  if (document.visibilityState !== 'visible') return;
+  $$('[data-plazo]').forEach(el => {
+    const s = (S.activos || []).find(x => x.id === el.dataset.plazo);
+    const e = s && estadoCrono(s);
+    if (!e) return;
+    el.className = 'plazo ' + e.cls;
+    const t = el.querySelector('.pl-t'), c = el.querySelector('.crono');
+    if (t) t.textContent = e.txt;
+    if (c) c.textContent = e.val;
+  });
+}, 1000);
 function vigilarPlazos() {
   clearInterval(vigilarPlazos.t);
   vigilarPlazos.t = setInterval(() => {
     S.activos.forEach(s => {
       const m = plazoDe(s);
       if (m == null) return;
-      const el = document.querySelector(`[data-plazo="${s.id}"]`);
-      if (el) el.outerHTML = chipPlazo(s);
       if (S.modo !== 'conductor') return;
       const ya = S.avisosPlazo[s.id] || '';
       if (m <= 0 && !ya.includes('tarde')) {
         S.avisosPlazo[s.id] = ya + 'tarde';
-        avisar('Envío atrasado', `Ya pasó la hora para entregar a ${s.destinatario || 'su destino'}. Entrégalo cuanto antes`, 'nueva');
-      } else if (m <= 15 && m > 0 && !ya.includes('15')) {
+        avisar('Envío atrasado', `Se venció el plazo para entregar a ${s.destinatario || 'su destino'}. Entrégalo cuanto antes`, 'nueva', `plazotarde:${s.id}`);
+      } else if (m <= ((s.urgencia || 'urgente') === 'urgente' ? 5 : 15) && m > 0 && !ya.includes('15')) {
         S.avisosPlazo[s.id] = ya + '15';
-        avisar('Te quedan ' + m + ' minutos', `Entrega el envío a ${s.destinatario || 'su destino'} antes de que se venza el plazo`, 'nueva');
+        avisar('Te quedan ' + m + ' minutos', `Entrega el envío a ${s.destinatario || 'su destino'} antes de que se venza el plazo`, 'nueva', `plazo15:${s.id}`);
       }
     });
   }, 20000);
@@ -3063,6 +3254,8 @@ async function setModo(m) {
   mapa.pintarTeselas();
   pintarTop(); setVista('inicio');
   await restaurarServicios();
+  informarNativo();
+  latido();
 }
 
 async function alternarLinea() {
@@ -3079,6 +3272,9 @@ async function alternarLinea() {
   S.enLinea = !S.enLinea;
   pintarTop();
   try { await S.api.setEnLinea(S.enLinea, S.pos); } catch (e) {}
+  informarNativo();
+  mantenerPantalla(S.enLinea);
+  latido();
   if (S.enLinea) { escucharCercanas(); toast('Estás en línea, te llegarán solicitudes'); }
   else { detenerCercanas(); S.cercanas = []; toast('Fuera de línea'); }
   sincronizarSeguimiento();
@@ -3123,7 +3319,7 @@ function escucharCercanas() {
       const s = nuevas[0];
       const km = kmRuta(S.pos, { lat: s.origen_lat, lng: s.origen_lng });
       avisar(`Nuevo ${s.tipo === 'paquete' ? 'envío' : 'viaje'} por ${money(s.precio_ofrecido)}`,
-        `A ${km} km de ti · ${s.origen_texto || ''}`, 'nueva');
+        `A ${km} km de ti · ${s.origen_texto || ''}`, 'nueva', `nueva:${s.id}`);
     }
     primera = false;
     if (S.vista === 'inicio' && S.modo === 'conductor') render();
@@ -3482,7 +3678,7 @@ function alRecibirMensajes(id, m) {
   else if (m.length > antes.length && ult && ult.emisor_id === 'otro') {
     const s = S.activos.find(x => x.id === id);
     const quien = s ? nombreCorto(otroLado(s).nombre) : '';
-    if (S.chatId !== id) avisar(`Mensaje de ${quien || 'tu servicio'}`, ult.texto, 'mensaje');
+    if (S.chatId !== id) avisar(`Mensaje de ${quien || 'tu servicio'}`, ult.texto, 'mensaje', `msg:${ult.id}`);
     else { vibrar([40, 50, 40]); sonido('mensaje'); }
   }
   if (S.chatId === id) pintarChat();
@@ -3915,7 +4111,7 @@ function pintarEta() {
     if (cerca && s.estado !== 'a_bordo' && !S.avisoLlegadaPor[s.id]) {
       S.avisoLlegadaPor[s.id] = true;
       avisar(s.tipo === 'paquete' ? 'El conductor llegó por tu paquete' : 'Tu conductor ya llegó',
-        s.tipo === 'paquete' ? 'Entrégale el paquete' : 'Sal a su encuentro', 'nueva');
+        s.tipo === 'paquete' ? 'Entrégale el paquete' : 'Sal a su encuentro', 'llegada', `llegada:${s.id}`);
     }
     const txt = cerca
       ? (s.estado === 'a_bordo' ? 'Llegando al destino' : (s.tipo === 'paquete' ? 'El conductor está en la recogida' : 'Tu conductor ya está afuera'))
@@ -4238,8 +4434,9 @@ function pasoPrecio(sh) {
     </div>
     <button class="btn primary full" id="p-publicar" style="margin-top:12px">Buscar conductor por ${money(S.precio)}</button>`;
   $('#b-atras').onclick = () => { S.paso = 'detalles'; render(); };
-  $('#pr-menos').onclick = () => { S.precio = Math.max(minPermitido, +(S.precio - .10).toFixed(2)); render(); };
-  $('#pr-mas').onclick = () => { S.precio = +(S.precio + .10).toFixed(2); render(); };
+  /* De 5 en 5 centavos, igual que la contraoferta del conductor */
+  $('#pr-menos').onclick = () => { S.precio = Math.max(minPermitido, +(S.precio - PASO_PRECIO).toFixed(2)); render(); };
+  $('#pr-mas').onclick = () => { S.precio = +(S.precio + PASO_PRECIO).toFixed(2); render(); };
   $('#sw-auto').onclick = () => { S.auto = !S.auto; render(); };
   $('#p-publicar').onclick = publicar;
 }
@@ -4257,12 +4454,11 @@ function pasoPrecioFijo(sh, t) {
       <div class="kv"><span class="k">Recorrido</span><span class="v">${S.km} km · ${S.dur} min</span></div>
       <div class="kv"><span class="k">Tamaño</span><span class="v">${TAMANOS[S.tamano].t}</span></div>
       <div class="kv"><span class="k">Entrega</span><span class="v">${urgDe(S.urgencia).t}</span></div>
-      ${S.urgencia !== 'urgente' ? `<div class="kv"><span class="k">Plazo del conductor</span><span class="v">1 h desde que lo acepte</span></div>` : ''}
+      <div class="kv"><span class="k">Plazo de entrega</span><span class="v">${textoPlazoUrgencia(S.urgencia)}</span></div>
       <div class="kv"><span class="k">Descuento por esperar</span><span class="v">${t.desc ? `−${t.desc * 100}% (${money(t.bruto - t.final)})` : 'Sin descuento'}</span></div>
       <div class="kv"><span class="k">Total a pagar</span><span class="v">${money(t.final)}</span></div>
     </div>
-    <p class="fine" style="margin:12px 0">Los envíos van a precio fijo: el conductor solo puede tomarlo o dejarlo pasar, no puede pedirte más. Se asigna automáticamente al primero que lo tome.</p>
-    <button class="btn primary full" id="p-publicar">Pedir envío por ${money(t.final)}</button>`;
+    <button class="btn primary full" id="p-publicar" style="margin-top:12px">Pedir envío por ${money(t.final)}</button>`;
   $('#b-atras').onclick = () => { S.pasoEnvio = 'datos'; S.paso = 'detalles'; render(); };
   $('#p-publicar').onclick = publicar;
 }
@@ -4315,7 +4511,7 @@ function seguirSolicitud() {
     S.ofertas = lista;
     if (lista.length > antes && !S.solicitud.auto_asignar && S.solicitud.tipo !== 'paquete') {
       const o = lista[0];
-      avisar('Tienes una oferta', `${o.conductor_nombre || 'Un conductor'} pide ${money(o.precio)}`, 'nueva');
+      avisar('Tienes una oferta', `${o.conductor_nombre || 'Un conductor'} pide ${money(o.precio)}`, 'aceptado', `oferta:${o.id}`);
     }
     if (S.solicitud.estado === 'buscando' && lista.length !== antes) render();
   }));
@@ -4769,7 +4965,7 @@ function pasoSolicitudes(sh) {
     sh.innerHTML = `
       <div class="empty"><div class="big">${IC.poder()}</div>
         <h3 style="margin-bottom:6px;color:var(--text)">Estás fuera de línea</h3>
-        <p class="dim">Ponte en línea para ver los viajes y envíos que se publican cerca de ti. Puedes llevar 1 viaje, 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.</p></div>
+        <p class="dim">Ponte en línea para ver los viajes a menos de ${RADIO_VIAJES_KM} km de ti y los envíos de cualquier parte de la ciudad. Puedes llevar 1 viaje, 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.</p></div>
       <button class="btn primary full" id="c-online">Ponerme en línea</button>`;
     $('#c-online').onclick = alternarLinea;
     return;
@@ -4840,7 +5036,7 @@ function armarCercanas() {
 }
 
 function modalContraoferta(s) {
-  let p = +(s.precio_ofrecido + .5).toFixed(2);
+  let p = +(+s.precio_ofrecido + .25).toFixed(2);
   modal(`<div class="grip"></div>
     <h2>Tu contraoferta</h2>
     <p class="dim" style="margin:6px 0 14px">${esc(s.pasajero_nombre || 'El pasajero')} ofrece ${money(s.precio_ofrecido)} por ${s.distancia_km} km</p>
@@ -4851,8 +5047,8 @@ function modalContraoferta(s) {
       <button class="btn" id="co-x">Cancelar</button>
     </div>`);
   const pinta = () => $('#co-n').textContent = '$' + p.toFixed(2);
-  $('#co-menos').onclick = () => { p = Math.max(1, +(p - .25).toFixed(2)); pinta(); };
-  $('#co-mas').onclick = () => { p = +(p + .25).toFixed(2); pinta(); };
+  $('#co-menos').onclick = () => { p = Math.max(1.50, +(p - PASO_PRECIO).toFixed(2)); pinta(); };
+  $('#co-mas').onclick = () => { p = +(p + PASO_PRECIO).toFixed(2); pinta(); };
   $('#co-x').onclick = cerrarModal;
   $('#co-ok').onclick = () => { cerrarModal(); enviarOferta(s, p); };
 }
@@ -5167,24 +5363,221 @@ function fotoDe(video, espejo) {
   return new Promise(r => c.toBlob(r, 'image/jpeg', .86));
 }
 
+/* ------------------------------------------------------------------
+   ¿Hay una cédula en la foto?
+   Busca un rectángulo con proporción de tarjeta (ID-1: 85.6 × 54 mm,
+   1.586) que ocupe buena parte del recuadro: bordes rectos y visibles en
+   los cuatro lados y algo impreso adentro. Trabaja sobre una copia de
+   ~260 px de ancho en escala de grises, así corre en cualquier teléfono.
+   Devuelve { ok, motivo, caja:{x,y,w,h} en coordenadas de la fuente }.
+   ------------------------------------------------------------------ */
+function detectarTarjeta(fuente, zona, minFraccion = .55) {
+  const fw = fuente.videoWidth || fuente.naturalWidth || fuente.width;
+  const fh = fuente.videoHeight || fuente.naturalHeight || fuente.height;
+  if (!fw || !fh) return { ok: false, motivo: 'Esperando la cámara...' };
+  const z = zona || { x: 0, y: 0, w: fw, h: fh };
+  const W = 260, H = Math.max(40, Math.round(W * z.h / z.w));
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(fuente, z.x, z.y, z.w, z.h, 0, 0, W, H);
+  const px = cx.getImageData(0, 0, W, H).data;
+  const g = new Float32Array(W * H);
+  for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = px[j] * .299 + px[j + 1] * .587 + px[j + 2] * .114;
+  /* suavizado 3x3 para que el grano de la cámara no cuente como borde */
+  const b = new Float32Array(W * H);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    let t = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) t += g[(y + dy) * W + x + dx];
+    b[y * W + x] = t / 9;
+  }
+  /* Sobel: gx marca bordes verticales, gy horizontales */
+  const gx = new Float32Array(W * H), gy = new Float32Array(W * H);
+  const mags = [];
+  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+    const i = y * W + x;
+    const a = b[i - W - 1], c = b[i - W + 1], d = b[i + W - 1], f = b[i + W + 1];
+    gx[i] = (c + 2 * b[i + 1] + f) - (a + 2 * b[i - 1] + d);
+    gy[i] = (d + 2 * b[i + W] + f) - (a + 2 * b[i - W] + c);
+    if ((x + y) % 3 === 0) mags.push(Math.abs(gx[i]) + Math.abs(gy[i]));
+  }
+  mags.sort((p, q) => p - q);
+  const T = Math.max(40, mags[Math.floor(mags.length * .85)] || 0);
+  /* Perfiles: cuántos píxeles de borde horizontal hay en cada fila y de
+     borde vertical en cada columna. */
+  const esH = i => Math.abs(gy[i]) > T && Math.abs(gy[i]) > 1.3 * Math.abs(gx[i]);
+  const esV = i => Math.abs(gx[i]) > T && Math.abs(gx[i]) > 1.3 * Math.abs(gy[i]);
+  const filas = new Float32Array(H), cols = new Float32Array(W);
+  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+    const i = y * W + x;
+    if (esH(i)) filas[y]++;
+    if (esV(i)) cols[x]++;
+  }
+  const suave = (arr, n) => arr.map((_, k) => { let t = 0; for (let d = -2; d <= 2; d++) t += arr[Math.min(n - 1, Math.max(0, k + d))] || 0; return t; });
+  const F = suave(Array.from(filas), H), C = suave(Array.from(cols), W);
+  /* Candidatos: picos del perfil (filas/columnas con muchos bordes). Una
+     cédula tiene líneas internas (franjas, foto) tan fuertes como su
+     contorno, así que no basta con el pico más alto: se prueban las
+     combinaciones y gana el rectángulo con los 4 lados más continuos. */
+  const picos = (arr, n) => {
+    const mx = Math.max(...arr) || 1, cand = [], out = [];
+    for (let i = 3; i < n - 3; i++)
+      if (arr[i] >= mx * .2 && arr[i] >= arr[i - 1] && arr[i] >= arr[i + 1]) cand.push(i);
+    cand.sort((a, b) => arr[b] - arr[a]);
+    /* un borde da varias filas seguidas con el mismo valor: se queda una */
+    for (const i of cand) {
+      if (out.every(j => Math.abs(j - i) > 5)) out.push(i);
+      if (out.length >= 10) break;
+    }
+    return out;
+  };
+  const PF = picos(F, H), PC = picos(C, W);
+  const banda = Math.max(3, Math.round(Math.min(W, H) * .06));
+  const memo = new Map();
+  const cubre = (lado, top, bot, izq, der) => {
+    const clave = lado + (lado === 't' ? top + ',' + izq + ',' + der : lado === 'b' ? bot + ',' + izq + ',' + der
+                                : lado === 'l' ? izq + ',' + top + ',' + bot : der + ',' + top + ',' + bot);
+    if (memo.has(clave)) return memo.get(clave);
+    const w = der - izq, h = bot - top;
+    let hits = 0, n = 0;
+    if (lado === 't' || lado === 'b') {
+      const y0 = lado === 't' ? top : bot;
+      for (let x = izq + Math.round(w * .08); x < der - Math.round(w * .08); x += 2) {
+        n++;
+        for (let y = y0 - banda; y <= y0 + banda; y++) if (y > 1 && y < H - 2 && esH(y * W + x)) { hits++; break; }
+      }
+    } else {
+      const x0 = lado === 'l' ? izq : der;
+      for (let y = top + Math.round(h * .1); y < bot - Math.round(h * .1); y += 2) {
+        n++;
+        for (let x = x0 - banda; x <= x0 + banda; x++) if (x > 1 && x < W - 2 && esV(y * W + x)) { hits++; break; }
+      }
+    }
+    const r = n ? hits / n : 0;
+    memo.set(clave, r);
+    return r;
+  };
+  /* Contraste del borde: el tono justo afuera del lado tiene que ser
+     distinto del de adentro. Una línea de texto o una raya da bordes, pero
+     con el mismo papel a ambos lados; el contorno de la cédula sobre la
+     mesa no. */
+  const contraste = (top, bot, izq, der) => {
+    const w = der - izq, h = bot - top, d = 4;
+    let peor = 1e9;
+    for (const lado of ['t', 'b', 'l', 'r']) {
+      let suma = 0, n = 0;
+      if (lado === 't' || lado === 'b') {
+        const y0 = lado === 't' ? top : bot, sg = lado === 't' ? -1 : 1;
+        for (let x = izq + Math.round(w * .1); x < der - Math.round(w * .1); x += 3) {
+          /* el borde exacto en esta columna (la cédula puede estar inclinada) */
+          let ye = -1, mx = 0;
+          for (let y = y0 - banda; y <= y0 + banda; y++) if (y > 1 && y < H - 2 && Math.abs(gy[y * W + x]) > mx) { mx = Math.abs(gy[y * W + x]); ye = y; }
+          const yf = ye + sg * d, yd = ye - sg * d;
+          if (ye < 0 || yf < 1 || yf > H - 2 || yd < 1 || yd > H - 2) continue;
+          suma += Math.abs(b[yf * W + x] - b[yd * W + x]); n++;
+        }
+      } else {
+        const x0 = lado === 'l' ? izq : der, sg = lado === 'l' ? -1 : 1;
+        for (let y = top + Math.round(h * .12); y < bot - Math.round(h * .12); y += 3) {
+          let xe = -1, mx = 0;
+          for (let x = x0 - banda; x <= x0 + banda; x++) if (x > 1 && x < W - 2 && Math.abs(gx[y * W + x]) > mx) { mx = Math.abs(gx[y * W + x]); xe = x; }
+          const xf = xe + sg * d, xd = xe - sg * d;
+          if (xe < 0 || xf < 1 || xf > W - 2 || xd < 1 || xd > W - 2) continue;
+          suma += Math.abs(b[y * W + xf] - b[y * W + xd]); n++;
+        }
+      }
+      if (n) peor = Math.min(peor, suma / n);
+    }
+    return peor === 1e9 ? 0 : peor;
+  };
+  let mejor = null, motivo = PF.length > 1 && PC.length > 1
+    ? 'Pon la cédula completa y horizontal sobre una superficie oscura'
+    : 'Acerca la cédula: que llene el recuadro';
+  for (const top of PF) for (const bot of PF) {
+    if (bot - top < H * .2) continue;
+    for (const izq of PC) for (const der of PC) {
+      const w = der - izq, h = bot - top;
+      if (w < W * minFraccion) continue;
+      const prop = w / h;
+      if (prop < 1.3 || prop > 1.95) { motivo = 'Pon la cédula horizontal, completa dentro del recuadro'; continue; }
+      /* se corta en cuanto un lado ya es peor que el mejor encontrado */
+      const lados = [];
+      let peor = 1;
+      for (const lado of ['t', 'b', 'l', 'r']) {
+        const c = cubre(lado, top, bot, izq, der);
+        lados.push(c); peor = Math.min(peor, c);
+        if (mejor && peor + .15 < mejor.peor) break;
+      }
+      if (lados.length < 4) continue;
+      if (peor >= .5 && contraste(top, bot, izq, der) < 18) { motivo = 'No distinguimos la cédula del fondo: ponla sobre una mesa de otro color'; continue; }
+      /* a igual continuidad, el más grande (el contorno y no una franja interna) */
+      const nota = peor + w * h / (W * H) * .15;
+      if (!mejor || nota > mejor.nota) mejor = { top, bot, izq, der, lados, peor, nota };
+    }
+  }
+  if (!mejor) return { ok: false, motivo };
+  const { top, bot, izq, der, lados } = mejor;
+  const w = der - izq, h = bot - top;
+  if (mejor.peor < .5) return { ok: false, motivo: 'No vemos los 4 bordes de la cédula: ponla sobre una mesa de otro color', lados };
+  /* Adentro tiene que haber algo impreso (foto, texto), no una superficie lisa */
+  let sum = 0, sum2 = 0, cnt = 0;
+  for (let y = top + Math.round(h * .12); y < bot - Math.round(h * .12); y += 2)
+    for (let x = izq + Math.round(w * .06); x < der - Math.round(w * .06); x += 2) { const v = g[y * W + x]; sum += v; sum2 += v * v; cnt++; }
+  const desv = cnt ? Math.sqrt(Math.max(0, sum2 / cnt - (sum / cnt) ** 2)) : 0;
+  if (desv < 14) return { ok: false, motivo: 'La imagen está muy lisa o borrosa: busca más luz', lados };
+  const k = z.w / W;
+  return { ok: true, lados, caja: { x: z.x + izq * k, y: z.y + top * k, w: w * k, h: h * k } };
+}
+
+/* Recorta la cédula detectada (con un pequeño margen) y la devuelve en JPEG */
+function recortarTarjeta(fuente, caja) {
+  const fw = fuente.videoWidth || fuente.naturalWidth || fuente.width;
+  const fh = fuente.videoHeight || fuente.naturalHeight || fuente.height;
+  const m = .05;
+  const x = Math.max(0, caja.x - caja.w * m), y = Math.max(0, caja.y - caja.h * m);
+  const w = Math.min(fw - x, caja.w * (1 + 2 * m)), h = Math.min(fh - y, caja.h * (1 + 2 * m));
+  const sal = Math.min(1280, Math.round(w));
+  const c = document.createElement('canvas');
+  c.width = sal; c.height = Math.round(sal * h / w);
+  c.getContext('2d').drawImage(fuente, x, y, w, h, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, 'image/jpeg', .9));
+}
+
+/* Zona del cuadro de video que corresponde al recuadro guía de la pantalla
+   (el video se muestra con object-fit: cover, así que hay que deshacer el
+   recorte). Se toma un 18 % más grande para no cortar los bordes. */
+function zonaGuia(v) {
+  const vw = v.videoWidth, vh = v.videoHeight;
+  const cw = v.clientWidth || 300, ch = v.clientHeight || 400;
+  const esc = Math.max(cw / vw, ch / vh);
+  const gw = cw * .88 * 1.18, gh = cw * .88 / 1.58 * 1.18;
+  const w = Math.min(vw, gw / esc), h = Math.min(vh, gh / esc);
+  return { x: (vw - w) / 2, y: (vh - h) / 2, w, h };
+}
+
 /* Abre la cámara en un modal.
-   tipo 'rostro': frontal, espera un rostro centrado y una sonrisa, y
-   dispara solo. Devuelve { blob, descriptor }.
-   tipo 'cedula': trasera, con un marco; el usuario toca "Tomar foto". */
+   tipo 'rostro': frontal. Pide mirar de frente y luego sonreír (prueba de
+   que es una persona real y no una foto), y dispara sola.
+   Devuelve { blob, descriptor }.
+   tipo 'cedula': trasera, con un marco. El botón se habilita solo cuando
+   se detecta una tarjeta rectangular dentro del marco; la foto se recorta
+   a la cédula. También se puede subir una foto, que pasa por la misma
+   revisión. Devuelve { blob }. */
 function capturar(tipo, titulo, ayuda) {
   return new Promise(async res => {
     const rostro = tipo === 'rostro';
     modal(`<div class="grip"></div>
       <div class="head"><div class="grow"><h2>${esc(titulo)}</h2><div class="dim">${esc(ayuda)}</div></div>
         <button class="back" id="cam-x" aria-label="Cerrar">✕</button></div>
-      <div class="cam">
+      ${rostro ? `<div class="pasos-cam"><span id="pc-1" class="on">1. Mira de frente</span><span id="pc-2">2. Sonríe</span><span id="pc-3">3. Listo</span></div>` : ''}
+      <div class="cam" id="cam-caja">
         <video id="cam-v" playsinline autoplay muted class="${rostro ? 'espejo' : ''}"></video>
         <div class="guia"><div class="${rostro ? 'ovalo' : 'rect'}" id="cam-guia"></div></div>
         <div class="msg-cam" id="cam-msg">Abriendo la cámara...</div>
       </div>
-      ${rostro ? '' : `<button class="btn primary full" id="cam-ok" disabled>${IC.escudo('sm')} Tomar foto</button>`}
-      ${!rostro && !enApp() ? `<label class="btn ghost full" style="margin-top:6px">Subir una foto desde el dispositivo
-        <input type="file" accept="image/*" id="cam-file" style="display:none"></label>` : ''}`);
+      ${rostro ? '' : `<button class="btn primary full" id="cam-ok" disabled>${IC.escudo('sm')} Tomar foto</button>
+        <label class="btn ghost full" style="margin-top:6px">Subir una foto de la cédula
+          <input type="file" accept="image/*" id="cam-file" style="display:none"></label>`}`);
     let stream = null, parar = false, listo = false;
     const fin = v => {
       if (listo) return; listo = true; parar = true;
@@ -5196,15 +5589,36 @@ function capturar(tipo, titulo, ayuda) {
     alCerrarModal = () => { parar = true; if (stream) stream.getTracks().forEach(t => t.stop()); if (!listo) { listo = true; res(null); } };
     $('#cam-x').onclick = () => fin(null);
     const msg = t => { const m = $('#cam-msg'); if (m) m.textContent = t; };
+    const guia = () => $('#cam-guia');
+
+    /* Foto subida desde el teléfono: misma revisión que la cámara */
     const archivo = $('#cam-file');
-    if (archivo) archivo.onchange = () => { const f = archivo.files[0]; if (f) fin({ blob: f }); };
+    if (archivo) archivo.onchange = async () => {
+      const f = archivo.files[0]; if (!f) return;
+      const img = new Image();
+      const url = URL.createObjectURL(f);
+      img.onload = async () => {
+        const r = detectarTarjeta(img, null, .35);
+        if (!r.ok) {
+          URL.revokeObjectURL(url);
+          archivo.value = '';
+          return toast('En esa foto no se ve una cédula completa y rectangular. ' + r.motivo, 'bad');
+        }
+        const blob = await recortarTarjeta(img, r.caja);
+        URL.revokeObjectURL(url);
+        fin({ blob });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast('No se pudo abrir esa imagen', 'bad'); };
+      img.src = url;
+    };
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: rostro ? 'user' : { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false
       });
     } catch (e) {
-      msg('No pudimos abrir la cámara. Da permiso de cámara a Ruta y vuelve a intentarlo.');
+      msg(rostro ? 'No pudimos abrir la cámara. Da permiso de cámara a Ruta y vuelve a intentarlo.'
+                 : 'No pudimos abrir la cámara. Da permiso de cámara o sube una foto de tu cédula.');
       return;
     }
     if (parar) { stream.getTracks().forEach(t => t.stop()); return; }
@@ -5213,10 +5627,29 @@ function capturar(tipo, titulo, ayuda) {
     await v.play().catch(() => {});
 
     if (!rostro) {
-      msg('Encuadra la parte frontal de tu cédula dentro del marco');
+      /* Revisión en vivo: 2 lecturas buenas seguidas habilitan el botón */
       const ok = $('#cam-ok');
-      ok.disabled = false;
-      ok.onclick = async () => { ok.disabled = true; fin({ blob: await fotoDe(v, false) }); };
+      let buenas = 0, ultima = null;
+      msg('Encuadra la parte frontal de tu cédula dentro del marco');
+      ok.onclick = async () => {
+        ok.disabled = true;
+        let r = detectarTarjeta(v, zonaGuia(v));
+        if (!r.ok && ultima) r = ultima;       // se movió justo al tocar
+        if (!r.ok) { ok.disabled = false; return toast('No se detectó la cédula, intenta de nuevo', 'bad'); }
+        fin({ blob: await recortarTarjeta(v, r.caja) });
+      };
+      while (!parar) {
+        let r = { ok: false };
+        try { if (v.videoWidth) r = detectarTarjeta(v, zonaGuia(v)); } catch (e) {}
+        if (parar) break;
+        buenas = r.ok ? buenas + 1 : 0;
+        if (r.ok) ultima = r;
+        const bien = buenas >= 2;
+        if (guia()) guia().classList.toggle('bien', bien);
+        ok.disabled = !bien;
+        msg(bien ? 'Cédula detectada ✓ Toca "Tomar foto"' : (r.motivo || 'Encuadra tu cédula dentro del marco'));
+        await sleep(bien ? 450 : 320);
+      }
       return;
     }
 
@@ -5225,31 +5658,42 @@ function capturar(tipo, titulo, ayuda) {
     try { f = await cargarFaceApi(); }
     catch (e) { msg(e.message || 'No se pudo cargar el verificador'); return; }
     const opts = new f.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: .5 });
-    let sonrisas = 0;
+    const marcar = n => ['pc-1', 'pc-2', 'pc-3'].forEach((id, i) => {
+      const el = $('#' + id); if (!el) return;
+      el.className = i < n ? 'ok' : i === n ? 'on' : '';
+    });
+    /* Fases: 0 = de frente sin sonreír, 1 = sonrisa, luego se dispara */
+    let fase = 0, seguidas = 0;
     const t0 = Date.now();
-    msg('Pon tu rostro dentro del óvalo, con buena luz');
+    msg('Pon tu rostro dentro del óvalo y mira de frente, serio');
     while (!parar) {
       let d = null;
       try { d = await f.detectSingleFace(v, opts).withFaceLandmarks().withFaceExpressions().withFaceDescriptor(); } catch (e) {}
       if (parar) break;
-      const guia = $('#cam-guia');
       if (!d) {
-        sonrisas = 0;
-        if (guia) guia.classList.remove('bien');
+        seguidas = 0;
+        if (guia()) guia().classList.remove('bien');
         msg(Date.now() - t0 > 25000 ? 'No te vemos bien: acércate, quita gafas o gorra y busca más luz' : 'Pon tu rostro dentro del óvalo');
       } else {
         const bx = d.detection.box, W = v.videoWidth || 640;
-        if (bx.width < W * .22) { msg('Acércate un poco más'); sonrisas = 0; }
+        const feliz = d.expressions.happy || 0;
+        if (bx.width < W * .22) { msg('Acércate un poco más'); seguidas = 0; }
         else {
-          if (guia) guia.classList.add('bien');
-          if ((d.expressions.happy || 0) > .85) {
-            sonrisas++;
-            msg('¡Así! Quieto un momento...');
-            if (sonrisas >= 2) {
+          if (guia()) guia().classList.add('bien');
+          if (fase === 0) {
+            if (feliz < .4) {
+              if (++seguidas >= 2) { fase = 1; seguidas = 0; marcar(1); msg('¡Bien! Ahora sonríe 😊'); }
+              else msg('Quieto, mirando de frente...');
+            } else { seguidas = 0; msg('Primero mira de frente, sin sonreír'); }
+          } else if (feliz > .85) {
+            if (++seguidas >= 2) {
+              marcar(2);
+              msg('¡Listo!');
               const blob = await fotoDe(v, true);
               return fin({ blob, descriptor: Array.from(d.descriptor).map(n => +n.toFixed(6)) });
             }
-          } else { sonrisas = 0; msg('Ahora sonríe 😊'); }
+            msg('¡Así! Quieto un momento...');
+          } else { seguidas = 0; msg('Ahora sonríe 😊'); }
         }
       }
       await sleep(220);
@@ -5257,17 +5701,18 @@ function capturar(tipo, titulo, ayuda) {
   });
 }
 
-/* Activa la cuenta: rostro con sonrisa + cédula, se suben al almacenamiento
-   privado y la base marca la cuenta activa. alRegistrarse: viene recién
-   creada la cuenta y se ofrece "Hacerlo después". */
+/* Activa la cuenta: primero la cédula (debe detectarse una tarjeta
+   rectangular) y después una selfie sonriendo. Esa selfie queda guardada
+   como referencia: cada día se pide otra y se compara con ella.
+   alRegistrarse: viene recién creada la cuenta y se ofrece "Hacerlo después". */
 function flujoIdentidad(alRegistrarse) {
   if (!S.user) return;
   modal(`<div class="grip"></div>
     <h2>${alRegistrarse ? '¡Cuenta creada! Ahora actívala' : 'Activa tu cuenta'}</h2>
     <p class="dim" style="margin:6px 0 12px">Para cuidar a pasajeros y conductores, cada cuenta se verifica con:</p>
     <div class="card plano">
-      <div class="leg"><div class="n">1</div><div class="grow"><b>Una foto de tu rostro sonriendo</b><div class="dim">La cámara la toma sola cuando sonríes</div></div></div>
-      <div class="leg"><div class="n">2</div><div class="grow"><b>La parte frontal de tu cédula</b><div class="dim">Que se lean bien el nombre y el número</div></div></div>
+      <div class="leg"><div class="n">1</div><div class="grow"><b>La parte frontal de tu cédula</b><div class="dim">Completa y horizontal: la app detecta la tarjeta y la recorta</div></div></div>
+      <div class="leg"><div class="n">2</div><div class="grow"><b>Una foto de tu rostro sonriendo</b><div class="dim">Primero de frente y luego sonriendo; la cámara dispara sola. Con esta foto te verificamos cada día</div></div></div>
     </div>
     <label class="check"><input type="checkbox" id="id-ok"><span>Autorizo a Ruta a tratar mi imagen y mis datos biométricos para verificar mi identidad, según los <button type="button" id="id-ter" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y la Política de Privacidad</button>.</span></label>
     <button class="btn primary full" id="id-go" disabled>Empezar</button>
@@ -5280,15 +5725,15 @@ function flujoIdentidad(alRegistrarse) {
   };
   $('#id-go').onclick = async () => {
     cerrarModal();
-    const cara = await capturar('rostro', 'Foto de tu rostro', 'Mira a la cámara y sonríe');
-    if (!cara) return toast('Verificación cancelada', 'bad');
     const ced = await capturar('cedula', 'Tu cédula (parte frontal)', 'Sobre una mesa, con buena luz y sin reflejos');
     if (!ced) return toast('Falta la foto de tu cédula: tu cuenta sigue inactiva', 'bad');
+    const cara = await capturar('rostro', 'Ahora tu rostro', 'Mira de frente y luego sonríe');
+    if (!cara) return toast('Falta la foto de tu rostro: tu cuenta sigue inactiva', 'bad');
     modal(`<div class="grip"></div><div class="wait"><div class="spin"></div><div class="grow"><h3>Activando tu cuenta...</h3><div class="dim">Subiendo tus fotos de forma segura</div></div></div>`);
     try {
       const uid = S.user.id;
-      const f1 = await S.api.subirFoto(`${uid}/rostro.jpg`, cara.blob);
       const f2 = await S.api.subirFoto(`${uid}/cedula.jpg`, ced.blob);
+      const f1 = await S.api.subirFoto(`${uid}/rostro.jpg`, cara.blob);
       S.perfil = { ...S.perfil, ...await S.api.registrarIdentidad(f1, f2, cara.descriptor) };
       cerrarModal();
       avisar('Cuenta activada', S.modo === 'conductor' ? 'Ya verificamos tu identidad. Si aún no estás habilitado, un administrador lo revisará.' : 'Ya puedes pedir viajes y envíos', 'mensaje');
@@ -5303,7 +5748,7 @@ function flujoIdentidad(alRegistrarse) {
 /* Verificación del día: selfie con sonrisa, comparada en la base. */
 async function flujoVerificacion() {
   if (!S.user) return;
-  const cara = await capturar('rostro', 'Verificación de hoy', 'Mira a la cámara y sonríe');
+  const cara = await capturar('rostro', 'Verificación de hoy', 'Mira de frente y luego sonríe');
   if (!cara) return;
   modal(`<div class="grip"></div><div class="wait"><div class="spin"></div><div class="grow"><h3>Comparando con tu registro...</h3></div></div>`);
   try {
@@ -5319,6 +5764,128 @@ async function flujoVerificacion() {
     toast(explicarError(e, 'registrarVerificacion'), 'bad');
   }
 }
+
+
+/* ============================================================
+   Segundo plano, presencia y puente con el APK
+   ============================================================ */
+/* Latido cada 45 s: el panel de administración ve quién está conectado,
+   en qué modo y dónde. El conductor en línea además refresca su posición
+   aunque no se mueva (si no, a los 15 min el panel lo daba por caído). */
+function latido() {
+  if (!S.api || !S.user || !S.perfil || S.perfil.desdeCache) return;
+  const abierta = document.visibilityState === 'visible';
+  const mandar = () => {
+    S.api.presencia({ modo: S.modo, app_abierta: abierta, plataforma: enApp() ? 'android' : 'web',
+                      lat: S.pos.lat, lng: S.pos.lng }).catch(() => {});
+    if (S.modo === 'conductor' && S.enLinea) S.api.publicarPos(S.pos).catch(() => {});
+  };
+  if (!navigator.geolocation || S.watchId != null) return mandar();
+  navigator.geolocation.getCurrentPosition(p => {
+    if (EN_ECUADOR(p.coords.latitude, p.coords.longitude)) S.pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+    mandar();
+  }, mandar, { maximumAge: 60000, timeout: 8000 });
+}
+function iniciarLatido() {
+  clearInterval(iniciarLatido.t);
+  latido();
+  iniciarLatido.t = setInterval(latido, 45000);
+}
+document.addEventListener('visibilitychange', () => { if (S.user) latido(); });
+
+/* Pantalla encendida mientras el conductor está en línea (solo web): con
+   la pantalla apagada el navegador congela la página y deja de llegar todo. */
+let wakeLock = null;
+async function mantenerPantalla(on) {
+  if (enApp() || !('wakeLock' in navigator)) return;
+  try {
+    if (on && !wakeLock && document.visibilityState === 'visible') {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && S.modo === 'conductor' && S.enLinea) mantenerPantalla(true);
+});
+
+/* ---- Puente con el APK ----
+   La página le cuenta a Flutter quién está conectado y con qué token. Con
+   eso el servicio nativo sigue trabajando con la app cerrada: publica la
+   ubicación, revisa solicitudes nuevas y cambios de estado, y hace sonar
+   las notificaciones del sistema. */
+function informarNativo(sesion) {
+  if (!enApp()) return;
+  const mandar = ses => {
+    if (!ses || !S.user) return nativo({ tipo: 'sesion', token: null });
+    nativo({
+      tipo: 'sesion', url: CFG.SUPABASE_URL, key: CFG.SUPABASE_ANON_KEY,
+      token: ses.access_token, refresh: ses.refresh_token, expira: ses.expires_at,
+      sesion: JSON.stringify(ses), uid: S.user.id, modo: S.modo, enLinea: !!S.enLinea,
+      nombre: (S.perfil && S.perfil.nombre) || ''
+    });
+  };
+  if (sesion) return mandar(sesion);
+  if (S.api) S.api.sb.auth.getSession().then(r => mandar(r.data && r.data.session)).catch(() => {});
+}
+/* El servicio nativo pudo renovar el token mientras la página estaba
+   cerrada. Antes de crear el cliente de Supabase se le pide la sesión más
+   nueva y se deja en el almacenamiento: si la página usara su copia vieja,
+   Supabase vería un refresh token ya gastado y cerraría la sesión. */
+function sesionNativaPrevia() {
+  if (!enApp()) return Promise.resolve();
+  return new Promise(res => {
+    const fin = () => { window.__rutaSesion = null; res(); };
+    window.__rutaSesion = txt => {
+      try {
+        const nueva = JSON.parse(txt || 'null');
+        const ref = (CFG.SUPABASE_URL.match(/https:\/\/([^.]+)/) || [])[1];
+        const k = `sb-${ref}-auth-token`;
+        const vieja = JSON.parse(localStorage.getItem(k) || 'null');
+        if (nueva && nueva.access_token && (!vieja || (+nueva.expires_at || 0) > (+vieja.expires_at || 0)))
+          localStorage.setItem(k, JSON.stringify(nueva));
+      } catch (e) {}
+      fin();
+    };
+    nativo({ tipo: 'pedirSesion' });
+    setTimeout(fin, 900);
+  });
+}
+/* Llamados desde Flutter con runJavaScript */
+window.rutaNativo = {
+  /* el servicio renovó el token con la página abierta */
+  async sesion(txt) {
+    try {
+      const ses = JSON.parse(txt);
+      if (S.api && ses && ses.access_token) await S.api.sb.auth.setSession({ access_token: ses.access_token, refresh_token: ses.refresh_token });
+    } catch (e) {}
+  },
+  /* respuesta del inicio de sesión con Google nativo */
+  async google(idToken, error) {
+    const btn = $('#btn-google');
+    if (btn) btn.disabled = false;
+    if (!idToken) { if (error) toast(error, 'bad'); return; }
+    const api = conectar(); if (!api) return;
+    const { data, error: e } = await api.sb.auth.signInWithIdToken({ provider: 'google', token: idToken });
+    if (e) return toast('Google: ' + (e.message || 'no se pudo ingresar'), 'bad');
+    S.user = data.user;
+    await cargarPerfil();
+    arrancarApp();
+  },
+  /* se tocó una notificación: vuelve a leer todo */
+  refrescar() { alVolver(); }
+};
+
+/* En el APK los enlaces externos (Waze, llamadas, WhatsApp, correo) se
+   abren con la app que corresponde. Waze abre directo en modo navegación. */
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]');
+  if (!a || !enApp()) return;
+  const url = a.getAttribute('href') || '';
+  if (!/^(https?:|tel:|mailto:|waze:|whatsapp:|geo:|intent:)/i.test(url)) return;
+  e.preventDefault();
+  nativo({ tipo: 'abrir', url });
+}, true);
 
 /* ---------- perfil ---------- */
 function pintarPerfil(sh) {
@@ -5427,7 +5994,18 @@ function pintarPerfil(sh) {
 }
 
 async function cerrarSesion() {
-  if (S.modo === 'conductor' && S.enLinea) { try { await S.api.setEnLinea(false, S.pos); } catch (e) {} }
+  /* Al cerrar sesión el conductor queda fuera de línea siempre, aunque la
+     app creyera que ya lo estaba: si no, seguía apareciendo "en línea" en
+     el panel y recibiendo solicitudes. */
+  const eraConductor = S.modo === 'conductor' || (S.perfil && S.perfil.rol === 'conductor');
+  clearInterval(iniciarLatido.t);
+  mantenerPantalla(false);
+  detenerAlerta();
+  nativo({ tipo: 'sesion', token: null });
+  if (S.api && S.user) {
+    try { if (eraConductor) await S.api.setEnLinea(false, S.pos); } catch (e) {}
+    try { await S.api.quitarPresencia(); } catch (e) {}
+  }
   try { await S.api.salir(); } catch (e) {}
   detenerTodo(); limpiarSupSubs();
   if (S.subSop) { try { S.subSop(); } catch (e) {} S.subSop = null; }
@@ -5636,11 +6214,13 @@ $$('#nav button').forEach(b => b.onclick = () => setVista(b.dataset.vista));
   const recuperando = location.hash.includes('type=recovery');
   if (!hayConfig()) { pantallaAcceso(); return; }
   try {
+    await sesionNativaPrevia();
     const api = conectar();
     if (!api) { pantallaAcceso(); return; }
 
     // Mantener la sesión activa y responder a cambios de token
     api.sb.auth.onAuthStateChange(async (event, sesion) => {
+      if (sesion && S.arrancadoPara && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')) informarNativo(sesion);
       if (sesion && sesion.user) {
         S.user = sesion.user;
         if (!S.perfil) {

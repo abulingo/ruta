@@ -68,13 +68,23 @@ header{position:sticky;top:0;z-index:900;display:flex;align-items:center;gap:12p
 @keyframes pul{50%{opacity:.3}}
 main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;padding:14px 16px;max-width:1500px;margin:0 auto}
 @media(max-width:980px){main{grid-template-columns:1fr}}
-.kpis{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.kpis{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media(max-width:1180px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:980px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:var(--sombra)}
 .kpi .n{font-family:"Space Grotesk";font-weight:700;font-size:24px}
 .kpi .l{font-size:12px;color:var(--muted)}
 .kpi.alerta .n{color:var(--warn)}
+.kpi.vivo-k{border-color:#C7EBD6}
+.kpi.vivo-k .n{color:var(--ok)}
+.kpi.clic{cursor:pointer}
+.kpi.clic:hover{border-color:var(--azul-borde)}
+.btn.wa{background:#25D366;border-color:#1EBE5A;color:#fff}
+.pt.p{background:#7A4DFF}.pt.p.dormido{background:#9AA8BD}
+.punto{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--dim);margin-right:4px;vertical-align:middle}
+.punto.on{background:var(--ok)}
+.sec-t{padding:10px 14px 6px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);border-bottom:1px solid var(--line)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sombra);overflow:hidden;min-width:0}
 .tabs{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--line);overflow-x:auto}
 .tabs button{border:0;background:none;padding:8px 12px;border-radius:10px;font-weight:600;color:var(--muted);white-space:nowrap}
@@ -154,6 +164,8 @@ main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;
         <button data-t="pendientes" class="on">Pendientes<span class="c" id="c-pendientes">0</span></button>
         <button data-t="curso">En curso<span class="c" id="c-curso">0</span></button>
         <button data-t="hoy">Hoy<span class="c" id="c-hoy">0</span></button>
+        <button data-t="conectados">Conectados<span class="c" id="c-conectados">0</span></button>
+        <button data-t="nuevos">Nuevos<span class="c" id="c-nuevos">0</span></button>
         <button data-t="usuarios">Usuarios<span class="c" id="c-usuarios">0</span></button>
         <button data-t="conductores">Conductores<span class="c" id="c-conductores">0</span></button>
       </div>
@@ -225,7 +237,10 @@ function beep() {
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ruta-admin-sesion' }
 });
-const A = { sol: [], perfiles: {}, vehiculos: {}, conductores: [], bio: {}, tab: 'pendientes', q: '', sel: null, vistos: null, subs: [] };
+const A = { sol: [], perfiles: {}, vehiculos: {}, conductores: [], presencia: [], bio: {}, tab: 'pendientes', q: '', sel: null, vistos: null, usuariosVistos: null, subs: [] };
+/* Ventanas de tiempo para decir "conectado": la app manda un latido cada
+   45 s (web) o cada 15-60 s (servicio del APK). */
+const CONECTADO_MS = 3 * 60000, EN_LINEA_MS = 10 * 60000, NUEVOS_DIAS = 7;
 
 /* ---------- acceso ---------- */
 async function esAdmin(user) {
@@ -264,16 +279,19 @@ $('#b-sonido').onclick = () => {
 /* ---------- datos ---------- */
 async function cargarTodo() {
   const desde = new Date(); desde.setHours(0, 0, 0, 0);
-  const [s1, s2, p, v, c, b] = await Promise.all([
+  const [s1, s2, p, v, c, b, pr] = await Promise.all([
     sb.from('solicitudes_detalle').select('*').in('estado', ACTIVOS).order('creado_en', { ascending: false }).limit(500),
     sb.from('solicitudes_detalle').select('*').in('estado', ['finalizado', 'cancelado']).gte('creado_en', desde.toISOString()).order('creado_en', { ascending: false }).limit(500),
     sb.from('perfiles').select('*').order('creado_en', { ascending: false }).limit(2000),
     sb.from('vehiculos').select('*'),
     sb.from('conductores_estado').select('*'),
-    sb.from('biometria').select('usuario_id,foto_path,cedula_path,ultima_verificacion_path,ultima_distancia,actualizado_en')
+    sb.from('biometria').select('usuario_id,foto_path,cedula_path,ultima_verificacion_path,ultima_distancia,actualizado_en'),
+    sb.from('presencia').select('*')
   ]);
   const err = [s1, s2, p, v, c, b].find(r => r.error);
   if (err) throw err.error;
+  /* presencia es de la migración v3: si aún no se corrió, el panel sigue */
+  A.presencia = pr.error ? [] : pr.data;
   const nuevas = s1.data.filter(s => s.estado === 'buscando' && A.vistos && !A.vistos.has(s.id));
   A.vistos = new Set(s1.data.map(s => s.id));
   A.sol = [...s1.data, ...s2.data];
@@ -282,6 +300,13 @@ async function cargarTodo() {
   v.data.forEach(x => { (A.vehiculos[x.conductor_id] = A.vehiculos[x.conductor_id] || []).push(x); });
   A.conductores = c.data;
   A.bio = Object.fromEntries(b.data.map(x => [x.usuario_id, x]));
+  /* Aviso cuando se registra alguien nuevo, para escribirle por WhatsApp */
+  const registrados = p.data.filter(x => A.usuariosVistos && !A.usuariosVistos.has(x.id));
+  A.usuariosVistos = new Set(p.data.map(x => x.id));
+  if (registrados.length) {
+    beep();
+    registrados.forEach(x => toast(`Nuevo ${x.rol === 'conductor' ? 'conductor' : 'pasajero'}: ${x.nombre || x.correo || '—'} ${x.celular ? '· ' + x.celular : ''}`));
+  }
   if (nuevas.length) {
     beep();
     nuevas.forEach(s => toast(`Nueva solicitud: ${s.tipo === 'paquete' ? 'envío' : 'viaje'} de ${s.pasajero_nombre || '—'} · ${money(s.precio_ofrecido)}`));
@@ -301,6 +326,8 @@ function entrar(user) {
   const ch = sb.channel('admin-todo')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes' }, recargar)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'conductores_estado' }, recargar)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'presencia' }, recargar)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'perfiles' }, recargar)
     .subscribe(st => { $('#vivo').style.opacity = st === 'SUBSCRIBED' ? 1 : .4; });
   const t = setInterval(recargar, 20000);
   const t2 = setInterval(pintarLista, 30000);   // refresca los "hace X min" y los plazos
@@ -308,18 +335,47 @@ function entrar(user) {
 }
 
 /* ---------- vista ---------- */
-const enLinea = c => c.en_linea && (Date.now() - new Date(c.actualizado_en)) < 15 * 60000;
+const enLinea = c => c.en_linea && (Date.now() - new Date(c.actualizado_en)) < EN_LINEA_MS;
+const conectado = x => x && (Date.now() - new Date(x.visto_en)) < CONECTADO_MS;
+const enUso = x => conectado(x) && x.app_abierta;
+const presDe = id => A.presencia.find(x => x.usuario_id === id);
+const esNuevo = p => p.creado_en && (Date.now() - new Date(p.creado_en)) < NUEVOS_DIAS * 86400000;
+const durTxt = ms => { const t = Math.abs(ms), h = Math.floor(t / 3600000), m = Math.floor(t % 3600000 / 60000); return h ? `${h} h ${m} min` : `${m} min`; };
 const plazo = s => {
   if (s.tipo !== 'paquete' || !s.aceptado_en || !['aceptado', 'en_camino', 'a_bordo'].includes(s.estado)) return '';
-  const m = Math.round((new Date(s.entrega_limite || (new Date(s.aceptado_en).getTime() + 3600000)) - Date.now()) / 60000);
-  return m < 0 ? `<span class="badge bad">Atrasado ${-m} min</span>` : `<span class="badge ${m <= 15 ? 'warn' : ''}">Entregar en ${m} min</span>`;
+  const ms = new Date(s.entrega_limite || (new Date(s.aceptado_en).getTime() + 3600000)) - Date.now();
+  return ms < 0 ? `<span class="badge bad">Atrasado ${durTxt(ms)}</span>` : `<span class="badge ${ms <= 15 * 60000 ? 'warn' : ''}">Entregar en ${durTxt(ms)}</span>`;
 };
+/* WhatsApp: el celular se guarda como 09XXXXXXXX; wa.me lo quiere con el
+   código de Ecuador y sin el 0 (5939XXXXXXXX). */
+function waLink(p, texto) {
+  let n = String(p.celular || '').replace(/\D/g, '');
+  if (!n) return '';
+  if (n.startsWith('0')) n = '593' + n.slice(1);
+  else if (n.length === 9) n = '593' + n;
+  const msg = texto || `Hola ${(p.nombre || '').split(' ')[0]}, te saludamos de Ruta. `;
+  return `https://wa.me/${n}?text=${encodeURIComponent(msg)}`;
+}
+function mensajeBienvenida(p) {
+  const nombre = (p.nombre || '').split(' ')[0] || '';
+  if (p.rol === 'conductor') return `Hola ${nombre}, te saludamos de Ruta. Vimos que te registraste como conductor. ` +
+    (p.cuenta_activa ? 'Ya recibimos tu foto y tu cédula; estamos revisando tu vehículo para habilitarte.' : 'Para habilitarte necesitamos que envíes desde la app la foto de tu cédula y tu selfie (Perfil → Identidad).');
+  return `Hola ${nombre}, te saludamos de Ruta. Gracias por registrarte. ` +
+    (p.cuenta_activa ? 'Tu cuenta ya está activa, ya puedes pedir viajes y envíos.' : 'Para activar tu cuenta solo falta enviar desde la app la foto de tu cédula y tu selfie (Perfil → Identidad).');
+}
 function listaTab(t) {
   const hoy = new Date().toDateString();
   if (t === 'pendientes') return A.sol.filter(s => s.estado === 'buscando');
   if (t === 'curso') return A.sol.filter(s => ['aceptado', 'en_camino', 'a_bordo'].includes(s.estado));
   if (t === 'hoy') return A.sol.filter(s => ['finalizado', 'cancelado'].includes(s.estado) && new Date(s.creado_en).toDateString() === hoy);
   if (t === 'usuarios') return Object.values(A.perfiles);
+  if (t === 'nuevos') return Object.values(A.perfiles).filter(esNuevo);
+  if (t === 'conectados') {
+    /* conductores en línea primero, después quien tiene la app abierta y al final el resto conectado */
+    const ids = new Set([...A.conductores.filter(enLinea).map(c => c.conductor_id), ...A.presencia.filter(conectado).map(x => x.usuario_id)]);
+    const peso = p => (A.conductores.some(c => c.conductor_id === p.id && enLinea(c)) ? 0 : enUso(presDe(p.id)) ? 1 : 2);
+    return [...ids].map(id => A.perfiles[id]).filter(Boolean).sort((a, b) => peso(a) - peso(b));
+  }
   return Object.values(A.perfiles).filter(p => p.rol === 'conductor' || A.vehiculos[p.id]);
 }
 function coincide(x) {
@@ -334,16 +390,21 @@ function coincide(x) {
 function pintar() {
   const hoy = listaTab('hoy');
   const fin = hoy.filter(s => s.estado === 'finalizado');
+  const conPas = A.presencia.filter(x => conectado(x) && x.modo !== 'conductor');
   const kpis = [
-    ['Pendientes', listaTab('pendientes').length, listaTab('pendientes').length > 0],
-    ['En curso', listaTab('curso').length],
-    ['Finalizados hoy', fin.length],
-    ['Cancelados hoy', hoy.length - fin.length],
-    ['Movido hoy', money(fin.reduce((a, s) => a + (+s.precio_final || +s.precio_ofrecido || 0), 0))],
-    ['Conductores en línea', A.conductores.filter(enLinea).length]
+    ['Conductores en línea', A.conductores.filter(enLinea).length, 'vivo-k', 'conectados'],
+    ['Pasajeros conectados', conPas.length, 'vivo-k', 'conectados'],
+    ['En uso de la app ahora', A.presencia.filter(enUso).length, 'vivo-k', 'conectados'],
+    ['Usuarios nuevos (7 días)', listaTab('nuevos').length, listaTab('nuevos').length ? 'alerta' : '', 'nuevos'],
+    ['Pendientes', listaTab('pendientes').length, listaTab('pendientes').length > 0 ? 'alerta' : '', 'pendientes'],
+    ['En curso', listaTab('curso').length, '', 'curso'],
+    ['Finalizados hoy', fin.length, '', 'hoy'],
+    ['Cancelados hoy', hoy.length - fin.length, '', 'hoy'],
+    ['Movido hoy', money(fin.reduce((a, s) => a + (+s.precio_final || +s.precio_ofrecido || 0), 0)), '', 'hoy'],
+    ['Usuarios registrados', Object.keys(A.perfiles).length, '', 'usuarios']
   ];
-  $('#kpis').innerHTML = kpis.map(([l, n, al]) => `<div class="kpi ${al ? 'alerta' : ''}"><div class="n num">${n}</div><div class="l">${l}</div></div>`).join('');
-  ['pendientes', 'curso', 'hoy', 'usuarios', 'conductores'].forEach(t => { $('#c-' + t).textContent = listaTab(t).length; });
+  $('#kpis').innerHTML = kpis.map(([l, n, cls, t]) => `<div class="kpi clic ${cls}" data-ir="${t}"><div class="n num">${n}</div><div class="l">${l}</div></div>`).join('');
+  ['pendientes', 'curso', 'hoy', 'conectados', 'nuevos', 'usuarios', 'conductores'].forEach(t => { $('#c-' + t).textContent = listaTab(t).length; });
   pintarLista();
   pintarMapa();
 }
@@ -379,6 +440,8 @@ function filaUsuario(p) {
   const vs = A.vehiculos[p.id] || [];
   const b = A.bio[p.id];
   const cond = A.conductores.find(c => c.conductor_id === p.id);
+  const pres = presDe(p.id);
+  const ubic = (cond && enLinea(cond) && cond.lat != null) ? cond : (pres && pres.lat != null ? pres : null);
   const verHoy = p.verificado_en && new Date(p.verificado_en).toDateString() === new Date().toDateString();
   return `<div class="fila" data-u="${esc(p.id)}">
     <div class="ico viaje" style="background:${p.rol === 'conductor' ? '#00875A' : 'var(--azul)'}">${esc((p.nombre || '?').split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase())}</div>
@@ -389,7 +452,9 @@ function filaUsuario(p) {
         <span class="badge ${p.cuenta_activa ? 'ok' : 'warn'}">${p.cuenta_activa ? 'Cuenta activa' : 'Cuenta inactiva'}</span>
         <span class="badge ${verHoy ? 'ok' : ''}">${verHoy ? 'Verificado hoy' : 'Sin verificar hoy'}</span>
         <span class="badge">${p.viajes_totales || 0} servicios · ${p.calificacion || '5.0'}★</span>
-        ${cond ? `<span class="badge ${enLinea(cond) ? 'ok' : ''}">${enLinea(cond) ? 'En línea' : 'Desconectado'} · ${hace(cond.actualizado_en)}</span>` : ''}
+        ${cond ? `<span class="badge ${enLinea(cond) ? 'ok' : ''}">${enLinea(cond) ? 'En línea' : 'Fuera de línea'} · ${hace(cond.actualizado_en)}</span>` : ''}
+        ${pres ? `<span class="badge ${enUso(pres) ? 'ok' : conectado(pres) ? 'azul' : ''}"><span class="punto ${conectado(pres) ? 'on' : ''}"></span>${enUso(pres) ? 'Usando la app' : conectado(pres) ? 'Conectado (app en segundo plano)' : 'Visto ' + hace(pres.visto_en)} · ${pres.modo === 'conductor' ? 'modo conductor' : 'modo pasajero'}${pres.plataforma ? ' · ' + esc(pres.plataforma) : ''}</span>` : '<span class="badge">Sin conexión reciente</span>'}
+        ${esNuevo(p) ? `<span class="badge warn">Nuevo · ${hace(p.creado_en)}</span>` : ''}
         ${p.terminos_version ? `<span class="badge">Términos ${esc(p.terminos_version)}</span>` : '<span class="badge warn">Sin aceptar términos</span>'}
       </div>
       <div class="meta" style="margin-top:8px;gap:14px">
@@ -398,16 +463,35 @@ function filaUsuario(p) {
         ${vs.map(v => `<label class="swrow"><button class="sw ${v.aprobado ? 'on' : ''}" data-veh="${esc(v.id)}" aria-label="Vehículo aprobado"><i></i></button>${esc(v.placa)} ${esc([v.marca, v.modelo, v.color].filter(Boolean).join(' '))}</label>`).join('')}
       </div>
     </div>
-    <div class="acc">${b ? `<button class="btn sm" data-fotos="${esc(p.id)}">Ver fotos</button>` : '<span class="dim">Sin fotos</span>'}</div>
+    <div class="acc" style="flex-direction:column;align-items:flex-end">
+      ${p.celular ? `<a class="btn sm wa" href="${esc(waLink(p, esNuevo(p) ? mensajeBienvenida(p) : ''))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+      ${p.correo ? `<a class="btn sm" href="mailto:${esc(p.correo)}?subject=${encodeURIComponent('Tu cuenta en Ruta')}">Correo</a>` : ''}
+      ${ubic ? `<button class="btn sm" data-ubicar="${esc(p.id)}">Ver en mapa</button>` : ''}
+      ${b ? `<button class="btn sm" data-fotos="${esc(p.id)}">Ver fotos</button>` : '<span class="dim">Sin fotos</span>'}
+    </div>
   </div>`;
 }
 function pintarLista() {
   const l = listaTab(A.tab).filter(coincide);
   const esSol = ['pendientes', 'curso', 'hoy'].includes(A.tab);
-  $('#lista').innerHTML = l.length
-    ? l.map(esSol ? filaSolicitud : filaUsuario).join('')
-    : `<div class="vacio">${A.q ? 'Nada coincide con la búsqueda.' : 'No hay nada aquí por ahora.'}</div>`;
+  if (!l.length) { $('#lista').innerHTML = `<div class="vacio">${A.q ? 'Nada coincide con la búsqueda.' : 'No hay nada aquí por ahora.'}</div>`; return; }
+  if (A.tab === 'conectados') {
+    const cond = l.filter(p => A.conductores.some(c => c.conductor_id === p.id && enLinea(c)));
+    const resto = l.filter(p => !cond.includes(p));
+    const pas = resto.filter(p => (presDe(p.id) || {}).modo !== 'conductor');
+    const otros = resto.filter(p => !pas.includes(p));
+    $('#lista').innerHTML =
+      (cond.length ? `<div class="sec-t">Conductores en línea (${cond.length})</div>` + cond.map(filaUsuario).join('') : '') +
+      (pas.length ? `<div class="sec-t">Pasajeros conectados (${pas.length})</div>` + pas.map(filaUsuario).join('') : '') +
+      (otros.length ? `<div class="sec-t">Conductores con la app abierta, fuera de línea (${otros.length})</div>` + otros.map(filaUsuario).join('') : '');
+    return;
+  }
+  $('#lista').innerHTML = l.map(esSol ? filaSolicitud : filaUsuario).join('');
 }
+$('#kpis').onclick = e => {
+  const k = e.target.closest('[data-ir]'); if (!k) return;
+  const b = $(`#tabs button[data-t="${k.dataset.ir}"]`); if (b) b.click();
+};
 
 $('#tabs').onclick = e => {
   const b = e.target.closest('button[data-t]'); if (!b) return;
@@ -441,6 +525,13 @@ $('#lista').onclick = async e => {
   }
   const f = t.closest('[data-fotos]');
   if (f) return verFotos(f.dataset.fotos);
+  const u = t.closest('[data-ubicar]');
+  if (u) {
+    const id = u.dataset.ubicar, c = A.conductores.find(x => x.conductor_id === id && enLinea(x)), pr = presDe(id);
+    const q = (c && c.lat != null) ? c : pr;
+    if (q && mapa) { mapa.setView([q.lat, q.lng], 16); const m = A.marcas[id]; if (m) m.openTooltip(); }
+    return;
+  }
   const fila = t.closest('[data-s]');
   if (fila && !t.closest('a')) { A.sel = fila.dataset.s; pintarLista(); pintarMapa(true); }
 };
@@ -462,6 +553,7 @@ async function verFotos(uid) {
 
 /* ---------- mapa ---------- */
 let mapa, capas = [];
+A.marcas = {};
 function iniciarMapa() {
   mapa = L.map('mapa', { zoomControl: true }).setView([-0.1807, -78.4678], 12);
   L.tileLayer(TILES, { maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(mapa);
@@ -469,7 +561,7 @@ function iniciarMapa() {
 const icono = (cls, txt, t = 22) => L.divIcon({ className: 'mk', html: `<div class="pt ${cls}">${txt}</div>`, iconSize: [t, t], iconAnchor: [t / 2, t / 2] });
 function pintarMapa(enfocar) {
   if (!mapa) return;
-  capas.forEach(c => mapa.removeLayer(c)); capas = [];
+  capas.forEach(c => mapa.removeLayer(c)); capas = []; A.marcas = {};
   const pts = [];
   const lista = ['pendientes', 'curso', 'hoy'].includes(A.tab) ? listaTab(A.tab) : A.sol.filter(s => ACTIVOS.includes(s.estado));
   lista.forEach((s, i) => {
@@ -486,9 +578,20 @@ function pintarMapa(enfocar) {
     if (c.lat == null) return;
     const p = A.perfiles[c.conductor_id] || {};
     const v = (A.vehiculos[c.conductor_id] || [])[0];
-    capas.push(L.marker([c.lat, c.lng], { icon: icono('c', '🚗', 26) }).addTo(mapa)
-      .bindTooltip(`${esc(p.nombre || 'Conductor')} ${v ? '· ' + esc(v.placa) : ''}<br>${esc(p.celular || '')} · ${hace(c.actualizado_en)}`));
+    const mk = L.marker([c.lat, c.lng], { icon: icono('c', '🚗', 26) }).addTo(mapa)
+      .bindTooltip(`<b>Conductor en línea</b><br>${esc(p.nombre || 'Conductor')} ${v ? '· ' + esc(v.placa) : ''}<br>${esc(p.celular || '')} · ${hace(c.actualizado_en)}`);
+    capas.push(mk); A.marcas[c.conductor_id] = mk;
     if (!enfocar) pts.push([c.lat, c.lng]);
+  });
+  /* Pasajeros conectados (y conductores con la app abierta pero fuera de
+     línea): punto morado, gris si la app está en segundo plano. */
+  const enMapa = new Set(A.conductores.filter(enLinea).map(c => c.conductor_id));
+  A.presencia.filter(x => conectado(x) && x.lat != null && !enMapa.has(x.usuario_id)).forEach(x => {
+    const p = A.perfiles[x.usuario_id] || {};
+    const mk = L.marker([x.lat, x.lng], { icon: icono('p' + (x.app_abierta ? '' : ' dormido'), x.modo === 'conductor' ? 'C' : 'P', 20) }).addTo(mapa)
+      .bindTooltip(`<b>${x.modo === 'conductor' ? 'Conductor (fuera de línea)' : 'Pasajero'}</b> · ${x.app_abierta ? 'usando la app' : 'app en segundo plano'}<br>${esc(p.nombre || '')}<br>${esc(p.celular || '')} · ${hace(x.visto_en)}`);
+    capas.push(mk); A.marcas[x.usuario_id] = mk;
+    if (!enfocar) pts.push([x.lat, x.lng]);
   });
   if (pts.length) mapa.fitBounds(pts, { padding: [40, 40], maxZoom: 16 });
 }
