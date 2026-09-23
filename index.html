@@ -26,7 +26,8 @@
   style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com;
   font-src 'self' data: https://fonts.gstatic.com;
   img-src 'self' data: blob: https://*.cartocdn.com https://*.tile.openstreetmap.org https://*.supabase.co;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://router.project-osrm.org https://nominatim.openstreetmap.org;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://router.project-osrm.org https://nominatim.openstreetmap.org https://cdn.jsdelivr.net;
+  media-src 'self' blob: data: mediastream:;
   worker-src 'self' blob:;
   manifest-src 'self'">
 <meta name="color-scheme" content="light dark">
@@ -134,8 +135,8 @@ textarea.input{resize:none;min-height:60px}
 .row>*{flex:1;min-width:0}
 
 .btn{
-  display:flex;align-items:center;justify-content:center;gap:9px;
-  padding:12px 16px;border-radius:var(--rs);font-weight:600;font-size:15px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 14px;border-radius:var(--rs);font-weight:600;font-size:13.5px;
   background:var(--panel2);border:1.5px solid var(--line);color:var(--text);
   transition:transform .08s,background .15s,opacity .15s,box-shadow .15s;
 }
@@ -145,7 +146,7 @@ textarea.input{resize:none;min-height:60px}
 .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
 .btn.suave{background:var(--azul-suave);border-color:var(--azul-borde);color:var(--azul-2)}
 .btn.danger{color:var(--bad);border-color:#F6D8D7;background:#FDF3F2}
-.btn.sm{padding:9px 12px;font-size:13.5px;border-radius:10px}
+.btn.sm{padding:7px 10px;font-size:12px;border-radius:9px}
 .btn.full{width:100%}
 .btn.google{background:#fff;color:#1F2937;border-color:var(--line2)}
 .btn+.btn{margin-top:8px}
@@ -167,12 +168,17 @@ textarea.input{resize:none;min-height:60px}
 
 /* ---------- app ---------- */
 .app{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--fondo)}
+/* Flota sobre el mapa (fondo transparente) en vez de empujarlo hacia
+   abajo: cada botón lleva su propio fondo para seguir siendo legible
+   sobre cualquier zona del mapa. */
 .topbar{
-  display:flex;align-items:center;gap:var(--s2);background:var(--bg);
-  padding:8px var(--s3);padding-top:calc(8px + env(safe-area-inset-top));
-  border-bottom:1px solid var(--line);z-index:600
+  position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:var(--s2);
+  background:transparent;padding:8px var(--s3);padding-top:calc(8px + env(safe-area-inset-top));
+  border-bottom:0;z-index:650;pointer-events:none
 }
 .topbar .grow{flex:1}
+.topbar>*{pointer-events:auto}
+.topbar .brand{background:var(--bg);padding:7px 12px;border-radius:14px;box-shadow:var(--sombra)}
 .iconbtn{
   width:35px;height:35px;border-radius:11px;background:var(--panel2);border:1.5px solid var(--line);
   display:grid;place-items:center;color:var(--muted);flex:none;position:relative;transition:.15s
@@ -207,6 +213,8 @@ textarea.input{resize:none;min-height:60px}
 .mk .pt{width:15px;height:15px;border-radius:50%;border:3.5px solid #fff;background:var(--azul);box-shadow:0 2px 8px rgba(13,45,110,.35)}
 .mk .pt.hollow{background:var(--text)}
 .mk .car{width:36px;height:36px;border-radius:12px;background:var(--azul);color:#fff;display:grid;place-items:center;font-size:16px;box-shadow:var(--sombra-azul);border:2px solid #fff}
+.mk .pax{width:32px;height:32px;border-radius:50%;background:#0FA958;color:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 8px 20px rgba(15,169,88,.32);border:2px solid #fff}
+.mk .pax svg{width:17px;height:17px}
 .mk .me{width:16px;height:16px;border-radius:50%;background:var(--azul);border:3px solid #fff;box-shadow:0 0 0 6px rgba(10,90,255,.18)}
 
 #cross{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:500}
@@ -216,24 +224,13 @@ textarea.input{resize:none;min-height:60px}
 #cross .shadow{width:12px;height:4px;border-radius:50%;background:rgba(13,45,110,.25)}
 
 /* ---------- hoja inferior ---------- */
-/* Hoja inferior con tres alturas: se arrastra o se toca el asa para
-   darle más espacio al mapa o al contenido, según lo que se esté haciendo. */
 .sheet{
   position:relative;z-index:610;background:var(--bg);border-radius:22px 22px 0 0;
   box-shadow:var(--sombra-alta);max-height:62dvh;overflow-y:auto;
-  padding:0 var(--s3) var(--s3);overscroll-behavior:contain;
-  transition:max-height .26s cubic-bezier(.4,0,.2,1);
+  padding:0 var(--s3) calc(var(--s3) + env(safe-area-inset-bottom));overscroll-behavior:contain;
 }
-.sheet.compacta{max-height:34dvh}
-.sheet.expandida{max-height:86dvh}
-#asa{
-  position:sticky;top:0;z-index:3;display:block;width:100%;height:24px;
-  background:var(--bg);border-radius:22px 22px 0 0;touch-action:none;cursor:grab;
-}
-#asa::after{content:"";display:block;width:40px;height:4px;border-radius:4px;background:var(--line2);margin:9px auto 0;transition:background .15s,width .15s}
-#asa:hover::after,#asa:active::after{background:var(--azul);width:52px}
 .grip{width:38px;height:4px;border-radius:4px;background:var(--line2);margin:2px auto 10px}
-.head,.sheet .head{display:flex;align-items:center;gap:10px;margin-bottom:12px;width:100%}
+.head,.sheet .head{display:flex;align-items:center;gap:10px;margin-bottom:8px;width:100%}
 .head .grow,.sheet .head .grow{flex:1;min-width:0}
 .back{width:36px;height:36px;border-radius:12px;background:var(--panel2);border:1.5px solid var(--line);display:inline-flex;align-items:center;justify-content:center;flex:none;color:var(--text);font-weight:700;font-size:16px;cursor:pointer;transition:all .15s;line-height:1;padding:0}
 .back:hover{background:var(--azul-suave);color:var(--azul);border-color:var(--azul-borde)}
@@ -325,9 +322,9 @@ textarea.input{resize:none;min-height:60px}
 .didi-mk-a,.didi-mk-b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);border:2px solid #fff}
 .didi-mk-a{background:#00875A;color:#fff}
 .didi-mk-b{background:#DE350B;color:#fff}
-.didi-card{background:var(--panel);border:1.5px solid var(--azul-borde);border-radius:20px;padding:14px;box-shadow:0 8px 24px rgba(10,90,255,.08);margin-top:2px;position:relative}
-.didi-nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;min-height:24px}
-.didi-nav-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:20px;font-weight:700;display:grid;place-items:center;cursor:pointer;transition:all .15s}
+.didi-card{background:var(--panel);border:1.5px solid var(--azul-borde);border-radius:18px;padding:11px;box-shadow:0 8px 24px rgba(10,90,255,.08);margin-top:2px;position:relative}
+.didi-nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;min-height:20px}
+.didi-nav-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:16px;font-weight:700;display:grid;place-items:center;cursor:pointer;transition:all .15s}
 .didi-nav-btn:hover:not(:disabled){background:var(--azul-suave);color:var(--azul)}
 .didi-nav-btn:disabled{opacity:.25;cursor:not-allowed}
 .didi-counter{font-size:13px;color:var(--muted);font-weight:600}
@@ -342,8 +339,8 @@ textarea.input{resize:none;min-height:60px}
 .didi-price{font-family:"Space Grotesk";font-size:27px;font-weight:800;color:var(--azul-2);line-height:1;white-space:nowrap}
 .didi-tags{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
 .didi-tags .badge{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:11px;padding:4px 8px}
-.didi-acciones{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.didi-acciones .btn{font-size:15px;padding:13px}
+.didi-acciones{display:flex;flex-direction:column;gap:7px;margin-top:9px}
+.didi-acciones .btn{font-size:13.5px;padding:10px}
 .didi-puntos{display:flex;justify-content:center;gap:6px;margin-top:10px}
 .didi-puntos i{width:6px;height:6px;border-radius:3px;background:var(--line2);transition:all .2s}
 .didi-puntos i.on{width:18px;background:var(--azul)}
@@ -378,14 +375,39 @@ textarea.input{resize:none;min-height:60px}
 .switch.on{background:var(--azul)}
 .switch.on i{left:23px}
 
-.bottomnav{display:flex;background:var(--bg);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:620}
-.bottomnav button{flex:1;padding:6px 4px;border-radius:12px;color:var(--dim);font-size:11px;display:grid;justify-items:center;gap:3px;font-weight:500;position:relative}
-.bottomnav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.bottomnav button.on{color:var(--azul)}
-.bottomnav button .n{
-  position:absolute;top:0;left:50%;margin-left:5px;min-width:16px;height:16px;padding:0 4px;
-  border-radius:8px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;
-  display:grid;place-items:center;border:2px solid var(--bg)
+.bottomnav{display:none}
+
+/* ---------- menú del logo: reemplaza la barra inferior ---------- */
+.brand.clicable{cursor:pointer;user-select:none;padding:4px 2px;border-radius:10px}
+.brand.clicable:active{transform:scale(.97)}
+/* El desplegable del logo: un botón redondo azul, grande para el dedo,
+   que late suave hasta que el usuario lo abre la primera vez. */
+.brand .caret{
+  width:26px;height:26px;border-radius:50%;margin-left:2px;display:grid;place-items:center;flex:none;
+  background:var(--azul);color:#fff;box-shadow:0 3px 10px rgba(10,90,255,.35);
+  transition:transform .2s cubic-bezier(.4,0,.2,1),box-shadow .2s
+}
+.brand .caret svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
+.brand.clicable:hover .caret{box-shadow:0 4px 14px rgba(10,90,255,.5)}
+.brand.abierto .caret{transform:rotate(180deg)}
+.brand .caret.invita{animation:invita 1.8s ease-in-out infinite}
+@keyframes invita{
+  0%,100%{box-shadow:0 3px 10px rgba(10,90,255,.35),0 0 0 0 rgba(10,90,255,.45);transform:translateY(0)}
+  50%{box-shadow:0 3px 10px rgba(10,90,255,.35),0 0 0 8px rgba(10,90,255,0);transform:translateY(2px)}
+}
+.menutop{
+  position:absolute;top:48px;left:10px;z-index:700;min-width:172px;
+  background:var(--panel);border:1.5px solid var(--line);border-radius:14px;
+  box-shadow:var(--sombra-alta);padding:5px;display:flex;flex-direction:column;gap:1px;
+}
+.menutop button{
+  padding:9px 11px;border-radius:10px;text-align:left;font-size:13.5px;font-weight:500;
+  color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.menutop button:hover,.menutop button.on{background:var(--azul-suave);color:var(--azul)}
+.menutop button .n{
+  min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--bad);color:#fff;
+  font-size:10px;font-weight:700;display:grid;place-items:center
 }
 
 .leg{display:flex;align-items:center;gap:10px;padding:8px 0}
@@ -550,34 +572,81 @@ textarea.input{resize:none;min-height:60px}
 .chip .em .ic{width:15px;height:15px}
 .btn .ic{margin-right:-2px}
 
-/* ---------- asa: un toque sube el panel, otro lo baja ---------- */
-#asa{
-  position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:center;
-  width:100%;height:30px;background:var(--bg);border-radius:22px 22px 0 0;
-  touch-action:none;cursor:pointer;padding:0
-}
-#asa::after{display:none}
-#asa .barra{width:42px;height:4px;border-radius:4px;background:var(--line2);transition:background .15s,width .15s}
-#asa:hover .barra,#asa:active .barra{background:var(--azul);width:56px}
-#asa .tag{
-  position:absolute;right:2px;top:50%;transform:translateY(-50%);
-  display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;
-  color:var(--azul-2);background:var(--azul-suave);border:1px solid var(--azul-borde);
-  font-size:11.5px;font-weight:600;white-space:nowrap
-}
-#asa .tag .ic{width:13px;height:13px}
-.sheet.compacta .oculta-compacta{display:none!important}
-.sheet.compacta{max-height:40dvh}
-.sheet.expandida{max-height:88dvh}
-/* Con el panel abajo se aprieta lo que queda para que el botón de
-   aceptar siga visible sin desplazar. */
-.sheet.compacta .head{margin-bottom:8px}
-.sheet.compacta .didi-card{padding:12px;margin-top:2px}
-.sheet.compacta .didi-top{margin-bottom:8px}
-.sheet.compacta .didi-price{font-size:26px}
-.sheet.compacta .tira{margin:9px 0}
-.sheet.compacta .didi-acciones{margin-top:9px}
-.sheet.compacta .didi-nav-bar{margin-bottom:6px}
+/* ---------- panel inferior ----------
+   Sin asa: el panel crece solo con su contenido (hasta 62% de la
+   pantalla, con desplazamiento dentro) y todo se ve de una vez, sin
+   tener que tocar nada para "maximizarlo". El mapa se queda con el resto. */
+.sheet{max-height:62dvh;padding-top:var(--s3)}
+@media(max-height:680px){.sheet{max-height:66dvh}}
+
+/* ---------- servicios en curso ---------- */
+.pedido{display:flex;gap:11px;align-items:center;width:100%;text-align:left;padding:11px 0;border-bottom:1px solid var(--line)}
+.pedido:last-child{border-bottom:0}
+.pedido .ico{width:38px;height:38px;border-radius:12px;background:var(--azul-suave);color:var(--azul);display:grid;place-items:center;flex:none}
+.pedido .grow{flex:1;min-width:0}
+.pedido .t{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pedido .s{font-size:12.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pedido .fin{color:var(--dim);font-size:18px;flex:none}
+.progreso{display:flex;gap:4px;margin-top:6px}
+.progreso i{height:4px;flex:1;border-radius:4px;background:var(--line)}
+.progreso i.on{background:var(--azul)}
+.progreso i.ok{background:var(--ok)}
+.banner-activos{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:14px;
+  background:var(--azul);color:#fff;margin-bottom:12px;box-shadow:var(--sombra-azul)}
+.banner-activos .grow{flex:1;min-width:0}
+.banner-activos .t{font-weight:700;font-size:14px}
+.banner-activos .s{font-size:12.5px;opacity:.85}
+.plazo{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;
+  background:var(--azul-suave);color:var(--azul-2);border:1px solid var(--azul-borde);white-space:nowrap}
+.plazo.poco{background:#FDF6EA;color:var(--warn);border-color:#F5E2C4}
+.plazo.tarde{background:#FDF3F2;color:var(--bad);border-color:#F6D8D7;animation:pulso-tarde 1.2s ease-in-out infinite}
+@keyframes pulso-tarde{50%{opacity:.6}}
+
+/* ---------- ruta del conductor: paradas ---------- */
+.parada-sig{border:1.5px solid var(--azul-borde);border-radius:18px;padding:12px;background:var(--panel);box-shadow:0 8px 24px rgba(10,90,255,.08)}
+.parada-sig .top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.parada-num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff;
+  font-family:"Space Grotesk",Inter,sans-serif;font-weight:700;font-size:14px}
+.parada-num.recoger{background:#00875A}
+.parada-num.entregar{background:#DE350B}
+.parada-sig .quien{font-weight:700;font-size:15px}
+.parada-sig .dir{font-size:13px;color:var(--muted);margin:2px 0 8px}
+.paradas{margin-top:10px}
+.parada{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 0;border-bottom:1px solid var(--line)}
+.parada:last-child{border-bottom:0}
+.parada .parada-num{width:26px;height:26px;font-size:12.5px}
+.parada .grow{flex:1;min-width:0}
+.parada .t{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.parada .s{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.parada.sel{background:var(--azul-suave);border-radius:12px;padding-left:8px;padding-right:8px}
+.mk .num-parada{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;
+  border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);font-family:"Space Grotesk",Inter,sans-serif}
+.mk .num-parada.recoger{background:#00875A}
+.mk .num-parada.entregar{background:#DE350B}
+.cupo{font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
+
+/* ---------- identidad, cámara y candado de cuenta ---------- */
+.candado{border:1.5px solid #F5E2C4;background:#FDF6EA;border-radius:18px;padding:14px;margin-bottom:12px}
+.candado h3{color:var(--text);margin-bottom:4px}
+.candado p{margin:0 0 10px;color:var(--muted);font-size:13.5px}
+html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
+.cam{position:relative;width:100%;aspect-ratio:3/4;max-height:56dvh;border-radius:18px;overflow:hidden;background:#000;margin:10px 0}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam video.espejo{transform:scaleX(-1)}
+.cam .guia{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center}
+.cam .guia .ovalo{width:62%;aspect-ratio:3/4;border-radius:50%;border:3px dashed rgba(255,255,255,.85);box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s}
+.cam .guia .ovalo.bien{border-color:#2BC275;border-style:solid}
+.cam .guia .rect{width:88%;aspect-ratio:1.58;border-radius:14px;border:3px dashed rgba(255,255,255,.85);box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.cam .msg-cam{position:absolute;left:10px;right:10px;bottom:12px;text-align:center;color:#fff;font-weight:600;font-size:15px;
+  background:rgba(0,0,0,.55);border-radius:12px;padding:9px 12px}
+.foto-ok{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:#EDFAF2;border:1px solid #C7EBD6;color:var(--ok);font-weight:600;font-size:13.5px}
+.foto-ok img{width:44px;height:44px;border-radius:10px;object-fit:cover}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.45;margin:10px 0;cursor:pointer}
+.check input{width:20px;height:20px;flex:none;margin-top:1px;accent-color:var(--azul)}
+.legal{max-height:58vh;overflow-y:auto;padding-right:4px;font-size:13.2px;line-height:1.6;color:var(--text)}
+.legal h4{margin:14px 0 4px;font-size:14px}
+.legal p,.legal li{margin:0 0 6px;color:var(--muted)}
+.legal ul{padding-left:18px;margin:0 0 6px}
 
 /* ---------- buscador de lugares ---------- */
 .buscador{
@@ -612,9 +681,9 @@ textarea.input{resize:none;min-height:60px}
 .didi-metric-label .ic{width:14px;height:14px}
 .tira{
   display:flex;align-items:stretch;gap:0;border:1.5px solid var(--line);
-  border-radius:14px;overflow:hidden;margin:12px 0;background:var(--panel2)
+  border-radius:14px;overflow:hidden;margin:9px 0;background:var(--panel2)
 }
-.tira .t1{flex:1;min-width:0;padding:9px 12px;display:flex;align-items:center;gap:9px}
+.tira .t1{flex:1;min-width:0;padding:7px 10px;display:flex;align-items:center;gap:8px}
 .tira .t1+.t1{border-left:1.5px solid var(--line)}
 .tira .marca{width:10px;height:10px;border-radius:50%;flex:none}
 .tira .marca.a{background:#00875A}
@@ -634,12 +703,13 @@ textarea.input{resize:none;min-height:60px}
 /* ---------- botones de accion del conductor ---------- */
 .btn.waze{background:#33CCFF;border-color:#2BB7E6;color:#04314A;font-weight:700}
 .btn.waze:active{background:#2BB7E6}
-.acciones{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px}
+.acciones{display:grid;grid-template-columns:1fr auto auto;gap:7px;margin-top:8px}
 .acciones .btn{margin-top:0}
 .iconacc{
-  width:46px;height:46px;border-radius:14px;background:var(--panel2);border:1.5px solid var(--line);
+  width:38px;height:38px;border-radius:12px;background:var(--panel2);border:1.5px solid var(--line);
   display:grid;place-items:center;color:var(--muted);position:relative;flex:none
 }
+.iconacc svg{width:18px;height:18px}
 .iconacc:active{transform:scale(.95)}
 .iconacc .n{
   position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;
@@ -740,6 +810,11 @@ textarea.input{resize:none;min-height:60px}
             <div class="field"><label for="rg-color">Color</label><input id="rg-color" class="input" placeholder="Gris"></div>
           </div>
         </div>
+        <label class="check" for="rg-terminos">
+          <input type="checkbox" id="rg-terminos">
+          <span>Leí y acepto los <button type="button" id="rg-ver-terminos" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y Condiciones y la Política de Privacidad</button>, incluido el uso de mi foto y la de mi cédula para verificar mi identidad.</span>
+        </label>
+        <p class="fine" style="margin:0 0 8px">Después de crear la cuenta te pediremos una foto de tu rostro y de tu cédula (parte frontal). Puedes dejarlo para después, pero tu cuenta quedará <b>inactiva</b> hasta que las envíes.</p>
         <button class="btn primary full" id="btn-registro" style="margin-top:6px">Crear cuenta</button>
       </div>
 
@@ -756,12 +831,18 @@ textarea.input{resize:none;min-height:60px}
   <!-- ============ APP ============ -->
   <section id="app" class="app hidden">
     <header class="topbar">
-      <div class="brand"><i></i>Ruta</div>
+      <div class="brand clicable" id="brand-menu" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false"><i></i>Ruta<span class="caret" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span></div>
       <div class="grow"></div>
       <button id="btn-linea" class="pill hidden"><span class="dot"></span><span id="linea-txt">Fuera de línea</span></button>
       <button id="btn-power" class="hidden" aria-label="Conectarme o desconectarme" title="Conectarme o desconectarme"></button>
       <button id="avatar" class="avatar">··</button>
     </header>
+    <div id="menu-top" class="menutop hidden">
+      <button data-vista="inicio" id="menu-inicio" class="on">Inicio</button>
+      <button data-vista="actividad">Actividad<span id="menu-sop" class="n hidden">0</span></button>
+      <button data-vista="ayuda">Ayuda</button>
+      <button data-vista="perfil">Perfil</button>
+    </div>
 
     <div id="mapwrap">
       <div id="map"></div>
@@ -774,7 +855,6 @@ textarea.input{resize:none;min-height:60px}
     </div>
 
     <div id="sheet" class="sheet">
-      <button id="asa" aria-label="Cambiar el alto del panel" title="Arrastra o toca para dar más espacio al mapa"></button>
       <div id="sheetbody"></div>
     </div>
 
@@ -880,6 +960,7 @@ const IC = {
   ruta:     c => svgi('<circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M15.5 5.5H9.8a3.3 3.3 0 0 0 0 6.6h4.4a3.3 3.3 0 0 1 0 6.4H8.5"/>', c),
   crono:    c => svgi('<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.8v3.7l2.6 1.6M9.4 2.8h5.2"/>', c),
   personas: c => svgi('<circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c0-3.4 2.8-5.4 6.2-5.4s6.2 2 6.2 5.4"/><path d="M16.5 5.2a3.2 3.2 0 0 1 0 6M18 14.9c2 .6 3.4 2.1 3.4 4.4"/>', c),
+  persona:  c => svgi('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>', c),
   billete:  c => svgi('<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/>', c),
   nota:     c => svgi('<path d="M20 15.5a2 2 0 0 1-2 2H8l-4 3.5V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M8 8h8M8 11.8h5"/>', c),
   chat:     c => svgi('<path d="M20 15.5a2 2 0 0 1-2 2H8l-4 3.5V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>', c),
@@ -921,14 +1002,105 @@ function pedirAvisos() {
     if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   } catch (e) {}
 }
-function avisar(titulo, cuerpo) {
-  vibrar([50, 70, 50]);
-  if (document.visibilityState === 'visible') return;
+/* Dentro del APK la página habla con Flutter por este canal: Flutter
+   muestra la notificación del sistema con sonido aunque la app esté en
+   segundo plano (el WebView no tiene la API Notification). */
+const enApp = () => !!(window.RutaNativo && window.RutaNativo.postMessage);
+function nativo(msg) {
+  try { if (enApp()) window.RutaNativo.postMessage(JSON.stringify(msg)); } catch (e) {}
+}
+function avisar(titulo, cuerpo, tonoAviso) {
+  vibrar(tonoAviso === 'nueva' || tonoAviso === 'aceptado' ? RING_VIBRA : [50, 70, 50]);
+  if (tonoAviso) sonido(tonoAviso);
+  nativo({ tipo: 'aviso', titulo, cuerpo, fuerte: tonoAviso === 'nueva' || tonoAviso === 'aceptado' });
+  if (document.visibilityState === 'visible') { toast(cuerpo ? `${titulo}: ${cuerpo}` : titulo); return; }
   try {
     if ('Notification' in window && Notification.permission === 'granted')
       new Notification(titulo, { body: cuerpo, icon: ICONO, tag: 'ruta', renotify: true });
   } catch (e) {}
 }
+
+/* ---- Sonidos cortos generados con Web Audio ----
+   Nada de archivos de audio: se sintetizan con un oscilador, así que
+   funcionan igual sin red y detrás de la CSP más estricta, tanto en el
+   navegador como dentro del WebView del APK. Los navegadores no dejan
+   sonar nada antes de un primer toque del usuario, así que el contexto
+   se "despierta" con el primer gesto de la pantalla de acceso. */
+let audioCtx = null;
+function tonoCtx() {
+  if (audioCtx && audioCtx.state !== 'closed') return audioCtx;
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+  return audioCtx;
+}
+function tono(freq, ms, vol = .16, retraso = 0) {
+  const ctx = tonoCtx(); if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  const t0 = ctx.currentTime + retraso;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine'; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(vol, t0 + .015);
+  gain.gain.setValueAtTime(vol, Math.max(t0 + .02, t0 + ms / 1000 - .05));
+  gain.gain.exponentialRampToValueAtTime(.001, t0 + ms / 1000);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + ms / 1000 + .03);
+}
+const RING_VIBRA = [280, 120, 280, 120, 280, 120, 280];
+/* Cada sonido es una lista de notas [frecuencia, ms, volumen, retraso s].
+   La misma lista sirve para Web Audio y para el WAV de respaldo. */
+const notasTimbre = v => Array.from({ length: v }, (_, i) => [[1000, 230, .4, i * .72], [760, 230, .4, i * .72 + .26]]).flat();
+const NOTAS = {
+  enviado:  [[880, 90, .16, 0]],
+  mensaje:  [[660, 110, .22, 0], [880, 140, .24, .11]],
+  nueva:    notasTimbre(4),
+  aceptado: [[784, 160, .4, 0], [988, 160, .4, .18], [1175, 320, .45, .36], ...notasTimbre(2).map(n => [n[0], n[1], n[2], n[3] + .8])]
+};
+/* WAV sintetizado en memoria: suena aunque el AudioContext siga
+   suspendido (pasa en el WebView al volver de segundo plano). */
+const cacheWav = {};
+function wavDe(notas) {
+  const sr = 22050;
+  const fin = Math.max(...notas.map(n => n[3] + n[1] / 1000)) + .05;
+  const len = Math.ceil(fin * sr);
+  const pcm = new Float32Array(len);
+  notas.forEach(([f, ms, vol, ret]) => {
+    const i0 = Math.floor(ret * sr), n = Math.floor(ms / 1000 * sr);
+    for (let i = 0; i < n && i0 + i < len; i++) {
+      const env = Math.min(1, i / (sr * .015), (n - i) / (sr * .05));
+      pcm[i0 + i] += Math.sin(2 * Math.PI * f * i / sr) * vol * env;
+    }
+  });
+  const buf = new ArrayBuffer(44 + len * 2), dv = new DataView(buf);
+  const w = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); dv.setUint32(4, 36 + len * 2, true); w(8, 'WAVEfmt ');
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  w(36, 'data'); dv.setUint32(40, len * 2, true);
+  for (let i = 0; i < len; i++) dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, pcm[i])) * 32767, true);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+function sonido(tipo) {
+  if (leerLocal('sonido', '1') === '0') return;
+  const notas = NOTAS[tipo];
+  if (!notas) return;
+  const ctx = tonoCtx();
+  if (ctx && ctx.state === 'running') {
+    try { notas.forEach(([f, ms, vol, ret]) => tono(f, ms, vol, ret)); return; } catch (e) {}
+  }
+  try {
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    const a = new Audio(cacheWav[tipo] || (cacheWav[tipo] = wavDe(notas)));
+    a.play().catch(() => {});
+  } catch (e) {}
+}
+/* Se despierta el audio en cada toque, no solo en el primero: el WebView
+   lo vuelve a suspender cada vez que la app pasa a segundo plano. */
+(() => {
+  const despertar = () => { const c = tonoCtx(); if (c && c.state === 'suspended') c.resume().catch(() => {}); };
+  ['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, despertar, { passive: true }));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') despertar(); });
+})();
 
 /* Aviso fijo cuando el teléfono se queda sin datos */
 function estadoRed() {
@@ -1044,14 +1216,21 @@ const minRuta = km => Math.max(4, Math.round(km / 21 * 60 + 2));
 /* ---- 3. Tarifas ---- */
 const TAMANOS = {
   pequeno: { f: 1.00, t: 'Pequeño', s: 'Sobre, documentos, hasta 3 kg', i: 'sobre' },
-  mediano: { f: 1.25, t: 'Mediano', s: 'Caja de zapatos, hasta 10 kg',  i: 'caja' },
-  grande:  { f: 1.60, t: 'Grande',  s: 'Bulto grande, hasta 25 kg',     i: 'bulto' }
+  mediano: { f: 1.10, t: 'Mediano', s: 'Caja de zapatos, hasta 10 kg',  i: 'caja' },
+  grande:  { f: 1.20, t: 'Grande',  s: 'Bulto grande, hasta 25 kg',     i: 'bulto' }
 };
 const URGENCIAS = {
   urgente: { d: 0.00, t: 'Urgente', s: 'Sale ahora mismo', i: 'rayo' },
-  '1h':    { d: 0.20, t: 'Dentro de 1 hora', s: 'El conductor lo recoge en su ruta', i: 'reloj' },
-  '5h':    { d: 0.40, t: 'Dentro de 5 horas', s: 'Se agrupa con otros envíos del día', i: 'agenda' }
+  '2h':    { d: 0.20, t: 'Dentro de 2 horas', s: 'El conductor lo recoge en su ruta', i: 'reloj' },
+  '5h':    { d: 0.40, t: 'Dentro de 5 horas', s: 'Se agrupa con otros envíos', i: 'agenda' }
 };
+/* Envíos viejos guardados con '1h': se siguen mostrando y cobrando igual. */
+const URG_LEGADO = { '1h': { d: 0.20, t: 'Dentro de 1 hora', s: '', i: 'reloj' } };
+const urgDe = k => URGENCIAS[k] || URG_LEGADO[k] || URGENCIAS.urgente;
+/* Cupos del conductor, los mismos que aplica la base (conductor_puede_tomar). */
+const MAX_ENVIOS_2H = 3, MAX_ENVIOS_PASAJERO = 10, PLAZO_ENVIO_MIN = 60;
+const ACTIVOS = ['buscando', 'aceptado', 'en_camino', 'a_bordo'];
+const EN_CURSO = ['aceptado', 'en_camino', 'a_bordo'];
 function fechaQuito(f = new Date()) {
   try {
     const s = f.toLocaleString('en-US', { timeZone: 'America/Guayaquil' });
@@ -1093,7 +1272,7 @@ function tarifa(km, tipo, opts = {}) {
 
   // Tarifa base/bruta calculada según la fórmula
   const bruto = Math.max(1.50, Math.round(p * 20) / 20);
-  const desc = tipo === 'paquete' ? (URGENCIAS[opts.urgencia || 'urgente'] || URGENCIAS.urgente).d : 0;
+  const desc = tipo === 'paquete' ? urgDe(opts.urgencia || 'urgente').d : 0;
   let final = Math.round(bruto * (1 - desc) * 20) / 20;
   if (tipo !== 'paquete') {
     final = Math.max(1.50, final);
@@ -1115,7 +1294,7 @@ const S = {
   solicitud: null, ofertas: [], mensajes: [], historial: [],
   enLinea: false, pos: { lat: -0.1807, lng: -78.4678 },
   cercanas: [], cercanaIdx: 0, ofertaEnviada: null, eligiendo: null, subs: [],
-  leidos: 0, siguiente: null, avisoProx: false, watchId: null,
+  leidos: 0, siguiente: null, avisoProx: false, avisoLlegada: false, watchId: null,
   auto: true,
   /* lugares guardados y destinos recientes */
   lugares: [], recientes: [],
@@ -1123,24 +1302,39 @@ const S = {
   tickets: null, ticket: null, supMsgs: [], supSubs: [], subSop: null,
   sinLeerSop: 0, esSoporte: false, bandeja: 'mios',
   /* seguimiento en vivo */
-  subPos: null, posConductor: null,
+  subPos: null, posConductor: null, subPosPax: null, posPasajero: null,
+  /* servicios en curso: la fuente de verdad es la base, no la memoria */
+  activos: [], subActivos: null, subCercanas: null, subsOferta: [],
+  msgs: {}, leidosPor: {}, subMsgs: {}, chatId: null,
+  posCond: {}, subPosCond: {}, porCalificar: [], propios: new Set(),
+  avisosPlazo: {}, avisoLlegadaPor: {}, paradaSel: null,
   /* varios */
-  tema: leerLocal('tema', 'auto'), alto: leerLocal('alto', 'media'), idsVistos: new Set()
+  tema: leerLocal('tema', 'auto'), idsVistos: new Set()
 };
+const unsub = f => { if (f) { try { f(); } catch (e) {} } };
+/* Solo lo del servicio que el pasajero tiene abierto (ofertas). */
 function limpiarSubs() {
-  S.subs.forEach(f => { try { f(); } catch (e) {} });
+  S.subs.forEach(unsub);
   S.subs = [];
-  if (S.subPos) { try { S.subPos(); } catch (e) {} S.subPos = null; }
 }
+function detenerCercanas() { unsub(S.subCercanas); S.subCercanas = null; }
+function detenerTodo() {
+  limpiarSubs(); detenerCercanas();
+  unsub(S.subActivos); S.subActivos = null;
+  S.subsOferta.forEach(unsub); S.subsOferta = [];
+  Object.values(S.subMsgs).forEach(unsub); S.subMsgs = {};
+  Object.values(S.subPosCond).forEach(unsub); S.subPosCond = {};
+  unsub(S.subPosPax); S.subPosPax = null;
+  S.activos = []; S.msgs = {}; S.leidosPor = {}; S.posCond = {}; S.porCalificar = [];
+  seguirMiGps(false);
+  if (mapa.m) { mapa.limpiarCoches(); mapa.limpiarPasajero(); }
+}
+/* Sale del servicio enfocado y vuelve a la lista o al formulario. */
 function resetViaje() {
   limpiarSubs();
-  S.solicitud = null; S.ofertas = []; S.mensajes = []; S.ofertaEnviada = null; S.leidos = 0;
-  S.posConductor = null;
-  S.paso = S.modo === 'conductor' ? 'solicitudes' : 'form';
-  detenerProximidad();
+  S.solicitud = null; S.ofertas = []; S.ofertaEnviada = null;
+  S.paso = S.modo === 'conductor' ? 'solicitudes' : (S.activos.length ? 'pedidos' : 'form');
   mapa.firma = null;
-  mapa.limpiarConductor();
-  if (S.modo === 'conductor' && S.enLinea) escucharCercanas();
 }
 
 /* ---- 5. Mapa ---- */
@@ -1200,6 +1394,26 @@ async function rutaReal(a, b) {
   } catch (e) {
     const km = kmRuta(a, b);
     return { pts: puntosCurva(a, b), km, min: minRuta(km), real: false };
+  }
+}
+/* La misma idea con varias paradas en un solo pedido a OSRM. */
+async function rutaMulti(puntos) {
+  const ps = puntos.filter(Boolean);
+  if (ps.length < 2) return { pts: ps.map(p => [p.lat, p.lng]), km: 0, min: 0 };
+  if (ps.length === 2) return rutaReal(ps[0], ps[1]);
+  const k = 'm:' + ps.map(p => p.lat.toFixed(4) + ',' + p.lng.toFixed(4)).join(';');
+  if (cacheRutas[k]) return cacheRutas[k];
+  try {
+    const u = `https://router.project-osrm.org/route/v1/driving/${ps.map(p => p.lng + ',' + p.lat).join(';')}?overview=full&geometries=geojson`;
+    const j = await (await fetch(u)).json();
+    const rt = j.routes && j.routes[0];
+    if (!rt) throw new Error('sin ruta');
+    return (cacheRutas[k] = {
+      pts: rt.geometry.coordinates.map(c => [c[1], c[0]]),
+      km: +(rt.distance / 1000).toFixed(2), min: Math.max(2, Math.round(rt.duration / 60))
+    });
+  } catch (e) {
+    return { pts: ps.map(p => [p.lat, p.lng]), km: 0, min: 0 };
   }
 }
 
@@ -1324,6 +1538,89 @@ const mapa = {
     if (this.anim) cancelAnimationFrame(this.anim);
     if (this.mkC) { this.m.removeLayer(this.mkC); this.mkC = null; }
   },
+  /* Posición en vivo del pasajero, vista por el conductor mientras va
+     a recogerlo. Mismo patrón que conductor(), un icono de persona. */
+  pasajero(ll) {
+    if (!this.mkP) this.mkP = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="pax">' + IC.persona() + '</div>', 32) }).addTo(this.m);
+    else this.mkP.setLatLng([ll.lat, ll.lng]);
+  },
+  limpiarPasajero() {
+    if (this.mkP) { this.m.removeLayer(this.mkP); this.mkP = null; }
+  },
+  /* Un carro por conductor: el pasajero con varios envíos ve a todos
+     los que llevan sus cosas a la vez. */
+  coches: {},
+  coche(id, ll, rotulo) {
+    const c = this.coches[id];
+    if (c) { c.setLatLng([ll.lat, ll.lng]); return; }
+    this.coches[id] = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="car">' + IC.carro() + '</div>', 36), zIndexOffset: 500 }).addTo(this.m);
+    if (rotulo) this.coches[id].bindTooltip(esc(rotulo), { direction: 'top', offset: [0, -16], className: 'didi-tooltip' });
+  },
+  limpiarCoches(salvo) {
+    Object.keys(this.coches).forEach(id => {
+      if (salvo && salvo.includes(id)) return;
+      try { this.m.removeLayer(this.coches[id]); } catch (_) {}
+      delete this.coches[id];
+    });
+  },
+  posCoches() { return Object.values(this.coches).map(m => m.getLatLng()); },
+  /* Ruta del conductor con todas sus paradas numeradas en el orden en que
+     conviene hacerlas; encima, en naranja punteado, la solicitud que está
+     mirando para sumar (si mira alguna). */
+  async dibujarRutaConductor(paradas, vista) {
+    this.limpiarDidi();
+    if (!this.m) return;
+    const mio = ++this.tokenDidi;
+    const vigente = () => mio === this.tokenDidi;
+    this.conductor(S.pos);
+    paradas.forEach((p, i) => {
+      const mk = L.marker([p.p.lat, p.p.lng], {
+        icon: this.icono(`<div class="num-parada ${p.tipo}">${i + 1}</div>`, 28), zIndexOffset: 300 - i
+      }).addTo(this.m);
+      mk.bindTooltip(`${i + 1} · ${esc(rotuloParada(p))}`, {
+        permanent: i === 0, direction: 'top', offset: [0, -14],
+        className: 'didi-tooltip ' + (p.tipo === 'recoger' ? 'didi-tooltip-a' : 'didi-tooltip-b')
+      });
+      mk.on('click', () => { S.paradaSel = claveParada(p); render(); });
+      this.capasDidi.push(mk);
+    });
+    if (vista) {
+      const A = { lat: +vista.origen_lat, lng: +vista.origen_lng }, B = { lat: +vista.destino_lat, lng: +vista.destino_lng };
+      const a = L.marker([A.lat, A.lng], { icon: this.icono('<div class="didi-mk-a">' + IC.pin('sm') + '</div>', 28) }).addTo(this.m)
+        .bindTooltip('Nueva: recoger', { permanent: true, direction: 'top', className: 'didi-tooltip didi-tooltip-a' });
+      const b = L.marker([B.lat, B.lng], { icon: this.icono('<div class="didi-mk-b">' + IC.bandera('sm') + '</div>', 28) }).addTo(this.m);
+      const l = L.polyline([[A.lat, A.lng], [B.lat, B.lng]], { color: '#FF7D00', weight: 4, dashArray: '6, 8' }).addTo(this.m);
+      this.capasDidi.push(a, b, l);
+    }
+    const pts = [S.pos, ...paradas.map(p => p.p)];
+    const encuadre = [...pts, ...(vista ? [{ lat: +vista.origen_lat, lng: +vista.origen_lng }, { lat: +vista.destino_lat, lng: +vista.destino_lng }] : [])];
+    this.ajustar(L.latLngBounds(encuadre.map(p => [p.lat, p.lng])));
+    if (paradas.length) {
+      const r = await rutaMulti(pts);
+      if (!vigente()) return;
+      this.capasDidi.push(
+        L.polyline(r.pts, { color: '#002B7A', weight: 8, opacity: .85 }).addTo(this.m),
+        L.polyline(r.pts, { color: '#0A5AFF', weight: 5, lineJoin: 'round', lineCap: 'round' }).addTo(this.m));
+    }
+  },
+  /* Todos los pedidos del pasajero a la vista: destinos numerados y los
+     carros que ya los llevan. */
+  dibujarPedidos(lista) {
+    this.limpiarDidi();
+    this.borrarRuta(); this.quitarPunto('a'); this.quitarPunto('b');
+    const pts = [];
+    lista.forEach((s, i) => {
+      const B = { lat: +s.destino_lat, lng: +s.destino_lng };
+      const mk = L.marker([B.lat, B.lng], { icon: this.icono(`<div class="num-parada entregar">${i + 1}</div>`, 28) }).addTo(this.m);
+      mk.bindTooltip(`${i + 1} · ${esc(s.tipo === 'paquete' ? 'Envío a ' + (s.destinatario || s.destino_texto || '') : 'Viaje a ' + (s.destino_texto || ''))}`,
+        { direction: 'top', offset: [0, -14], className: 'didi-tooltip didi-tooltip-b' });
+      mk.on('click', () => enfocar(s));
+      this.capasDidi.push(mk);
+      pts.push(B, { lat: +s.origen_lat, lng: +s.origen_lng });
+    });
+    pts.push(...this.posCoches());
+    if (pts.length) this.ajustar(L.latLngBounds(pts.map(p => [p.lat, p.lng])));
+  },
   token: 0,
   dibujarLinea(pts) {
     [this.borde, this.linea].forEach(l => { if (l) this.m.removeLayer(l); });
@@ -1363,8 +1660,12 @@ const mapa = {
        encuadrar. Este era el motivo de que el mapa saliera "vacío". */
     this.m.invalidateSize({ pan: false });
     const m = this.margen();
+    /* La barra de arriba ("Ruta", en línea, encendido) ahora flota sobre
+       el mapa en vez de empujarlo hacia abajo, así que hay que dejarle
+       ese espacio libre a mano o los rótulos de recogida/destino se
+       meten debajo de sus botones. */
     this.m.fitBounds(bounds, {
-      paddingTopLeft: [m.h, m.v], paddingBottomRight: [m.h, m.v], maxZoom: 16.5, animate: true
+      paddingTopLeft: [m.h, m.v + 46], paddingBottomRight: [m.h, m.v], maxZoom: 16.5, animate: true
     });
   },
   encuadrarRuta(extra) {
@@ -1662,6 +1963,62 @@ function crearAPI(url, key) {
         conductor_id: yo(), en_linea: on, lat: pos.lat, lng: pos.lng, actualizado_en: new Date().toISOString()
       });
     },
+    async estabaEnLinea() {
+      const { data } = await sb.from('conductores_estado').select('en_linea').eq('conductor_id', yo()).maybeSingle();
+      return !!(data && data.en_linea);
+    },
+
+    /* ---------- mis servicios en curso ----------
+       Todo lo que sigue activo y es mío, leído de la base: así, al
+       recargar la página o reabrir la app, el viaje o los envíos
+       vuelven a aparecer tal como estaban. */
+    async misActivos(modo) {
+      const col = modo === 'conductor' ? 'conductor_id' : 'pasajero_id';
+      const estados = modo === 'conductor' ? EN_CURSO : ACTIVOS;
+      const { data, error } = await sb.from('solicitudes_detalle').select('*')
+        .eq(col, yo()).in('estado', estados).order('creado_en');
+      if (error) throw error;
+      return data || [];
+    },
+    onMisServicios(modo, cb) {
+      const col = modo === 'conductor' ? 'conductor_id' : 'pasajero_id';
+      let vivo = true;
+      const cargar = async () => {
+        try { const l = await this.misActivos(modo); if (vivo) cb(l); } catch (e) {}
+      };
+      cargar();
+      const ch = sb.channel('mios-' + modo + '-' + yo())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes', filter: `${col}=eq.${yo()}` }, cargar)
+        .subscribe();
+      const t = setInterval(cargar, 10000);
+      const fin = () => { vivo = false; clearInterval(t); sb.removeChannel(ch); };
+      fin.refrescar = cargar;
+      return fin;
+    },
+    async unaSolicitud(id) {
+      const { data } = await sb.from('solicitudes_detalle').select('*').eq('id', id).maybeSingle();
+      return data;
+    },
+
+    /* ---------- identidad ---------- */
+    async subirFoto(path, blob) {
+      const { error } = await sb.storage.from('identidad').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (error) throw error;
+      return path;
+    },
+    async registrarIdentidad(foto, cedula, descriptor) {
+      const { data, error } = await sb.rpc('registrar_identidad', { p_foto: foto, p_cedula: cedula, p_descriptor: descriptor });
+      if (error) throw error;
+      return data;
+    },
+    async registrarVerificacion(foto, descriptor) {
+      const { data, error } = await sb.rpc('registrar_verificacion', { p_foto: foto, p_descriptor: descriptor });
+      if (error) throw error;
+      return data;
+    },
+    async aceptarTerminos() {
+      return this.guardarPerfil({ terminos_aceptados_en: new Date().toISOString(), terminos_version: TERMINOS_VERSION });
+    },
     async enviarMensaje(id, texto) {
       const { error } = await sb.from('mensajes').insert({ solicitud_id: id, emisor_id: yo(), texto });
       if (error) toast(error.message, 'bad');
@@ -1675,7 +2032,7 @@ function crearAPI(url, key) {
       const ch = sb.channel('msg-' + id)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes', filter: 'solicitud_id=eq.' + id }, cargar)
         .subscribe();
-      const t = setInterval(cargar, 7000);
+      const t = setInterval(cargar, 15000);
       return () => { clearInterval(t); sb.removeChannel(ch); };
     },
     async historial() {
@@ -1794,6 +2151,27 @@ function crearAPI(url, key) {
       return () => { clearInterval(t); sb.removeChannel(ch); };
     },
 
+    /* ---------- posición en vivo del pasajero (para que el conductor
+       vea por dónde viene mientras se dirige a recogerlo) ---------- */
+    async publicarPosPasajero(pos) {
+      await sb.from('pasajeros_estado').upsert({
+        pasajero_id: yo(), lat: pos.lat, lng: pos.lng, actualizado_en: new Date().toISOString()
+      });
+    },
+    onPosPasajero(id, cb) {
+      const cargar = async () => {
+        const { data } = await sb.from('pasajeros_estado').select('lat,lng,actualizado_en')
+          .eq('pasajero_id', id).maybeSingle();
+        if (data && data.lat != null) cb({ lat: +data.lat, lng: +data.lng, en: data.actualizado_en });
+      };
+      cargar();
+      const ch = sb.channel('pos-pax-' + id)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pasajeros_estado', filter: 'pasajero_id=eq.' + id }, cargar)
+        .subscribe();
+      const t = setInterval(cargar, 6000);
+      return () => { clearInterval(t); sb.removeChannel(ch); };
+    },
+
     /* ---------- PIN ---------- */
     async recuperarPin(correo) {
       const { error } = await sb.auth.resetPasswordForEmail(correo, { redirectTo: location.href.split('#')[0] });
@@ -1829,34 +2207,97 @@ function pintarEstadoCfg() {
   el.innerHTML = 'Falta conectar tu proyecto de Supabase para poder crear cuentas. Toca <b>Configurar Supabase</b> aquí abajo.';
 }
 
+/* Cambia la versión cuando cambie el texto: a quien aceptó una versión
+   anterior se le vuelve a pedir que acepte. */
+const TERMINOS_VERSION = '2026-09';
+const CORREO_SOPORTE = 'abulingo.help@gmail.com';
+const TEXTO_TERMINOS = `
+  <p><b>Versión ${TERMINOS_VERSION}.</b> Al crear una cuenta o usar Ruta aceptas estas condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
+
+  <h4>1. Quiénes somos y qué hacemos</h4>
+  <p>Ruta es una plataforma tecnológica administrada por <b>César Santana</b> (contacto: <a href="mailto:${CORREO_SOPORTE}" style="color:var(--azul)">${CORREO_SOPORTE}</a>) que <b>pone en contacto</b> a personas que necesitan un traslado o un envío con conductores independientes que lo realizan. Ruta no es una empresa de transporte ni de mensajería: no es dueña de los vehículos, no emplea a los conductores y no transporta personas ni bienes por sí misma. Cada servicio es un acuerdo directo entre el usuario y el conductor.</p>
+
+  <h4>2. Requisitos y cuenta</h4>
+  <ul>
+    <li>Debes ser mayor de 18 años y dar datos reales: nombre, número de cédula, celular y correo.</li>
+    <li>Para activar tu cuenta debes enviar una foto de tu rostro y una foto de la parte frontal de tu cédula. Si decides no enviarlas, tu cuenta queda <b>inactiva</b> y no podrás pedir ni realizar servicios.</li>
+    <li>Cada día, antes de usar la app, debes verificar tu identidad con la cámara (una foto sonriendo que se compara con la de tu registro).</li>
+    <li>Los conductores además deben ser habilitados manualmente por un administrador, con su vehículo aprobado, y son responsables de contar con licencia, matrícula, SOAT/seguros y demás permisos que exija la ley y la autoridad de tránsito competente.</li>
+    <li>Tu PIN es personal. Eres responsable de lo que se haga con tu cuenta.</li>
+  </ul>
+
+  <h4>3. Precios y pago</h4>
+  <ul>
+    <li>Viajes: el pasajero propone el precio (mínimo $1.50 USD) y el conductor lo acepta o contraoferta. Envíos: tarifa fija calculada por distancia, tiempo, tamaño y urgencia.</li>
+    <li>El pago es en efectivo, directo al conductor, al terminar el servicio. Ruta no cobra por adelantado ni solicita datos de tarjetas.</li>
+  </ul>
+
+  <h4>4. Envíos: lo que se puede y no se puede mandar</h4>
+  <ul>
+    <li>Está prohibido enviar dinero en efectivo, joyas, armas, municiones, explosivos, drogas o sustancias sujetas a control, animales vivos, productos perecibles sin embalaje adecuado, documentos o bienes de origen ilícito y cualquier objeto prohibido por la ley ecuatoriana.</li>
+    <li>El remitente declara con veracidad qué contiene el paquete y lo entrega bien embalado. El conductor puede negarse a llevar un paquete sospechoso o mal embalado.</li>
+    <li>El conductor tiene un plazo referencial de 1 hora desde que acepta un envío para entregarlo; es una meta de servicio, no una garantía.</li>
+  </ul>
+
+  <h4>5. Limitación de responsabilidad</h4>
+  <ul>
+    <li><b>Ruta no se hace responsable por robos, hurtos, pérdidas, daños o retrasos</b> de los paquetes enviados, ni por su contenido.</li>
+    <li><b>Ruta no se hace responsable por accidentes, lesiones, daños, delitos, conflictos o cualquier hecho</b> que les ocurra a pasajeros, conductores, destinatarios o terceros durante o con ocasión de un servicio. Cada usuario y cada conductor responde por sus propios actos.</li>
+    <li>Lo anterior aplica en la medida en que lo permita la ley ecuatoriana, incluida la Ley Orgánica de Defensa del Consumidor; no limita derechos que la ley declare irrenunciables.</li>
+  </ul>
+
+  <h4>6. Nuestro compromiso ante incidentes</h4>
+  <p>Aunque no somos responsables de lo que ocurra durante el servicio, <b>estaremos atentos para entregar información temprana</b> que ayude a resolver cualquier incidente: datos del conductor y del vehículo, recorrido, horarios, fotos de verificación y mensajes del servicio, a las autoridades competentes (Policía Nacional, Fiscalía, ECU 911, jueces) cuando lo requieran conforme a la ley, y a los involucrados en lo que corresponda. Reporta cualquier problema en <b>Ayuda y soporte</b>. <b>Si estás en peligro, llama primero al 911.</b></p>
+
+  <h4>7. Protección de datos personales</h4>
+  <ul>
+    <li>Tratamos tus datos conforme a la <b>Ley Orgánica de Protección de Datos Personales (LOPDP)</b> del Ecuador. Responsable del tratamiento: César Santana, ${CORREO_SOPORTE}.</li>
+    <li>Datos que tratamos: identificación y contacto, fotos de rostro y cédula, un patrón numérico de tu rostro, ubicación durante los servicios, historial de servicios, mensajes y calificaciones.</li>
+    <li>Los datos biométricos (rostro) son <b>datos sensibles</b>: al aceptar das tu <b>consentimiento expreso</b> para usarlos solo para verificar tu identidad y prevenir suplantaciones y fraudes. Se guardan en almacenamiento privado al que solo accede la administración.</li>
+    <li>Tu ubicación se comparte con la otra parte solo mientras hay un servicio en curso: el pasajero ve al conductor en viajes y envíos; el conductor ve al pasajero solo en viajes.</li>
+    <li>Conservamos los datos mientras tengas una cuenta y el tiempo que exija la ley o la atención de reclamos. No vendemos tus datos.</li>
+    <li>Puedes ejercer tus derechos de acceso, rectificación, actualización, eliminación, oposición, portabilidad y suspensión escribiendo a ${CORREO_SOPORTE}. También puedes acudir a la Superintendencia de Protección de Datos Personales.</li>
+  </ul>
+
+  <h4>8. Conducta y suspensión</h4>
+  <p>Está prohibido el acoso, la discriminación, la violencia, suplantar identidad, crear cuentas falsas o usar la app para actividades ilícitas. Podemos suspender o cerrar cuentas que incumplan estas condiciones o que acumulen reportes o cancelaciones abusivas.</p>
+
+  <h4>9. Cambios, ley aplicable y reclamos</h4>
+  <p>Podemos actualizar estas condiciones; te pediremos aceptar la nueva versión para seguir usando la app. Se rigen por las leyes de la República del Ecuador. Cualquier controversia se intentará resolver primero por diálogo o mediación y, de no lograrse, ante los jueces competentes de Quito.</p>`;
+
 function modalPoliticas() {
-  modal(`
-    <div class="grip"></div>
-    <div class="head">
-      <div class="grow">
-        <h2>Políticas de la Empresa</h2>
-        <div class="dim">Ruta — Términos y Condiciones</div>
+  modalTerminos(false);
+}
+/* obligatorio: se muestra al ingresar si no aceptó la versión vigente.
+   Devuelve true si acepta. */
+function modalTerminos(obligatorio) {
+  return new Promise(res => {
+    modal(`
+      <div class="grip"></div>
+      <div class="head">
+        <div class="grow"><h2>Términos y Condiciones</h2><div class="dim">Y Política de Privacidad de Ruta</div></div>
+        ${obligatorio ? '' : '<button class="back" id="pol-x" aria-label="Cerrar">✕</button>'}
       </div>
-      <button class="back" id="pol-x" aria-label="Cerrar">✕</button>
-    </div>
-    <div style="max-height:60vh;overflow-y:auto;padding-right:4px;font-size:13.5px;line-height:1.6;color:var(--text)">
-      <p><b>1. Responsable del Servicio:</b><br>
-      La plataforma y el servicio son administrados por <b>César Santana</b>. Para cualquier duda, consulta legal o soporte, comuníquese directamente al correo oficial: <a href="mailto:abulingo.help@gmail.com" style="color:var(--azul);text-decoration:underline">abulingo.help@gmail.com</a>.</p>
-      
-      <p><b>2. Tarifas y Precios:</b><br>
-      • <b>Viajes de pasajeros:</b> La carrera mínima reglamentaria es de $1.50 USD. El valor se calcula según distancia y tiempo con tarifas dinámicas en horarios pico y nocturnos.<br>
-      • <b>Envíos de paquetes:</b> Los precios son fijos y no negociables, garantizando transparencia inmediata.</p>
-
-      <p><b>3. Privacidad y Seguridad:</b><br>
-      Los datos personales, número de identidad y contacto se utilizan exclusivamente para verificación de seguridad y confianza durante el servicio.</p>
-
-      <p><b>4. Atención al Usuario:</b><br>
-      Nuestro canal de atención está disponible en Ayuda y Soporte o escribiendo a <a href="mailto:abulingo.help@gmail.com" style="color:var(--azul)">abulingo.help@gmail.com</a>.</p>
-    </div>
-    <button class="btn primary full" id="pol-cerrar" style="margin-top:16px">Entendido</button>
-  `);
-  $('#pol-x').onclick = cerrarModal;
-  $('#pol-cerrar').onclick = cerrarModal;
+      ${obligatorio ? '<div class="aviso" style="margin-bottom:10px">Actualizamos nuestras condiciones. Para seguir usando Ruta necesitas aceptarlas.</div>' : ''}
+      <div class="legal">${TEXTO_TERMINOS}</div>
+      ${obligatorio ? `
+        <label class="check"><input type="checkbox" id="pol-ok-chk"><span>Leí y acepto los Términos y Condiciones y la Política de Privacidad, incluido el tratamiento de mis datos biométricos.</span></label>
+        <button class="btn primary full" id="pol-aceptar" disabled>Aceptar y continuar</button>
+        <button class="btn ghost full" id="pol-salir">No acepto, cerrar sesión</button>`
+      : `<button class="btn primary full" id="pol-cerrar" style="margin-top:14px">Entendido</button>`}
+    `);
+    if (obligatorio) {
+      alCerrarModal = () => res(false);
+      $('#pol-ok-chk').onchange = e => { $('#pol-aceptar').disabled = !e.target.checked; };
+      $('#pol-aceptar').onclick = () => { alCerrarModal = null; res(true); cerrarModal(); };
+      $('#pol-salir').onclick = () => { alCerrarModal = null; res(false); cerrarModal(); };
+      $('#modal').onclick = null;   // no se cierra tocando fuera
+    } else {
+      alCerrarModal = () => res(false);
+      $('#pol-x').onclick = cerrarModal;
+      $('#pol-cerrar').onclick = cerrarModal;
+    }
+  });
 }
 
 function modalConfig() {
@@ -2015,6 +2456,7 @@ async function registrar() {
   if (pin.length !== 4) return toast('El PIN necesita 4 dígitos', 'bad');
   if (rol === 'conductor' && !normalizarPlaca($('#rg-placa').value.trim()))
     return toast('La placa va con tres letras y tres o cuatro números, como PBA-1234', 'bad');
+  if (!$('#rg-terminos').checked) return toast('Debes aceptar los Términos y Condiciones para crear tu cuenta', 'bad');
 
   const api = conectar();
   if (!api) return;
@@ -2047,7 +2489,7 @@ async function registrar() {
     }
 
     S.user = r.data.user;
-    await guardarPerfilNuevo({ nombre, cedula, celular, correo, rol });
+    await guardarPerfilNuevo({ nombre, cedula, celular, correo, rol, terminos: true });
     if (rol === 'conductor') {
       const veh = {
         placa: normalizarPlaca($('#rg-placa').value.trim()),
@@ -2060,7 +2502,8 @@ async function registrar() {
       catch (err) { toast('Cuenta creada, pero el vehículo no se guardó: ' + err.message, 'bad'); }
     }
     await cargarPerfil();
-    arrancarApp();
+    await arrancarApp();
+    flujoIdentidad(true);
   } catch (e) {
     await errorRegistro(e, correo);
   } finally {
@@ -2089,15 +2532,16 @@ async function errorRegistro(e, correo) {
 /* Crea la fila en perfiles. Nunca bloquea el registro si algo falla. */
 async function guardarPerfilNuevo(d) {
   const api = S.api;
+  const terminos = d.terminos ? { terminos_aceptados_en: new Date().toISOString(), terminos_version: TERMINOS_VERSION } : {};
   let { error } = await api.sb.from('perfiles').upsert({
     id: S.user.id, nombre: d.nombre, cedula: d.cedula || null,
-    celular: d.celular || null, correo: d.correo, rol: d.rol || 'pasajero'
+    celular: d.celular || null, correo: d.correo, rol: d.rol || 'pasajero', ...terminos
   }, { onConflict: 'id' });
   if (error && error.code === '23505') {
     toast('Esa cédula ya está registrada en otra cuenta, tu perfil quedó sin ese dato', 'bad');
     const r2 = await api.sb.from('perfiles').upsert({
       id: S.user.id, nombre: d.nombre, cedula: null,
-      celular: d.celular || null, correo: d.correo, rol: d.rol || 'pasajero'
+      celular: d.celular || null, correo: d.correo, rol: d.rol || 'pasajero', ...terminos
     }, { onConflict: 'id' });
     error = r2.error;
   }
@@ -2212,7 +2656,6 @@ async function cargarPerfil() {
   if (deCache) { S.vehiculo = null; return; }
   const v = await api.sb.from('vehiculos').select('*').eq('conductor_id', S.user.id).eq('activo', true).limit(1);
   S.vehiculo = (v.data && v.data[0]) || null;
-  if (!S.perfil.cedula || !S.perfil.celular) completarPerfil();
 }
 
 function completarPerfil() {
@@ -2240,7 +2683,11 @@ function completarPerfil() {
 /* ============================================================
    8. Estructura de la app
    ============================================================ */
-function arrancarApp() {
+async function arrancarApp() {
+  /* El arranque puede llegar dos veces (getSession y onAuthStateChange):
+     la segunda no hace nada, si no se duplicaban suscripciones y avisos. */
+  if (!S.user || S.arrancadoPara === S.user.id) return;
+  S.arrancadoPara = S.user.id;
   $('#loading').classList.add('hidden');
   $('#auth').classList.add('hidden');
   $('#app').classList.remove('hidden');
@@ -2251,11 +2698,205 @@ function arrancarApp() {
   setVista('inicio');
   /* En segundo plano: atajos guardados, destinos recientes y soporte.
      Cada uno repinta solo si el usuario sigue en la pantalla que los usa. */
-  const repintar = () => { if (S.vista === 'inicio' && S.paso === 'form') render(); };
+  const repintar = () => { if (S.vista === 'inicio' && S.paso === 'form' && !S.solicitud) render(); };
   cargarLugares().then(repintar);
   cargarRecientes().then(repintar);
   escucharSoporte();
   pedirAvisos();
+  vigilarPlazos();
+  await restaurarServicios();
+  if (S.perfil && !S.perfil.desdeCache && S.perfil.terminos_version !== TERMINOS_VERSION) {
+    if (await modalTerminos(true)) {
+      try { await S.api.aceptarTerminos(); toast('Gracias, términos aceptados'); }
+      catch (e) { toast(explicarError(e, 'aceptarTerminos'), 'bad'); }
+    } else {
+      toast('Para usar Ruta necesitas aceptar los términos', 'bad');
+      return cerrarSesion();
+    }
+  }
+  if (S.perfil && !S.perfil.desdeCache && (!S.perfil.cedula || !S.perfil.celular)) completarPerfil();
+}
+
+/* Lo que hacía falta: al cargar la página o reabrir la app se pregunta a
+   la base qué servicios siguen activos y se vuelve a ellos, en vez de
+   arrancar siempre en el formulario vacío como si no hubiera nada. */
+async function restaurarServicios() {
+  if (!S.api || !S.user) return;
+  try { S.activos = await S.api.misActivos(S.modo); } catch (e) { S.activos = []; }
+  S.solicitud = null;
+  if (S.modo === 'conductor') {
+    S.paso = 'solicitudes';
+    try {
+      if (await S.api.estabaEnLinea() && estadoConductor().ok) {
+        S.enLinea = true; pintarTop(); escucharCercanas();
+      }
+    } catch (e) {}
+  } else if (S.activos.length === 1) {
+    enfocar(S.activos[0], true);
+  } else if (S.activos.length) {
+    S.paso = 'pedidos';
+  }
+  escucharMisServicios();
+  sincronizarSeguimiento();
+  mapa.firma = null;
+  render();
+  if (S.activos.length) {
+    const n = S.activos.length;
+    toast(S.modo === 'conductor'
+      ? `Tienes ${n} servicio${n > 1 ? 's' : ''} en curso`
+      : `Tienes ${n} pedido${n > 1 ? 's' : ''} en curso`);
+  }
+}
+
+/* ---------- el monitor de mis servicios ----------
+   Una sola suscripción, siempre viva mientras hay sesión, compara la lista
+   nueva con la anterior y de ahí salen los sonidos y avisos: conductor
+   asignado, en camino, entregado, cancelado. */
+function escucharMisServicios() {
+  unsub(S.subActivos);
+  let primera = true;
+  const modo = S.modo;
+  S.subActivos = S.api.onMisServicios(modo, async lista => {
+    if (modo !== S.modo) return;
+    const antes = new Map(S.activos.map(s => [s.id, s]));
+    const ahora = new Map(lista.map(s => [s.id, s]));
+    const firmaAntes = S.activos.map(s => s.id + s.estado).join();
+    S.activos = lista;
+    if (!primera) {
+      lista.forEach(s => {
+        const a = antes.get(s.id);
+        if (!a) alAparecer(s);
+        else if (a.estado !== s.estado) alCambiar(a, s);
+      });
+      for (const [id, a] of antes) if (!ahora.has(id)) await alSalir(a);
+    }
+    primera = false;
+    if (S.solicitud) {
+      const f = ahora.get(S.solicitud.id);
+      if (f) S.solicitud = { ...S.solicitud, ...f };
+    }
+    sincronizarSeguimiento();
+    if (firmaAntes !== S.activos.map(s => s.id + s.estado).join() && S.vista === 'inicio') render();
+  });
+}
+const nombreCorto = n => (n || '').split(' ')[0] || '';
+const queEs = s => s.tipo === 'paquete' ? 'envío' : 'viaje';
+const propio = (s, estado) => S.propios.has(s.id + ':' + estado);
+
+function alAparecer(s) {
+  if (S.modo === 'conductor') {
+    if (S.ofertaEnviada && S.ofertaEnviada.solicitud_id === s.id) S.ofertaEnviada = null;
+    S.cercanas = S.cercanas.filter(x => x.id !== s.id);
+    avisar('¡Servicio asignado!', `${nombreCorto(s.pasajero_nombre) || 'Un pasajero'} te asignó su ${queEs(s)} · ${money(s.precio_final || s.precio_ofrecido)}`, 'aceptado');
+  }
+}
+function alCambiar(a, s) {
+  if (propio(s, s.estado)) return;
+  if (S.modo === 'pasajero') {
+    if (a.estado === 'buscando' && EN_CURSO.includes(s.estado)) {
+      avisar('¡Conductor asignado!', `${nombreCorto(s.conductor_nombre) || 'Un conductor'} tomó tu ${queEs(s)}${s.placa ? ' · ' + s.placa : ''}`, 'aceptado');
+    } else if (s.estado === 'en_camino') {
+      avisar('Tu conductor va en camino', s.tipo === 'paquete' ? 'Va a recoger tu paquete' : 'Prepárate para salir', 'nueva');
+    } else if (s.estado === 'a_bordo') {
+      avisar(s.tipo === 'paquete' ? 'Paquete recogido' : 'Viaje en curso',
+        s.tipo === 'paquete' ? `Va rumbo a ${s.destinatario || 'la entrega'}` : 'Rumbo a tu destino', 'mensaje');
+    }
+  }
+}
+async function alSalir(a) {
+  let fin = null;
+  try { fin = await S.api.unaSolicitud(a.id); } catch (e) {}
+  fin = { ...a, ...(fin || {}) };
+  if (S.solicitud && S.solicitud.id === a.id) resetViaje();
+  if (fin.estado === 'finalizado') {
+    if (!propio(fin, 'finalizado')) {
+      avisar(fin.tipo === 'paquete' ? 'Envío entregado' : 'Viaje finalizado',
+        fin.tipo === 'paquete' ? `Tu paquete llegó a ${fin.destinatario || 'su destino'}` : 'Gracias por viajar con Ruta', 'mensaje');
+    }
+    if (S.modo === 'pasajero' || fin.tipo === 'viaje') S.porCalificar.push(fin);
+  } else if (fin.estado === 'cancelado' && !propio(fin, 'cancelado')) {
+    avisar(`${fin.tipo === 'paquete' ? 'Envío' : 'Viaje'} cancelado`,
+      fin.motivo_cancelacion || 'La otra parte canceló el servicio', 'mensaje');
+  }
+}
+
+/* Qué hay que seguir en vivo según los servicios activos: posición de los
+   conductores (pasajero), del pasajero de un viaje (conductor), chats y GPS
+   propio. Se llama cada vez que cambia la lista. */
+function sincronizarSeguimiento() {
+  const act = S.activos;
+  /* chats: uno por servicio activo */
+  const ids = new Set(act.filter(s => EN_CURSO.includes(s.estado)).map(s => s.id));
+  Object.keys(S.subMsgs).forEach(id => { if (!ids.has(id)) { unsub(S.subMsgs[id]); delete S.subMsgs[id]; } });
+  ids.forEach(id => {
+    if (!S.subMsgs[id]) S.subMsgs[id] = S.api.onMensajes(id, m => alRecibirMensajes(id, m));
+  });
+
+  if (S.modo === 'pasajero') {
+    const conds = [...new Set(act.filter(s => s.conductor_id && EN_CURSO.includes(s.estado)).map(s => s.conductor_id))];
+    Object.keys(S.subPosCond).forEach(cid => {
+      if (!conds.includes(cid)) { unsub(S.subPosCond[cid]); delete S.subPosCond[cid]; delete S.posCond[cid]; }
+    });
+    mapa.limpiarCoches(conds);
+    conds.forEach(cid => {
+      if (S.subPosCond[cid]) return;
+      const s = act.find(x => x.conductor_id === cid);
+      S.subPosCond[cid] = S.api.onPosConductor(cid, p => {
+        S.posCond[cid] = p;
+        mapa.coche(cid, p, `${nombreCorto(s && s.conductor_nombre)} ${s && s.placa ? '· ' + s.placa : ''}`);
+        if (S.solicitud && S.solicitud.conductor_id === cid) S.posConductor = p;
+        pintarEta();
+      });
+    });
+    unsub(S.subPosPax); S.subPosPax = null;
+  } else {
+    /* El conductor ve al pasajero solo en viajes, nunca en envíos. */
+    const v = act.find(s => s.tipo === 'viaje' && ['aceptado', 'en_camino'].includes(s.estado));
+    if (!v) { unsub(S.subPosPax); S.subPosPax = null; S.posPasajero = null; mapa.limpiarPasajero(); }
+    else if (!S.subPosPax || S.paxSeguido !== v.pasajero_id) {
+      unsub(S.subPosPax);
+      S.paxSeguido = v.pasajero_id;
+      S.subPosPax = S.api.onPosPasajero(v.pasajero_id, p => { S.posPasajero = p; mapa.pasajero(p); });
+    }
+  }
+  const gps = S.modo === 'conductor' ? (S.enLinea || act.length > 0) : act.some(s => s.tipo === 'viaje' && EN_CURSO.includes(s.estado));
+  seguirMiGps(gps || (S.modo === 'pasajero' && act.length > 0));
+}
+
+/* Plazo de 1 hora para entregar un envío desde que el conductor lo acepta.
+   Se revisa cada 20 s: aviso fuerte a los 15 min y otro al vencerse. */
+function plazoDe(s) {
+  if (s.tipo !== 'paquete' || !s.aceptado_en || s.estado === 'finalizado') return null;
+  const limite = s.entrega_limite ? new Date(s.entrega_limite).getTime()
+    : new Date(s.aceptado_en).getTime() + PLAZO_ENVIO_MIN * 60000;
+  return Math.round((limite - Date.now()) / 60000);
+}
+function chipPlazo(s) {
+  const m = plazoDe(s);
+  if (m == null) return '';
+  const cls = m < 0 ? 'tarde' : m <= 15 ? 'poco' : '';
+  const txt = m < 0 ? `Atrasado ${-m} min` : `Entregar en ${m} min`;
+  return `<span class="plazo ${cls}" data-plazo="${s.id}">${IC.reloj('sm')}${txt}</span>`;
+}
+function vigilarPlazos() {
+  clearInterval(vigilarPlazos.t);
+  vigilarPlazos.t = setInterval(() => {
+    S.activos.forEach(s => {
+      const m = plazoDe(s);
+      if (m == null) return;
+      const el = document.querySelector(`[data-plazo="${s.id}"]`);
+      if (el) el.outerHTML = chipPlazo(s);
+      if (S.modo !== 'conductor') return;
+      const ya = S.avisosPlazo[s.id] || '';
+      if (m <= 0 && !ya.includes('tarde')) {
+        S.avisosPlazo[s.id] = ya + 'tarde';
+        avisar('Envío atrasado', `Ya pasó la hora para entregar a ${s.destinatario || 'su destino'}. Entrégalo cuanto antes`, 'nueva');
+      } else if (m <= 15 && m > 0 && !ya.includes('15')) {
+        S.avisosPlazo[s.id] = ya + '15';
+        avisar('Te quedan ' + m + ' minutos', `Entrega el envío a ${s.destinatario || 'su destino'} antes de que se venza el plazo`, 'nueva');
+      }
+    });
+  }, 20000);
 }
 
 function ubicarme() {
@@ -2301,7 +2942,36 @@ function estadoConductor() {
     return { ok: false, motivo: 'Registra tu vehículo para poder recibir solicitudes.', sinVehiculo: true };
   if (!S.vehiculo.aprobado)
     return { ok: false, motivo: 'Tu vehículo está en revisión. Un administrador debe aprobarlo desde el panel.' };
+  if (!cuentaActiva())
+    return { ok: false, motivo: 'Tu cuenta está inactiva: envía tu foto y la de tu cédula.', identidad: true };
+  if (!verificadoHoy())
+    return { ok: false, motivo: 'Verifica tu identidad de hoy para empezar a trabajar.', verificar: true };
   return { ok: true };
+}
+const cuentaActiva = () => !!(S.perfil && S.perfil.cuenta_activa);
+const diaQuito = d => fechaQuito(new Date(d)).toDateString();
+const verificadoHoy = () => !!(S.perfil && S.perfil.verificado_en && diaQuito(S.perfil.verificado_en) === diaQuito(Date.now()));
+
+/* Tarjeta que reemplaza al formulario mientras la cuenta no esté lista. */
+function tarjetaCandado() {
+  if (!S.perfil || S.perfil.desdeCache) return '';
+  if (!cuentaActiva()) return `
+    <div class="candado">
+      <h3>Tu cuenta está inactiva</h3>
+      <p>Para pedir o realizar servicios necesitamos una foto de tu rostro y una de la parte frontal de tu cédula. Es para la seguridad de todos.</p>
+      <button class="btn primary full" data-candado="identidad">${IC.escudo('sm')} Activar mi cuenta</button>
+    </div>`;
+  if (!verificadoHoy()) return `
+    <div class="candado">
+      <h3>Verifica tu identidad de hoy</h3>
+      <p>Una vez al día te pedimos una foto sonriendo, que se compara con la de tu registro. Toma unos segundos.</p>
+      <button class="btn primary full" data-candado="verificar">${IC.escudo('sm')} Verificarme ahora</button>
+    </div>`;
+  return '';
+}
+function armarCandado() {
+  $$('#sheetbody [data-candado]').forEach(b => b.onclick = () =>
+    b.dataset.candado === 'identidad' ? flujoIdentidad(false) : flujoVerificacion());
 }
 
 /* Centra el mapa: el conductor en su GPS, el pasajero en su punto de recogida */
@@ -2345,26 +3015,54 @@ function pintarTop() {
   p.title = S.enLinea ? 'Desconectarme' : 'Conectarme';
   p.setAttribute('aria-label', p.title);
   $('#avatar').classList.toggle('hidden', esConductor);
+  const mi = $('#menu-inicio');
+  if (mi) mi.textContent = esConductor ? 'Trabajar' : 'Pedir viaje';
 }
 
 function setVista(v) {
   S.vista = v;
-  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === v));
+  $$('#nav button, #menu-top button').forEach(b => b.classList.toggle('on', b.dataset.vista === v));
   render();
+}
+function armarMenuTop() {
+  const brand = $('#brand-menu');
+  const menu = $('#menu-top');
+  if (!brand || !menu) return;
+  const abrir = v => {
+    menu.classList.toggle('hidden', !v);
+    brand.classList.toggle('abierto', v);
+    brand.setAttribute('aria-expanded', String(v));
+  };
+  const caret = brand.querySelector('.caret');
+  if (caret && leerLocal('menu_visto', '0') !== '1') caret.classList.add('invita');
+  brand.addEventListener('click', () => {
+    abrir(menu.classList.contains('hidden'));
+    if (caret) caret.classList.remove('invita');
+    guardarLocal('menu_visto', '1');
+  });
+  brand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(menu.classList.contains('hidden')); } });
+  document.addEventListener('click', e => {
+    if (menu.classList.contains('hidden')) return;
+    if (!menu.contains(e.target) && !brand.contains(e.target)) abrir(false);
+  });
+  $$('#menu-top button[data-vista]').forEach(b => b.onclick = () => { setVista(b.dataset.vista); abrir(false); });
 }
 
 async function setModo(m) {
   if (S.modo === m) return;
-  limpiarSubs();
+  if (S.activos.length && !await confirmar('Tienes servicios en curso',
+      `Si cambias a modo ${m} dejarás de ver en pantalla los servicios que tienes como ${S.modo}. Siguen activos y vuelven al regresar.`, 'Cambiar igual')) return;
+  if (S.modo === 'conductor' && S.enLinea) { S.enLinea = false; try { await S.api.setEnLinea(false, S.pos); } catch (e) {} }
+  detenerTodo();
   S.modo = m;
-  S.solicitud = null; S.ofertas = []; S.ofertaEnviada = null; S.siguiente = null;
+  S.solicitud = null; S.ofertas = []; S.ofertaEnviada = null; S.siguiente = null; S.cercanas = [];
   S.paso = m === 'conductor' ? 'solicitudes' : 'form';
   mapa.limpiar();
   try { await S.api.guardarPerfil({ rol: m }); } catch (e) { toast('No se pudo cambiar el rol: ' + e.message, 'bad'); }
-  if (m === 'conductor' && S.enLinea) escucharCercanas();
   if (m === 'pasajero') ubicarme();
   mapa.pintarTeselas();
   pintarTop(); setVista('inicio');
+  await restaurarServicios();
 }
 
 async function alternarLinea() {
@@ -2373,6 +3071,8 @@ async function alternarLinea() {
     if (!e.ok) {
       toast(e.motivo, 'bad');
       if (e.sinVehiculo) modalVehiculo();
+      if (e.identidad) flujoIdentidad(false);
+      if (e.verificar) flujoVerificacion();
       return;
     }
   }
@@ -2380,15 +3080,41 @@ async function alternarLinea() {
   pintarTop();
   try { await S.api.setEnLinea(S.enLinea, S.pos); } catch (e) {}
   if (S.enLinea) { escucharCercanas(); toast('Estás en línea, te llegarán solicitudes'); }
-  else { limpiarSubs(); S.cercanas = []; toast('Fuera de línea'); }
+  else { detenerCercanas(); S.cercanas = []; toast('Fuera de línea'); }
+  sincronizarSeguimiento();
+  mapa.firma = null;
   render();
 }
 
+/* Espejo de conductor_puede_tomar() en la base: solo se muestran las
+   solicitudes para las que el conductor todavía tiene cupo. */
+function cupoPara(s) {
+  const act = S.activos.filter(x => EN_CURSO.includes(x.estado));
+  if (s.tipo === 'viaje') return !act.some(x => x.tipo === 'viaje');
+  const u = s.urgencia || 'urgente';
+  if (u === 'urgente') return !act.some(x => x.tipo === 'paquete' && (x.urgencia || 'urgente') === 'urgente');
+  if (u === '2h' || u === '1h') return act.filter(x => x.tipo === 'paquete' && ['1h', '2h'].includes(x.urgencia)).length < MAX_ENVIOS_2H;
+  return true;
+}
+function textoCupo() {
+  const act = S.activos;
+  const v = act.filter(x => x.tipo === 'viaje').length;
+  const u = act.filter(x => x.tipo === 'paquete' && (x.urgencia || 'urgente') === 'urgente').length;
+  const d = act.filter(x => x.tipo === 'paquete' && ['1h', '2h'].includes(x.urgencia)).length;
+  const c = act.filter(x => x.tipo === 'paquete' && x.urgencia === '5h').length;
+  return `<div class="cupo"><span class="chipdato">${IC.carro('sm')}Viajes ${v}/1</span>
+    <span class="chipdato">${IC.rayo('sm')}Urgentes ${u}/1</span>
+    <span class="chipdato">${IC.reloj('sm')}2 h ${d}/${MAX_ENVIOS_2H}</span>
+    <span class="chipdato">${IC.agenda('sm')}5 h ${c}/∞</span></div>`;
+}
+
 function escucharCercanas() {
-  limpiarSubs();
+  detenerCercanas();
   let primera = true;
-  S.subs.push(S.api.cercanas(lista => {
-    S.cercanas = lista.filter(s => s.pasajero_id !== S.user.id);
+  S.subCercanas = S.api.cercanas(lista => {
+    const mias = new Set(S.activos.map(s => s.id));
+    S.todasCercanas = lista.filter(s => s.pasajero_id !== S.user.id && !mias.has(s.id));
+    S.cercanas = S.todasCercanas.filter(cupoPara);
     /* Avisa solo de lo que no se había mostrado antes: el conductor
        casi nunca tiene la app abierta esperando a que algo aparezca. */
     const nuevas = S.cercanas.filter(s => !S.idsVistos.has(s.id));
@@ -2396,12 +3122,12 @@ function escucharCercanas() {
     if (!primera && nuevas.length) {
       const s = nuevas[0];
       const km = kmRuta(S.pos, { lat: s.origen_lat, lng: s.origen_lng });
-      avisar(`${s.tipo === 'paquete' ? 'Envío' : 'Viaje'} por ${money(s.precio_ofrecido)}`,
-        `A ${km} km de ti · ${s.origen_texto || ''}`);
+      avisar(`Nuevo ${s.tipo === 'paquete' ? 'envío' : 'viaje'} por ${money(s.precio_ofrecido)}`,
+        `A ${km} km de ti · ${s.origen_texto || ''}`, 'nueva');
     }
     primera = false;
-    if (S.paso === 'solicitudes' && S.vista === 'inicio') render();
-  }));
+    if (S.vista === 'inicio' && S.modo === 'conductor') render();
+  });
 }
 
 /* ============================================================
@@ -2421,13 +3147,15 @@ function escucharCercanas() {
    ------------------------------------------------------------------ */
 function firmaMapa() {
   const p = x => x ? (+x.lat).toFixed(5) + ',' + (+x.lng).toFixed(5) : '-';
-  const s = S.solicitud;
-  if (s && !['finalizado', 'cancelado'].includes(s.estado)) return [S.modo, 'sv', s.id, s.estado].join('|');
+  const act = S.activos.map(s => s.id + s.estado).join(',');
   if (S.modo === 'conductor') {
-    const c = S.cercanas[S.cercanaIdx];
-    return ['cond', S.enLinea ? 'on' : 'off', c ? c.id : 'vacio'].join('|');
+    const c = S.enLinea ? S.cercanas[S.cercanaIdx] : null;
+    return ['cond', S.enLinea ? 'on' : 'off', act, c ? c.id : 'vacio'].join('|');
   }
-  return ['pas', S.paso === 'calificar' ? 'fin' : 'pide', p(S.origen), p(S.destino)].join('|');
+  const s = S.solicitud;
+  if (s && ACTIVOS.includes(s.estado)) return ['pas', 'sv', s.id, s.estado].join('|');
+  if (S.paso === 'pedidos') return ['pas', 'lista', act].join('|');
+  return ['pas', 'pide', p(S.origen), p(S.destino)].join('|');
 }
 
 async function sincronizarMapa() {
@@ -2440,24 +3168,33 @@ async function sincronizarMapa() {
 
   const s = S.solicitud;
 
-  /* 1. Servicio en curso: el conductor ve su ruta rotulada; el pasajero
-        ve recogida, destino y el carro acercandose. */
-  if (s && !['finalizado', 'cancelado'].includes(s.estado)) {
+  /* 1. Conductor con servicios en curso: todas sus paradas en orden, y la
+        solicitud que esté mirando para sumar, en naranja. */
+  if (S.modo === 'conductor' && S.activos.length) {
+    mapa.borrarRuta(); mapa.quitarPunto('a'); mapa.quitarPunto('b');
+    return mapa.dibujarRutaConductor(planificarParadas(), S.enLinea ? S.cercanas[S.cercanaIdx] : null);
+  }
+
+  /* 2. Pasajero con un pedido abierto: recogida, destino y el carro. */
+  if (s && ACTIVOS.includes(s.estado) && S.modo === 'pasajero') {
     const A = { lat: +s.origen_lat, lng: +s.origen_lng };
     const B = { lat: +s.destino_lat, lng: +s.destino_lng };
-    if (S.modo === 'conductor') return mapa.dibujarCarreraDidi(S.pos, s);
     mapa.limpiarDidi();
     const km = +s.distancia_km || kmRuta(A, B);
     mapa.etiquetarViaje(A, B, null, { km, min: +s.duracion_min || minRuta(km) });
-    mapa.encuadrar([A, B, S.posConductor]);
+    const pc = S.posCond[s.conductor_id];
+    mapa.encuadrar([A, B, pc]);
     await mapa.ruta(A, B);
-    if (vigente()) mapa.encuadrarRuta([S.posConductor]);
+    if (vigente()) mapa.encuadrarRuta([pc]);
     return;
   }
 
-  /* 2. Conductor revisando las solicitudes de la zona. */
+  /* 3. Pasajero viendo la lista de sus pedidos. */
+  if (S.modo === 'pasajero' && S.paso === 'pedidos') return mapa.dibujarPedidos(S.activos);
+
+  /* 4. Conductor revisando las solicitudes de la zona. */
   if (S.modo === 'conductor') {
-    const c = S.cercanas[S.cercanaIdx];
+    const c = S.enLinea ? S.cercanas[S.cercanaIdx] : null;
     if (!c) {
       mapa.limpiarDidi(); mapa.borrarRuta();
       mapa.quitarPunto('a'); mapa.quitarPunto('b');
@@ -2493,9 +3230,19 @@ async function sincronizarMapa() {
   }
 }
 
+/* Mientras la pantalla sea la misma (datos que se refrescan solos) se
+   conserva el desplazamiento; al cambiar de pantalla se vuelve arriba. */
+function pantallaActual() {
+  return [S.vista, S.modo, S.eligiendo || '', S.paso, S.solicitud ? S.solicitud.id + S.solicitud.estado : '', S.porCalificar.length].join('|');
+}
 function render() {
   const sh = $('#sheetbody');
-  $('#sheet').scrollTop = 0;
+  const hoja = $('#sheet');
+  const clave = pantallaActual();
+  const scroll = clave === render.ultima ? hoja.scrollTop : 0;
+  render.ultima = clave;
+  requestAnimationFrame(() => { hoja.scrollTop = scroll; });
+  hoja.scrollTop = scroll;
   if (S.eligiendo) return pintarSelector(sh);
   $('#cross').classList.add('hidden');
   if (S.vista === 'actividad') return pintarActividad(sh);
@@ -2671,10 +3418,12 @@ function otroLado(s) {
     ? { nombre: s.pasajero_nombre || 'Pasajero', tel: s.pasajero_tel || s.destinatario_tel || '' }
     : { nombre: s.conductor_nombre || 'Conductor', tel: s.conductor_tel || '' };
 }
+const sinLeer = id => Math.max(0, (S.msgs[id] || []).filter(m => m.emisor_id === 'otro').length - (S.leidosPor[id] || 0));
 function tarjetaMensajes(s) {
   const o = otroLado(s);
-  const ultimo = S.mensajes.length ? S.mensajes[S.mensajes.length - 1].texto : 'Escribe si necesitas coordinar algo';
-  const nuevos = Math.max(0, S.mensajes.filter(m => m.emisor_id === 'otro').length - S.leidos);
+  const lista = S.msgs[s.id] || [];
+  const ultimo = lista.length ? lista[lista.length - 1].texto : 'Escribe si necesitas coordinar algo';
+  const nuevos = sinLeer(s.id);
   return `<div class="card" style="display:flex;align-items:center;gap:12px;margin-top:10px">
     <div class="icocaja">${IC.chat()}</div>
     <button class="grow" id="abrir-chat" style="text-align:left;min-width:0">
@@ -2685,8 +3434,10 @@ function tarjetaMensajes(s) {
     <span class="dim" aria-hidden="true" style="font-size:18px;line-height:1">›</span>
   </div>`;
 }
-function abrirChat() {
-  const s = S.solicitud; if (!s) return;
+function abrirChat(sArg) {
+  const s = sArg || S.solicitud; if (!s) return;
+  S.chatId = s.id;
+  if (!S.subMsgs[s.id]) S.subMsgs[s.id] = S.api.onMensajes(s.id, m => alRecibirMensajes(s.id, m));
   const o = otroLado(s);
   const rapidas = S.modo === 'conductor'
     ? ['Estoy llegando', 'Ya estoy afuera', 'Dame 2 minutos']
@@ -2708,80 +3459,42 @@ function abrirChat() {
       <button class="btn sm primary" id="msg-modal-ok">Enviar</button></div>
     <div class="row" style="margin-top:10px">${rapidas.map(t => `<button class="btn sm" data-rap="${esc(t)}">${esc(t)}</button>`).join('')}</div>`);
   pintarChat();
+  alCerrarModal = () => { S.chatId = null; if (S.vista === 'inicio') render(); };
   $('#ch-x').onclick = cerrarModal;
   $('#msg-modal-ok').onclick = enviarMsg;
   $('#msg-modal').onkeydown = e => { if (e.key === 'Enter') enviarMsg(); };
-  $$('#modal [data-rap]').forEach(b => b.onclick = () => S.api.enviarMensaje(s.id, b.dataset.rap));
+  $$('#modal [data-rap]').forEach(b => b.onclick = () => S.api.enviarMensaje(s.id, b.dataset.rap).then(() => sonido('enviado')));
 }
 function pintarChat() {
-  const c = $('#chat-modal'); if (!c) return;
-  c.innerHTML = S.mensajes.length
-    ? S.mensajes.map(m => `<div class="msg ${m.emisor_id === 'yo' ? 'mine' : ''}">${esc(m.texto)}</div>`).join('')
+  const c = $('#chat-modal'); if (!c || !S.chatId) return;
+  const lista = S.msgs[S.chatId] || [];
+  c.innerHTML = lista.length
+    ? lista.map(m => `<div class="msg ${m.emisor_id === 'yo' ? 'mine' : ''}">${esc(m.texto)}<span class="hora">${horaCorta(m.creado_en)}</span></div>`).join('')
     : `<div class="dim" style="padding:6px 0">Escribe si necesitas coordinar algo.</div>`;
   c.scrollTop = c.scrollHeight;
-  S.leidos = S.mensajes.filter(m => m.emisor_id === 'otro').length;
+  S.leidosPor[S.chatId] = lista.filter(m => m.emisor_id === 'otro').length;
 }
-function alRecibirMensajes(m) {
-  const antes = S.mensajes.length;
-  S.mensajes = m;
+function alRecibirMensajes(id, m) {
+  const antes = (S.msgs[id] || null);
+  S.msgs[id] = m;
   const ult = m[m.length - 1];
-  if (m.length > antes && ult && ult.emisor_id === 'otro' && !$('#chat-modal')) toast('Mensaje: ' + ult.texto);
-  pintarChat();
-  if (S.paso === 'viaje') render();
+  if (antes === null) { S.leidosPor[id] = S.leidosPor[id] != null ? S.leidosPor[id] : m.filter(x => x.emisor_id === 'otro').length; }
+  else if (m.length > antes.length && ult && ult.emisor_id === 'otro') {
+    const s = S.activos.find(x => x.id === id);
+    const quien = s ? nombreCorto(otroLado(s).nombre) : '';
+    if (S.chatId !== id) avisar(`Mensaje de ${quien || 'tu servicio'}`, ult.texto, 'mensaje');
+    else { vibrar([40, 50, 40]); sonido('mensaje'); }
+  }
+  if (S.chatId === id) pintarChat();
+  if (antes && m.length !== antes.length && S.vista === 'inicio' && !$('#modal:not(.hidden)')) render();
 }
 async function enviarMsg() {
-  const i = $('#msg-modal'); if (!i) return;
+  const i = $('#msg-modal'); if (!i || !S.chatId) return;
   const t = i.value.trim();
   if (!t) return;
   i.value = '';
-  await S.api.enviarMensaje(S.solicitud.id, t);
-}
-
-/* ============================================================
-   Alto de la hoja inferior
-   Tres posiciones para que el mapa y el contenido se repartan la
-   pantalla según lo que se esté haciendo. Se arrastra el asa, se
-   toca para pasar a la siguiente, o se usan las flechas.
-   ============================================================ */
-const ALTOS = ['compacta', 'media', 'expandida'];
-function altoHoja(a) {
-  S.alto = ALTOS.includes(a) ? a : 'media';
-  guardarLocal('alto', S.alto);
-  const sh = $('#sheet');
-  sh.classList.toggle('compacta', S.alto === 'compacta');
-  sh.classList.toggle('expandida', S.alto === 'expandida');
-  const asa = $('#asa');
-  const arriba = S.alto === 'expandida';
-  asa.setAttribute('aria-expanded', String(arriba));
-  asa.setAttribute('aria-label', arriba ? 'Bajar el panel y ver el mapa' : 'Subir el panel y ver todos los detalles');
-  const tag = $('#asa .tag');
-  if (tag) tag.innerHTML = arriba
-    ? IC.abajo('sm') + '<span>Ver el mapa</span>'
-    : IC.arriba('sm') + '<span>Ver detalles</span>';
-  clearTimeout(altoHoja.t);
-  altoHoja.t = setTimeout(() => mapa.reencuadrar(), 300);
-}
-function armarAsa() {
-  const asa = $('#asa');
-  asa.innerHTML = '<span class="barra"></span><span class="tag"></span>';
-  let y0 = null;
-  asa.addEventListener('pointerdown', e => { y0 = e.clientY; try { asa.setPointerCapture(e.pointerId); } catch (x) {} });
-  asa.addEventListener('pointerup', e => {
-    if (y0 === null) return;
-    const dy = e.clientY - y0; y0 = null;
-    /* Arrastrar da las tres alturas; un toque salta directo entre el
-       panel abierto del todo y el panel mínimo, que es lo que se hace
-       el 90% de las veces. */
-    if (dy < -24) altoHoja('expandida');
-    else if (dy > 24) altoHoja('compacta');
-    else altoHoja(S.alto === 'expandida' ? 'compacta' : 'expandida');
-  });
-  asa.addEventListener('pointercancel', () => { y0 = null; });
-  asa.addEventListener('keydown', e => {
-    if (e.key === 'ArrowUp')   { e.preventDefault(); altoHoja('expandida'); }
-    if (e.key === 'ArrowDown') { e.preventDefault(); altoHoja('compacta'); }
-  });
-  altoHoja(S.alto);
+  await S.api.enviarMensaje(S.chatId, t);
+  sonido('enviado');
 }
 
 /* ============================================================
@@ -2953,10 +3666,10 @@ function sinLeerDe(t) {
   return +(S.esSoporte && S.bandeja === 'todos' ? t.sin_leer_agente : t.sin_leer_usuario) || 0;
 }
 function pintarBadgeSoporte() {
-  const b = $('#nav-sop');
-  if (!b) return;
-  b.textContent = S.sinLeerSop > 9 ? '9+' : String(S.sinLeerSop);
-  b.classList.toggle('hidden', !S.sinLeerSop);
+  $$('#nav-sop, #menu-sop').forEach(b => {
+    b.textContent = S.sinLeerSop > 9 ? '9+' : String(S.sinLeerSop);
+    b.classList.toggle('hidden', !S.sinLeerSop);
+  });
 }
 
 /* Escucha permanente: mantiene el contador del menú al día y avisa
@@ -2971,10 +3684,7 @@ function escucharSoporte() {
     pintarBadgeSoporte();
     if (S.sinLeerSop > antes && !S.ticket) {
       const t = lista.find(x => +(S.esSoporte ? x.sin_leer_agente : x.sin_leer_usuario) > 0);
-      if (t) {
-        toast('Soporte: ' + (t.ultimo_texto || 'tienes una respuesta'));
-        avisar('Soporte de Ruta', t.ultimo_texto || 'Tienes una respuesta nueva');
-      }
+      if (t) avisar('Soporte de Ruta', t.ultimo_texto || 'Tienes una respuesta nueva', 'mensaje');
     }
     if (S.vista === 'ayuda') render();
   });
@@ -3116,13 +3826,13 @@ function abrirTicket(t) {
     const txt = i.value.trim();
     if (!txt) return;
     i.value = '';
-    try { await S.api.enviarSoporte(t.id, txt); }
+    try { await S.api.enviarSoporte(t.id, txt); sonido('enviado'); }
     catch (e) { toast(e.message || 'No se pudo enviar', 'bad'); i.value = txt; }
   };
   $('#sp-x').onclick = cerrarModal;
   $('#sup-ok').onclick = enviar;
   $('#sup-in').onkeydown = e => { if (e.key === 'Enter') enviar(); };
-  $$('#modal [data-rap]').forEach(b => b.onclick = () => S.api.enviarSoporte(t.id, b.dataset.rap).catch(() => {}));
+  $$('#modal [data-rap]').forEach(b => b.onclick = () => S.api.enviarSoporte(t.id, b.dataset.rap).then(() => sonido('enviado')).catch(() => {}));
   const proc = $('#sp-proc');
   if (proc) proc.onclick = async () => {
     try { await S.api.estadoTicket(t.id, 'en_proceso'); toast('Marcado en proceso'); } catch (e) { toast(e.message, 'bad'); }
@@ -3136,6 +3846,8 @@ function abrirTicket(t) {
   limpiarSupSubs();
   S.supSubs.push(S.api.onSoporte(t.id, ms => {
     const nuevos = ms.length > S.supMsgs.length;
+    const ult = ms[ms.length - 1];
+    if (nuevos && ult && ult.emisor_id !== S.user.id) { vibrar([40, 50, 40]); sonido('mensaje'); }
     S.supMsgs = ms;
     pintarSupChat();
     if (nuevos) S.api.marcarLeidos(t.id, agente).catch(() => {});
@@ -3178,32 +3890,38 @@ function seguirMiGps(on) {
     mapa.yo(S.pos);
     alMoverse.forEach(f => { try { f(S.pos); } catch (e) {} });
     const ahora = Date.now();
-    if (ahora - ultimo > 8000) { ultimo = ahora; S.api.publicarPos(S.pos).catch(() => {}); }
+    if (ahora - ultimo > 8000) {
+      ultimo = ahora;
+      if (S.modo === 'conductor') S.api.publicarPos(S.pos).catch(() => {});
+      /* El pasajero comparte su ubicación solo con un viaje en curso: en
+         un envío no hay a quién recoger, así que no se publica. */
+      else if (S.activos.some(s => s.tipo === 'viaje' && EN_CURSO.includes(s.estado)))
+        S.api.publicarPosPasajero(S.pos).catch(() => {});
+    }
   }, () => {}, { enableHighAccuracy: true, maximumAge: 5000 });
 }
 
-function seguirConductor(s) {
-  if (S.modo !== 'pasajero' || !s.conductor_id) return;
-  if (S.subPos) { try { S.subPos(); } catch (e) {} S.subPos = null; }
-  S.subPos = S.api.onPosConductor(s.conductor_id, p => {
-    const antes = S.posConductor;
-    S.posConductor = p;
-    if (antes && (antes.lat !== p.lat || antes.lng !== p.lng)) mapa.mover(antes, p, 1400);
-    else mapa.conductor(p);
-    pintarEta();
-  });
-}
+/* Distancia del carro al punto que toca, en cada servicio del pasajero.
+   Suena una sola vez cuando el conductor llega a la recogida. */
 function pintarEta() {
-  const el = $('#eta');
-  const s = S.solicitud;
-  if (!el || !s || !S.posConductor) return;
-  const meta = s.estado === 'a_bordo'
-    ? { lat: +s.destino_lat, lng: +s.destino_lng }
-    : { lat: +s.origen_lat, lng: +s.origen_lng };
-  const km = kmRuta(S.posConductor, meta);
-  el.textContent = km < .2
-    ? (s.estado === 'a_bordo' ? 'Están llegando al destino' : 'Tu conductor ya está afuera')
-    : `A ${km} km · unos ${minRuta(km)} min`;
+  S.activos.forEach(s => {
+    const pc = S.posCond[s.conductor_id];
+    if (!pc || !EN_CURSO.includes(s.estado)) return;
+    const meta = s.estado === 'a_bordo'
+      ? { lat: +s.destino_lat, lng: +s.destino_lng }
+      : { lat: +s.origen_lat, lng: +s.origen_lng };
+    const km = kmRuta(pc, meta);
+    const cerca = km < .2;
+    if (cerca && s.estado !== 'a_bordo' && !S.avisoLlegadaPor[s.id]) {
+      S.avisoLlegadaPor[s.id] = true;
+      avisar(s.tipo === 'paquete' ? 'El conductor llegó por tu paquete' : 'Tu conductor ya llegó',
+        s.tipo === 'paquete' ? 'Entrégale el paquete' : 'Sal a su encuentro', 'nueva');
+    }
+    const txt = cerca
+      ? (s.estado === 'a_bordo' ? 'Llegando al destino' : (s.tipo === 'paquete' ? 'El conductor está en la recogida' : 'Tu conductor ya está afuera'))
+      : `A ${km} km · unos ${minRuta(km)} min`;
+    $$(`[data-eta="${s.id}"]`).forEach(el => { el.textContent = txt; });
+  });
 }
 
 /* ============================================================
@@ -3227,33 +3945,121 @@ function pedirMotivo() {
     $('#mo-x').onclick = () => { res(null); cerrarModal(); };
   });
 }
-async function cancelarCon(s) {
-  const motivo = await pedirMotivo();
+async function cancelarCon(s, motivoFijo) {
+  const motivo = motivoFijo || await pedirMotivo();
   if (!motivo) return false;
+  S.propios.add(s.id + ':cancelado');
   try { await S.api.cancelarSolicitud(s.id, motivo); }
   catch (e) { toast(e.message || 'No se pudo cancelar', 'bad'); return false; }
+  S.activos = S.activos.filter(x => x.id !== s.id);
+  sincronizarSeguimiento();
   return true;
 }
 
 /* ---------- pasajero ---------- */
 function pintarPasajero(sh) {
-  if (S.paso === 'form') return pasoForm(sh);
+  const enPedido = ['detalles', 'precio'].includes(S.paso);
+  if (S.porCalificar.length && !S.solicitud && !enPedido) return pasoCalificar(sh, S.porCalificar[0]);
+  if (S.solicitud) {
+    if (S.solicitud.estado === 'buscando') return pasoEsperando(sh);
+    if (EN_CURSO.includes(S.solicitud.estado)) return pasoViaje(sh);
+    resetViaje();
+  }
+  if (S.paso === 'pedidos' && S.activos.length) return pasoPedidos(sh);
   if (S.paso === 'detalles') return pasoDetalles(sh);
   if (S.paso === 'precio') return pasoPrecio(sh);
-  if (S.paso === 'esperando') return pasoEsperando(sh);
-  if (S.paso === 'viaje') return pasoViaje(sh);
-  if (S.paso === 'calificar') return pasoCalificar(sh);
+  return pasoForm(sh);
+}
+
+/* Abre un pedido del pasajero: si sigue buscando conductor se escuchan
+   sus ofertas; si ya va en camino se muestra el seguimiento. */
+function enfocar(s, sinRender) {
+  limpiarSubs();
+  S.solicitud = { ...s };
+  S.ofertas = [];
+  S.posConductor = S.posCond[s.conductor_id] || null;
+  if (s.estado === 'buscando') seguirSolicitud();
+  mapa.firma = null;
+  if (!sinRender) { setVista('inicio'); }
+}
+function desenfocar() {
+  resetViaje();
+  S.paso = S.activos.length ? 'pedidos' : 'form';
+  render();
+}
+
+const PASOS_SERVICIO = ['buscando', 'aceptado', 'en_camino', 'a_bordo', 'finalizado'];
+const ESTADO_CORTO = {
+  buscando: s => s.tipo === 'paquete' ? 'Buscando quién lo lleve' : 'Buscando conductor',
+  aceptado: s => `${nombreCorto(s.conductor_nombre) || 'Conductor'} asignado`,
+  en_camino: s => s.tipo === 'paquete' ? 'Va por tu paquete' : 'Va a recogerte',
+  a_bordo: s => s.tipo === 'paquete' ? 'Llevando tu paquete' : 'En viaje',
+};
+function barraProgreso(s) {
+  const i = PASOS_SERVICIO.indexOf(s.estado);
+  return `<div class="progreso">${PASOS_SERVICIO.slice(0, 4).map((_, n) => `<i class="${n < i ? 'ok' : n === i ? 'on' : ''}"></i>`).join('')}</div>`;
+}
+const limitesPasajero = () => ({
+  viaje: S.activos.some(s => s.tipo === 'viaje'),
+  envios: S.activos.filter(s => s.tipo === 'paquete').length
+});
+
+/* Todos los pedidos del pasajero en una lista, cada uno con su avance,
+   su conductor y cuánto le falta. Tocar uno lo abre. */
+function pasoPedidos(sh) {
+  const lim = limitesPasajero();
+  const lista = S.activos;
+  sh.innerHTML = `
+    <div class="head"><div class="grow"><h2>Mis pedidos en curso</h2>
+      <div class="dim">${lista.length} activo${lista.length === 1 ? '' : 's'} · ${lim.envios}/${MAX_ENVIOS_PASAJERO} envíos · ${lim.viaje ? '1/1' : '0/1'} viaje</div></div></div>
+    <div class="card" style="padding:2px 14px">${lista.map((s, i) => `
+      <button class="pedido" data-ped="${i}">
+        <div class="ico">${s.tipo === 'paquete' ? IC.caja() : IC.carro()}</div>
+        <div class="grow">
+          <div class="t">${i + 1}. ${s.tipo === 'paquete' ? 'Envío a ' + esc(s.destinatario || s.destino_texto || '') : 'Viaje a ' + esc(s.destino_texto || '')}</div>
+          <div class="s">${(ESTADO_CORTO[s.estado] || (() => s.estado))(s)}${s.placa ? ' · ' + esc(s.placa) : ''} · ${money(s.precio_final || s.precio_ofrecido)}</div>
+          <div class="s" data-eta="${s.id}" style="color:var(--azul-2)">${EN_CURSO.includes(s.estado) ? 'Ubicando el vehículo...' : ''}</div>
+          ${barraProgreso(s)}
+          ${s.tipo === 'paquete' && EN_CURSO.includes(s.estado) ? `<div style="margin-top:6px">${chipPlazo(s)}</div>` : ''}
+        </div>
+        ${sinLeer(s.id) ? `<span class="badge solid">${sinLeer(s.id)}</span>` : '<div class="fin">›</div>'}
+      </button>`).join('')}</div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="pd-envio" ${lim.envios >= MAX_ENVIOS_PASAJERO ? 'disabled' : ''}>${IC.caja('sm')} Otro envío</button>
+      <button class="btn suave" id="pd-viaje" ${lim.viaje ? 'disabled' : ''}>${IC.carro('sm')} Pedir viaje</button>
+    </div>
+    ${lim.viaje ? '<p class="fine" style="margin:8px 0 0">Solo puedes tener un viaje a la vez; envíos, hasta 10.</p>' : ''}`;
+  $$('#sheetbody [data-ped]').forEach(b => b.onclick = () => enfocar(lista[+b.dataset.ped]));
+  const nuevo = tipo => { S.tipo = tipo; S.paso = 'form'; S.destino = null; mapa.firma = null; render(); };
+  $('#pd-envio').onclick = () => nuevo('paquete');
+  $('#pd-viaje').onclick = () => nuevo('viaje');
+  pintarEta();
 }
 
 function pasoForm(sh) {
   const o = S.origen, d = S.destino;
+  const lim = limitesPasajero();
+  const lleno = S.tipo === 'viaje' ? lim.viaje : lim.envios >= MAX_ENVIOS_PASAJERO;
+  const candado = tarjetaCandado();
+  const banner = S.activos.length ? `
+    <button class="banner-activos" id="p-activos">
+      ${IC.ruta()}
+      <div class="grow"><div class="t">Tienes ${S.activos.length} pedido${S.activos.length > 1 ? 's' : ''} en curso</div>
+        <div class="s">${S.activos.map(s => (ESTADO_CORTO[s.estado] || (() => ''))(s)).slice(0, 2).join(' · ')}</div></div>
+      <span style="font-size:20px">›</span>
+    </button>` : '';
   sh.innerHTML = `
+    ${banner}
+    ${candado}
     <div class="segmented" style="margin-bottom:12px">
       <button data-tipo="viaje" class="${S.tipo === 'viaje' ? 'on' : ''}">Viaje</button>
       <button data-tipo="paquete" class="${S.tipo === 'paquete' ? 'on' : ''}">Envío</button>
     </div>
-    <h2 class="oculta-compacta" style="margin-bottom:10px">${S.tipo === 'viaje' ? 'Hola ' + esc((S.perfil.nombre || '').split(' ')[0]) + ', ¿a dónde vas?' : '¿Qué mandas y a dónde?'}</h2>
-    <div class="chips oculta-compacta" id="chips-inicio"></div>
+    ${lleno ? `<div class="aviso" style="margin-bottom:10px">${S.tipo === 'viaje'
+      ? 'Ya tienes un viaje en curso. Puedes pedir otro cuando termine; mientras tanto sí puedes mandar envíos.'
+      : 'Tienes 10 envíos activos, que es el máximo. Espera a que se entregue alguno.'}</div>` : ''}
+    <h2 style="margin-bottom:10px">${S.tipo === 'viaje' ? 'Hola ' + esc((S.perfil.nombre || '').split(' ')[0]) + ', ¿a dónde vas?' : '¿Qué mandas y a dónde?'}</h2>
+    <div class="chips" id="chips-inicio"></div>
     <div class="card" style="padding:4px 14px;display:flex;align-items:center;gap:8px">
       <div class="grow" style="flex:1;min-width:0">
         <button class="locbtn" data-cual="origen">
@@ -3266,7 +4072,10 @@ function pasoForm(sh) {
       ${o && d ? `<button class="iconbtn" id="p-swap" aria-label="Intercambiar recogida y destino" title="Intercambiar">
         <svg viewBox="0 0 24 24"><path d="M7 20V5M7 5 4 8M7 5l3 3M17 4v15M17 19l3-3M17 19l-3-3"/></svg></button>` : ''}
     </div>
-    <button class="btn primary full" id="p-seguir" style="margin-top:12px" ${o && d ? '' : 'disabled'}>Continuar</button>`;
+    <button class="btn primary full" id="p-seguir" style="margin-top:12px" ${o && d && !lleno && !candado ? '' : 'disabled'}>Continuar</button>`;
+  armarCandado();
+  const ba = $('#p-activos');
+  if (ba) ba.onclick = () => { if (S.activos.length === 1) enfocar(S.activos[0]); else { S.paso = 'pedidos'; mapa.firma = null; render(); } };
   $$('#sheetbody [data-tipo]').forEach(b => b.onclick = () => { S.tipo = b.dataset.tipo; render(); });
   $$('#sheetbody .locbtn').forEach(b => b.onclick = () => abrirSelector(b.dataset.cual));
   chipsLugares('#chips-inicio', l => fijarPunto('destino', { lat: l.lat, lng: l.lng }, l.etiqueta));
@@ -3327,7 +4136,7 @@ function pasoEnvio(sh) {
      defecto en vez de tumbar la pantalla. */
   const resumen = () => {
     const t = TAMANOS[S.tamano] || TAMANOS.pequeno;
-    const u = URGENCIAS[S.urgencia] || URGENCIAS.urgente;
+    const u = urgDe(S.urgencia);
     const partes = [t.t];
     if (i >= 2) partes.push(u.t.toLowerCase());
     return `<div class="resumen-envio">${IC[t.i]('sm')}
@@ -3344,8 +4153,7 @@ function pasoEnvio(sh) {
         <button class="opt ${S.tamano === k ? 'on' : ''}" data-tam="${k}" style="padding:12px 14px">
           <div class="ico">${IC[v.i]()}</div>
           <div class="grow"><div class="t">${v.t}</div><div class="s">${v.s}</div></div>
-          <div class="fin" style="color:var(--dim)">›</div></button>`).join('')}
-      <p class="fine" style="margin-top:10px">El tamaño cambia el precio: mediano cuesta 25% más que pequeño y grande, 60% más.</p>`;
+          <div class="fin" style="color:var(--dim)">›</div></button>`).join('')}`;
     $$('#sheet [data-tam]').forEach(b => b.onclick = () => { S.tamano = b.dataset.tam; irA('urgencia'); });
     $('#b-atras').onclick = () => { S.paso = 'form'; render(); };
     return;
@@ -3362,10 +4170,9 @@ function pasoEnvio(sh) {
         return `<button class="opt ${S.urgencia === k ? 'on' : ''}" data-urg="${k}">
           <div class="ico">${IC[u.i]()}</div>
           <div class="grow"><div class="t">${u.t}</div><div class="s">${u.s}</div></div>
-          <div class="p">${money(t.final)}${u.d ? `<small>−${u.d * 100}%</small><span class="was">${money(t.bruto)}</span>` : ''}</div>
+          <div class="p">${money(t.final)}${u.d ? `<small>−${u.d * 100}%</small>` : ''}</div>
         </button>`;
-      }).join('')}
-      <p class="fine" style="margin-top:10px">Mientras más tiempo le des al conductor, más barato: 20% menos dentro de una hora y 40% menos dentro de cinco.</p>`;
+      }).join('')}`;
     $$('#sheet [data-urg]').forEach(b => b.onclick = () => { S.urgencia = b.dataset.urg; irA('datos'); });
     $('#env-editar').onclick = () => irA('tamano');
     $('#b-atras').onclick = () => irA('tamano');
@@ -3420,9 +4227,8 @@ function pasoPrecio(sh) {
       <div class="amount">$${S.precio.toFixed(2)}</div>
       <div class="stepper"><button id="pr-menos">−</button><button id="pr-mas">+</button></div>
     </div>
-    <input id="pr-manual" class="input" inputmode="decimal" placeholder="Escribir otro monto" style="margin-bottom:10px">
     <div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-      <div class="grow"><div style="font-weight:600">Asignar al primero que acepte</div>
+      <div class="grow"><div style="font-weight:600">Asignar al primero que acepte</div></div>
       <button class="switch ${S.auto ? 'on' : ''}" id="sw-auto"><i></i></button>
     </div>
     <div class="card oculta-compacta">
@@ -3432,18 +4238,9 @@ function pasoPrecio(sh) {
     </div>
     <button class="btn primary full" id="p-publicar" style="margin-top:12px">Buscar conductor por ${money(S.precio)}</button>`;
   $('#b-atras').onclick = () => { S.paso = 'detalles'; render(); };
-  $('#pr-menos').onclick = () => { S.precio = Math.max(minPermitido, +(S.precio - .25).toFixed(2)); render(); };
-  $('#pr-mas').onclick = () => { S.precio = +(S.precio + .25).toFixed(2); render(); };
+  $('#pr-menos').onclick = () => { S.precio = Math.max(minPermitido, +(S.precio - .10).toFixed(2)); render(); };
+  $('#pr-mas').onclick = () => { S.precio = +(S.precio + .10).toFixed(2); render(); };
   $('#sw-auto').onclick = () => { S.auto = !S.auto; render(); };
-  $('#pr-manual').onchange = e => {
-    const v = parseFloat(e.target.value.replace(',', '.'));
-    if (v >= minPermitido) { S.precio = Math.round(v * 20) / 20; render(); }
-    else if (v > 0) {
-      toast(`Para este recorrido puedes bajar hasta ${money(minPermitido)} (máx. $0.25 del valor sugerido)`, 'bad');
-      S.precio = minPermitido;
-      render();
-    }
-  };
   $('#p-publicar').onclick = publicar;
 }
 
@@ -3459,7 +4256,8 @@ function pasoPrecioFijo(sh, t) {
     <div class="card oculta-compacta">
       <div class="kv"><span class="k">Recorrido</span><span class="v">${S.km} km · ${S.dur} min</span></div>
       <div class="kv"><span class="k">Tamaño</span><span class="v">${TAMANOS[S.tamano].t}</span></div>
-      <div class="kv"><span class="k">Entrega</span><span class="v">${URGENCIAS[S.urgencia].t}</span></div>
+      <div class="kv"><span class="k">Entrega</span><span class="v">${urgDe(S.urgencia).t}</span></div>
+      ${S.urgencia !== 'urgente' ? `<div class="kv"><span class="k">Plazo del conductor</span><span class="v">1 h desde que lo acepte</span></div>` : ''}
       <div class="kv"><span class="k">Descuento por esperar</span><span class="v">${t.desc ? `−${t.desc * 100}% (${money(t.bruto - t.final)})` : 'Sin descuento'}</span></div>
       <div class="kv"><span class="k">Total a pagar</span><span class="v">${money(t.final)}</span></div>
     </div>
@@ -3491,53 +4289,35 @@ async function publicar() {
   const btn = $('#p-publicar');
   if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
   try {
-    S.solicitud = await S.api.crearSolicitud(d);
-    S.paso = 'esperando';
-    seguirSolicitud();
-    render();
+    const nueva = await S.api.crearSolicitud(d);
+    S.activos = [...S.activos, nueva];
+    /* Listo para armar el siguiente: el destino se borra, la recogida se
+       queda (lo normal es mandar varios envíos desde el mismo sitio). */
+    S.destino = null; S.descripcion = ''; S.destinatario = ''; S.destTel = ''; S.notas = '';
+    enfocar(nueva);
+    sincronizarSeguimiento();
   } catch (e) {
-    toast(e.message || 'No se pudo publicar', 'bad');
+    toast(explicarError(e, 'crearSolicitud'), 'bad');
     if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
+    if (/verifica|inactiva/i.test(e.message || '')) { try { await cargarPerfil(); } catch (_) {} S.paso = 'form'; render(); }
   }
 }
 
+/* Mientras el pedido abierto busca conductor se escuchan sus ofertas.
+   Si es de asignación automática, la base asigna sola al primer conductor
+   que acepte (trigger asignar_automatico) y el monitor lo avisa. */
 function seguirSolicitud() {
   limpiarSubs();
-  S.subs.push(S.api.onOfertas(S.solicitud.id, async lista => {
+  const id = S.solicitud.id;
+  S.subs.push(S.api.onOfertas(id, lista => {
+    if (!S.solicitud || S.solicitud.id !== id) return;
     const antes = S.ofertas.length;
     S.ofertas = lista;
-    if (lista.length > antes && S.paso === 'esperando' && !S.solicitud.auto_asignar) {
+    if (lista.length > antes && !S.solicitud.auto_asignar && S.solicitud.tipo !== 'paquete') {
       const o = lista[0];
-      avisar('Tienes una oferta', `${o.conductor_nombre || 'Un conductor'} pide ${money(o.precio)}`);
+      avisar('Tienes una oferta', `${o.conductor_nombre || 'Un conductor'} pide ${money(o.precio)}`, 'nueva');
     }
-    const auto = S.solicitud.tipo === 'paquete' || S.solicitud.auto_asignar;
-    if (auto && S.paso === 'esperando') {
-      const primera = lista.find(o => +o.precio <= +S.solicitud.precio_ofrecido);
-      if (primera) {
-        try {
-          const sol = await S.api.aceptarOferta(primera);
-          if (sol) {
-            S.solicitud = { ...S.solicitud, ...sol };
-            S.paso = 'viaje';
-            dibujarViaje(S.solicitud);
-            S.subs.push(S.api.onMensajes(S.solicitud.id, alRecibirMensajes));
-            toast(`${(primera.conductor_nombre || 'Un conductor').split(' ')[0]} tomó tu ${S.solicitud.tipo === 'paquete' ? 'envío' : 'viaje'}`);
-          }
-        } catch (e) { /* otro conductor se adelantó o ya está asignada */ }
-      }
-    }
-    if (S.paso === 'esperando') render();
-  }));
-  S.subs.push(S.api.onSolicitud(S.solicitud.id, sol => {
-    S.solicitud = { ...S.solicitud, ...sol };
-    if (['aceptado', 'en_camino', 'a_bordo'].includes(sol.estado) && S.paso !== 'viaje') {
-      S.paso = 'viaje';
-      dibujarViaje(S.solicitud);
-      S.subs.push(S.api.onMensajes(sol.id, alRecibirMensajes));
-    }
-    if (sol.estado === 'finalizado') S.paso = 'calificar';
-    if (sol.estado === 'cancelado' && S.paso !== 'calificar') { toast('La solicitud se canceló', 'bad'); resetViaje(); mapa.limpiar(); ubicarme(); }
-    render();
+    if (S.solicitud.estado === 'buscando' && lista.length !== antes) render();
   }));
 }
 
@@ -3557,6 +4337,9 @@ function pasoEsperando(sh) {
       <button class="btn primary full sm" data-of="${o.id}" style="margin-top:10px">${fijo ? 'Enviar con' : 'Viajar con'} ${esc((o.conductor_nombre || '').split(' ')[0])}</button>
     </div>`).join('');
   sh.innerHTML = `
+    <div class="head"><button class="back" id="b-pedidos" aria-label="Mis pedidos">${IC.atras('sm')}</button>
+      <div class="grow"><div class="dim">${fijo ? 'Envío a ' + esc(s.destinatario || s.destino_texto || '') : 'Viaje a ' + esc(s.destino_texto || '')}</div></div>
+      ${S.activos.length > 1 ? `<span class="badge">${S.activos.length} pedidos</span>` : ''}</div>
     <div class="wait"><div class="spin"></div>
       <div class="grow"><h3>${fijo ? 'Buscando quién lleve tu envío' : 'Buscando conductor por ' + money(s.precio_ofrecido)}</h3>
       <div class="dim">${fijo || s.auto_asignar
@@ -3565,16 +4348,23 @@ function pasoEsperando(sh) {
     </div>
     <div class="bar"><i></i></div>
     <div style="margin-top:14px">${ofs || `<div class="empty"><div class="big">${IC.reloj()}</div>${fijo ? 'Aún nadie lo toma. Si demora, prueba con una franja de entrega más amplia.' : 'Aún nadie responde. Si demora, sube un poco tu precio.'}</div>`}</div>
-    <button class="btn danger full" id="p-cancelar" style="margin-top:6px">Cancelar solicitud</button>`;
+    <button class="btn danger full" id="p-cancelar" style="margin-top:6px">Cancelar solicitud</button>
+    ${fijo && limitesPasajero().envios < MAX_ENVIOS_PASAJERO ? `<button class="btn suave full" id="p-otro">${IC.caja('sm')} Mandar otro envío mientras tanto</button>` : ''}`;
+  $('#b-pedidos').onclick = desenfocar;
+  const otro = $('#p-otro');
+  if (otro) otro.onclick = () => { resetViaje(); S.tipo = 'paquete'; S.paso = 'form'; render(); };
   $$('#sheet [data-of]').forEach(b => b.onclick = async () => {
     const of = S.ofertas.find(o => o.id === b.dataset.of);
     b.disabled = true; b.textContent = 'Confirmando...';
     try {
+      S.propios.add(of.solicitud_id + ':aceptado');
       const sol = await S.api.aceptarOferta(of);
       S.solicitud = { ...S.solicitud, ...sol };
-      S.paso = 'viaje';
-      dibujarViaje(S.solicitud);
-      S.subs.push(S.api.onMensajes(S.solicitud.id, alRecibirMensajes));
+      S.activos = S.activos.map(x => x.id === sol.id ? { ...x, ...sol } : x);
+      limpiarSubs();
+      sonido('aceptado');
+      sincronizarSeguimiento();
+      mapa.firma = null;
       render();
     } catch (e) {
       toast(RLS(e) ? 'Esa oferta ya no está disponible' : explicarError(e, 'aceptarOferta'), 'bad');
@@ -3583,8 +4373,8 @@ function pasoEsperando(sh) {
   });
   $('#p-cancelar').onclick = async () => {
     /* Todavía no hay conductor asignado: no vale la pena pedir motivo */
-    try { await S.api.cancelarSolicitud(S.solicitud.id, 'Cancelada durante la búsqueda'); } catch (e) {}
-    resetViaje(); mapa.limpiar(); ubicarme(); render();
+    if (!await cancelarCon(s, 'Cancelada durante la búsqueda')) return;
+    desenfocar();
   };
 }
 
@@ -3612,47 +4402,51 @@ function compartirViaje(s) {
 function pasoViaje(sh) {
   const s = S.solicitud;
   const par = (ETIQUETAS[s.estado] || ETIQUETAS.aceptado)(s);
+  const envio = s.tipo === 'paquete';
   sh.innerHTML = `
-    <div class="head"><div class="grow"><h2>${par[0]}</h2><div class="dim">${par[1]}</div></div>
+    <div class="head"><button class="back" id="b-pedidos" aria-label="Mis pedidos">${IC.atras('sm')}</button>
+      <div class="grow"><h2>${par[0]}</h2><div class="dim">${par[1]}</div></div>
       <span class="badge solid">${money(s.precio_final || s.precio_ofrecido)}</span></div>
-    <div class="card">
+    ${barraProgreso(s)}
+    <div class="card" style="margin-top:10px">
       <div class="offer">
         <div class="avatar">${iniciales(s.conductor_nombre)}</div>
         <div class="grow"><div class="t">${esc(s.conductor_nombre || 'Conductor')} · ${s.conductor_calificacion || '5.0'}★</div>
           <div class="s">${esc(s.vehiculo_texto || 'Vehículo')} ${esc(s.placa || '')}</div></div>
         <a class="btn sm suave" href="tel:${esc(s.conductor_tel || '')}">Llamar</a>
       </div>
-      <div class="dim" id="eta" style="margin-top:10px;text-align:center">
-        ${S.posConductor ? '' : 'Ubicando el vehículo...'}</div>
+      <div class="dim" data-eta="${s.id}" style="margin-top:10px;text-align:center">Ubicando el vehículo...</div>
+      ${envio && s.aceptado_en ? `<div style="text-align:center;margin-top:6px">${chipPlazo(s)}</div>` : ''}
     </div>
-    <div class="card oculta-compacta"><div class="route">
+    <div class="card"><div class="route">
       <div class="rail"><div class="l1"></div><div class="line"></div><div class="l2"></div></div>
       <div><div class="dim">Recogida</div><div style="font-weight:500">${esc(s.origen_texto)}</div></div>
-      <div style="margin-top:10px"><div class="dim">Destino</div><div style="font-weight:500">${esc(s.destino_texto)}</div></div>
+      <div style="margin-top:10px"><div class="dim">${envio ? 'Entrega a ' + esc(s.destinatario || '') : 'Destino'}</div><div style="font-weight:500">${esc(s.destino_texto)}</div></div>
     </div></div>
     ${tarjetaMensajes(s)}
-    <div class="row oculta-compacta" style="margin-top:10px">
-      <button class="btn sm suave" id="p-compartir">Compartir viaje</button>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm suave" id="p-compartir">Compartir ${envio ? 'envío' : 'viaje'}</button>
       <button class="btn sm" id="p-mapa">Ver recorrido</button>
     </div>
-    <div class="row oculta-compacta" style="margin-top:8px">
+    <div class="row" style="margin-top:8px">
       <button class="btn sm" id="p-ayuda">Reportar un problema</button>
       <button class="btn danger sm" id="p-cancelar">Cancelar</button>
     </div>`;
-  $('#abrir-chat').onclick = abrirChat;
+  $('#b-pedidos').onclick = desenfocar;
+  $('#abrir-chat').onclick = () => abrirChat(s);
   $('#p-mapa').onclick = () => modalRecorrido(s);
   $('#p-compartir').onclick = () => compartirViaje(s);
   $('#p-ayuda').onclick = () => modalNuevoTicket(s);
   pintarEta();
   $('#p-cancelar').onclick = async () => {
-    if (s.estado === 'a_bordo') return toast('Ya vas en camino. Si hay un problema, repórtalo a soporte', 'bad');
+    if (s.estado === 'a_bordo') return toast(envio ? 'El paquete ya va en camino. Si hay un problema, repórtalo a soporte' : 'Ya vas en camino. Si hay un problema, repórtalo a soporte', 'bad');
     if (!await cancelarCon(s)) return;
-    resetViaje(); mapa.limpiar(); ubicarme(); render();
+    desenfocar();
   };
 }
 
-function pasoCalificar(sh) {
-  const s = S.solicitud;
+function pasoCalificar(sh, sArg) {
+  const s = sArg || S.solicitud;
   const quien = S.modo === 'conductor' ? s.pasajero_nombre : s.conductor_nombre;
   sh.innerHTML = `
     <h2 style="text-align:center">Listo</h2>
@@ -3670,8 +4464,12 @@ function pasoCalificar(sh) {
     $$('#stars button').forEach(x => x.classList.toggle('on', +x.dataset.n <= n));
   });
   const cerrar = () => {
-    resetViaje(); mapa.limpiar(); S.origen = null; S.destino = null;
-    if (S.modo === 'pasajero') ubicarme();
+    S.porCalificar = S.porCalificar.filter(x => x.id !== s.id);
+    if (!S.porCalificar.length) {
+      resetViaje(); mapa.limpiar();
+      if (S.modo === 'pasajero' && !S.activos.length) { S.origen = null; S.destino = null; ubicarme(); }
+    }
+    mapa.firma = null;
     render();
   };
   $('#cal-ok').onclick = async () => {
@@ -3684,12 +4482,168 @@ function pasoCalificar(sh) {
 
 /* ---------- conductor ---------- */
 function pintarConductor(sh) {
-  if (S.solicitud && !['finalizado', 'cancelado'].includes(S.solicitud.estado)) {
-    S.paso = 'viaje';
-    return viajeConductor(sh);
-  }
-  if (S.paso === 'calificar') return pasoCalificar(sh);
+  if (S.porCalificar.length) return pasoCalificar(sh, S.porCalificar[0]);
+  if (S.activos.length) return panelRuta(sh);
   return pasoSolicitudes(sh);
+}
+
+/* ------------------------------------------------------------------
+   Ruta del conductor
+   Cada servicio aporta sus paradas: recoger (si aún no lo recogió) y
+   entregar/dejar. Se ordenan con el vecino más cercano, respetando que
+   no se entrega nada antes de recogerlo y dando prioridad a lo que no
+   puede esperar: el pasajero a bordo, los envíos con el plazo encima y
+   los urgentes. Los de 5 h van al final si no quedan de paso.
+   ------------------------------------------------------------------ */
+const claveParada = p => p.s.id + ':' + p.tipo;
+function prioridad(p) {
+  const s = p.s;
+  if (s.tipo === 'viaje') return p.tipo === 'entregar' ? .25 : .45;
+  const m = plazoDe(s);
+  if (m != null && m <= 20) return .3;
+  const u = s.urgencia || 'urgente';
+  if (u === 'urgente') return .45;
+  if (u === '5h') return 1.35;
+  return 1;
+}
+function planificarParadas() {
+  const pend = [];
+  S.activos.filter(s => EN_CURSO.includes(s.estado)).forEach(s => {
+    const A = { lat: +s.origen_lat, lng: +s.origen_lng }, B = { lat: +s.destino_lat, lng: +s.destino_lng };
+    if (s.estado !== 'a_bordo') pend.push({ s, tipo: 'recoger', p: A });
+    pend.push({ s, tipo: 'entregar', p: B, trasRecoger: s.estado !== 'a_bordo' });
+  });
+  const orden = [];
+  let aqui = S.pos;
+  while (orden.length < pend.length) {
+    const libres = pend.filter(x => !orden.includes(x) &&
+      (!x.trasRecoger || orden.some(o => o.s.id === x.s.id && o.tipo === 'recoger')));
+    let mejor = libres[0], costo = Infinity;
+    libres.forEach(x => {
+      const c = (haversine(aqui, x.p) + .15) * prioridad(x);
+      if (c < costo) { costo = c; mejor = x; }
+    });
+    orden.push(mejor);
+    aqui = mejor.p;
+  }
+  return orden;
+}
+function rotuloParada(p) {
+  const s = p.s, envio = s.tipo === 'paquete';
+  if (p.tipo === 'recoger') return envio ? 'Recoger paquete de ' + nombreCorto(s.pasajero_nombre) : 'Recoger a ' + nombreCorto(s.pasajero_nombre);
+  return envio ? 'Entregar a ' + (s.destinatario || 'destinatario') : 'Dejar a ' + nombreCorto(s.pasajero_nombre);
+}
+/* Qué botón corresponde a cada parada. Los viajes pasan por "Voy en
+   camino" para que el pasajero reciba el aviso; los envíos se recogen
+   directo, que el conductor puede estar cargando varios. */
+function accionParada(p) {
+  const s = p.s, envio = s.tipo === 'paquete';
+  if (p.tipo === 'recoger') {
+    if (!envio && s.estado === 'aceptado') return { t: 'Voy en camino', next: 'en_camino' };
+    return { t: envio ? 'Recogí el paquete' : 'Recogí al pasajero', next: 'a_bordo' };
+  }
+  if (s.estado !== 'a_bordo') return null;
+  return { t: envio ? 'Entregué el paquete' : 'Finalizar viaje', next: 'finalizado' };
+}
+
+function panelRuta(sh) {
+  const paradas = planificarParadas();
+  if (!paradas.length) return pasoSolicitudes(sh);
+  let sel = paradas.find(p => claveParada(p) === S.paradaSel) || paradas[0];
+  const idx = paradas.indexOf(sel);
+  const s = sel.s, envio = s.tipo === 'paquete';
+  const a = accionParada(sel);
+  const km = kmRuta(S.pos, sel.p), min = minRuta(km);
+  const o = otroLado(s);
+  const nuevos = sinLeer(s.id);
+  const dir = sel.tipo === 'recoger' ? s.origen_texto : s.destino_texto;
+  const chips = [
+    `<span class="chipdato acento">${IC.billete('sm')}${money(s.precio_final || s.precio_ofrecido)}</span>`,
+    envio ? `<span class="chipdato">${IC.caja('sm')}${(TAMANOS[s.tamano] || {}).t || 'Envío'} · ${urgDe(s.urgencia).t}</span>`
+          : `<span class="chipdato">${IC.personas('sm')}${s.pasajeros || 1} pasajero${(s.pasajeros || 1) > 1 ? 's' : ''}</span>`,
+    envio && s.descripcion ? `<span class="chipdato">${IC.sobre('sm')}${esc(s.descripcion)}</span>` : '',
+    s.notas ? `<span class="chipdato">${IC.nota('sm')}${esc(s.notas)}</span>` : ''
+  ].filter(Boolean).join('');
+
+  sh.innerHTML = `
+    <div class="head"><div class="grow"><h2>Tu ruta</h2>
+      <div class="dim">${paradas.length} parada${paradas.length > 1 ? 's' : ''} · ${S.activos.length} servicio${S.activos.length > 1 ? 's' : ''} en curso</div></div>
+      ${S.enLinea ? '<span class="pill live"><span class="dot"></span>En línea</span>' : ''}</div>
+
+    <div class="parada-sig">
+      <div class="top">
+        <div class="parada-num ${sel.tipo}">${idx + 1}</div>
+        <div class="grow" style="flex:1;min-width:0">
+          <div class="quien">${esc(rotuloParada(sel))}</div>
+          <div class="dim" style="font-size:12.5px">${min} min · ${km} km ${idx === 0 ? '· siguiente parada' : ''}</div>
+        </div>
+        ${envio ? chipPlazo(s) : ''}
+      </div>
+      <div class="dir"><b>${sel.tipo === 'recoger' ? 'Recogida' : 'Entrega'}:</b> ${esc(dir || '')}</div>
+      <div class="chipset" style="margin:0 0 10px">${chips}</div>
+      ${botonWaze(sel.p, sel.tipo === 'recoger' ? 'Navegar a la recogida' : 'Navegar a la entrega')}
+      ${a ? `<button class="btn primary full" id="c-next" style="margin-top:8px">${a.t}</button>` : ''}
+      <div class="acciones">
+        <button class="btn suave" id="abrir-chat" style="justify-content:flex-start;overflow:hidden">
+          <span style="display:flex;flex-direction:column;align-items:flex-start;min-width:0">
+            <span style="font-size:13.5px">${esc(nombreCorto(o.nombre) || 'Pasajero')}${nuevos ? ` · ${nuevos} nuevo${nuevos > 1 ? 's' : ''}` : ''}</span>
+            <span style="font-size:11.5px;font-weight:500;opacity:.8">Escribir mensaje</span>
+          </span>
+        </button>
+        <a class="iconacc" href="tel:${esc(o.tel)}" aria-label="Llamar">${IC.telefono()}</a>
+        <button class="iconacc" id="c-mapa" aria-label="Ver el recorrido completo">${IC.ruta()}</button>
+      </div>
+      ${envio && s.destinatario_tel && sel.tipo === 'entregar' ? `<a class="btn sm full" href="tel:${esc(s.destinatario_tel)}" style="margin-top:8px">Llamar a quien recibe (${esc(s.destinatario || '')})</a>` : ''}
+    </div>
+
+    ${paradas.length > 1 ? `
+      <div class="sec"><h3>Todas las paradas</h3></div>
+      <div class="card paradas" style="padding:2px 12px">${paradas.map((p, i) => `
+        <button class="parada ${p === sel ? 'sel' : ''}" data-par="${esc(claveParada(p))}">
+          <div class="parada-num ${p.tipo}">${i + 1}</div>
+          <div class="grow"><div class="t">${esc(rotuloParada(p))}</div>
+            <div class="s">${esc((p.tipo === 'recoger' ? p.s.origen_texto : p.s.destino_texto) || '')}</div></div>
+          ${p.s.tipo === 'paquete' ? chipPlazo(p.s) : ''}
+        </button>`).join('')}</div>` : ''}
+
+    ${textoCupo()}
+    ${S.enLinea ? seccionCercanas() : `<button class="btn suave full" id="c-online" style="margin-top:10px">${IC.poder('sm')} Ponerme en línea para sumar servicios</button>`}
+
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm" id="c-ayuda">Reportar un problema</button>
+      <button class="btn danger sm" id="c-cancel">Cancelar este servicio</button>
+    </div>`;
+
+  $$('#sheetbody [data-par]').forEach(b => b.onclick = () => { S.paradaSel = b.dataset.par; render(); });
+  $('#abrir-chat').onclick = () => abrirChat(s);
+  $('#c-mapa').onclick = () => modalRecorrido(s);
+  $('#c-ayuda').onclick = () => modalNuevoTicket(s);
+  const on = $('#c-online'); if (on) on.onclick = alternarLinea;
+  if (a) $('#c-next').onclick = async () => {
+    const btn = $('#c-next'); btn.disabled = true;
+    try {
+      S.propios.add(s.id + ':' + a.next);
+      await S.api.cambiarEstado(s.id, a.next);
+      if (a.next === 'finalizado') {
+        s.precio_final = s.precio_final || s.precio_ofrecido;
+        S.activos = S.activos.filter(x => x.id !== s.id);
+        if (s.tipo === 'viaje') S.porCalificar.push({ ...s, estado: 'finalizado' });
+        toast(envio ? `Envío entregado · ganaste ${money(s.precio_final)}` : `Viaje finalizado · ganaste ${money(s.precio_final)}`);
+        sonido('enviado');
+      } else {
+        S.activos = S.activos.map(x => x.id === s.id ? { ...x, estado: a.next } : x);
+      }
+      S.paradaSel = null;
+      sincronizarSeguimiento();
+      mapa.firma = null;
+      render();
+    } catch (e) { toast(explicarError(e, 'cambiarEstado'), 'bad'); btn.disabled = false; }
+  };
+  $('#c-cancel').onclick = async () => {
+    if (!await cancelarCon(s)) return;
+    S.paradaSel = null; mapa.firma = null; render();
+  };
+  armarCercanas();
 }
 
 /* Tarjeta que ve el conductor.
@@ -3715,7 +4669,7 @@ function tarjetaSolicitudDidi(s, idx, total) {
   const totalKm = +(distYo + distViaje).toFixed(2);
   const porKm = totalKm > 0 ? (precio / totalKm) : 0;
   const viajes = s.pasajero_viajes != null ? s.pasajero_viajes : null;
-  const urg = esEnvio ? (URGENCIAS[s.urgencia] || null) : null;
+  const urg = esEnvio ? urgDe(s.urgencia) : null;
 
   /* Fila de cabecera: lo que decide si se toma la carrera. */
   const meta = [
@@ -3736,13 +4690,12 @@ function tarjetaSolicitudDidi(s, idx, total) {
 
   return `
     <div class="didi-card" id="didi-sol-card">
+      ${total > 1 ? `
       <div class="didi-nav-bar">
-        ${total > 1
-          ? `<button class="didi-nav-btn" id="didi-prev" ${idx <= 0 ? 'disabled' : ''} aria-label="Anterior">${IC.atras('sm')}</button>
-             <div class="didi-counter">Carrera ${idx + 1} de ${total}</div>
-             <button class="didi-nav-btn" id="didi-next" ${idx >= total - 1 ? 'disabled' : ''} aria-label="Siguiente" style="transform:scaleX(-1)">${IC.atras('sm')}</button>`
-          : `<div class="didi-counter solo">${esEnvio ? 'Un envío cerca' : 'Una carrera cerca'}</div>`}
-      </div>
+        <button class="didi-nav-btn" id="didi-prev" ${idx <= 0 ? 'disabled' : ''} aria-label="Anterior">${IC.atras('sm')}</button>
+        <div class="didi-counter">Carrera ${idx + 1} de ${total}</div>
+        <button class="didi-nav-btn" id="didi-next" ${idx >= total - 1 ? 'disabled' : ''} aria-label="Siguiente" style="transform:scaleX(-1)">${IC.atras('sm')}</button>
+      </div>` : ''}
 
       <div class="didi-top">
         <div class="didi-quien">
@@ -3793,13 +4746,14 @@ function tarjetaSolicitud(s) {
 }
 
 function pasoSolicitudes(sh) {
-  if (S.solicitud && !['finalizado', 'cancelado'].includes(S.solicitud.estado)) {
-    S.paso = 'viaje';
-    return viajeConductor(sh);
-  }
   const hab = estadoConductor();
   if (!hab.ok) {
     mapa.limpiarDidi();
+    if (hab.identidad || hab.verificar) {
+      sh.innerHTML = tarjetaCandado();
+      armarCandado();
+      return;
+    }
     sh.innerHTML = `
       <div class="empty"><div class="big">${IC.reloj()}</div>
         <h3 style="margin-bottom:6px;color:var(--text)">Cuenta en revisión</h3>
@@ -3815,32 +4769,35 @@ function pasoSolicitudes(sh) {
     sh.innerHTML = `
       <div class="empty"><div class="big">${IC.poder()}</div>
         <h3 style="margin-bottom:6px;color:var(--text)">Estás fuera de línea</h3>
-        <p class="dim">Ponte en línea para ver los viajes y envíos que se publican cerca de ti.</p></div>
+        <p class="dim">Ponte en línea para ver los viajes y envíos que se publican cerca de ti. Puedes llevar 1 viaje, 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.</p></div>
       <button class="btn primary full" id="c-online">Ponerme en línea</button>`;
     $('#c-online').onclick = alternarLinea;
     return;
   }
+  sh.innerHTML = seccionCercanas(true);
+  armarCercanas();
+}
 
+/* Tarjetas de solicitudes cercanas. Se usa sola (sin servicios) o debajo
+   de la ruta, para sumar servicios mientras se trabaja. */
+function seccionCercanas(sola) {
+  const mias = new Set(S.activos.map(s => s.id));
+  S.cercanas = (S.todasCercanas || []).filter(s => !mias.has(s.id) && cupoPara(s));
   const total = S.cercanas.length;
-  if (!total) {
-    mapa.limpiarDidi();
-    sh.innerHTML = `
-      <div class="head"><div class="grow"><h2>Solicitudes cerca</h2>
-        <div class="dim">Escuchando la zona...</div></div>
-        <button class="pill live" id="c-off"><span class="dot"></span>En línea</button></div>
-      <div class="empty"><div class="spin" style="margin:0 auto 12px"></div>Sin solicitudes por ahora. Te avisamos apenas alguien publique una carrera o envío.</div>`;
-    $('#c-off').onclick = alternarLinea;
-    return;
-  }
-
+  const ocultas = (S.todasCercanas || []).length - total;
+  const nota = ocultas > 0 ? `<p class="fine" style="margin:6px 0 0">${ocultas} solicitud${ocultas > 1 ? 'es' : ''} oculta${ocultas > 1 ? 's' : ''} porque llegaste a tu cupo de ese tipo.</p>` : '';
+  if (!total) return `
+    ${sola ? `<div class="head"><div class="grow"><h2>Solicitudes cerca</h2><div class="dim">Escuchando la zona...</div></div>
+      <button class="pill live" id="c-off"><span class="dot"></span>En línea</button></div>` : `<div class="sec"><h3>Sumar servicios</h3></div>`}
+    <div class="empty" style="padding:${sola ? '' : '10px 0'}">${sola ? '<div class="spin" style="margin:0 auto 12px"></div>' : ''}Sin solicitudes por ahora. Te avisamos apenas alguien publique una carrera o envío.</div>${nota}`;
   S.cercanaIdx = Math.max(0, Math.min(S.cercanaIdx || 0, total - 1));
-  const s = S.cercanas[S.cercanaIdx];
-
-  /* Sin encabezado propio: el contador va dentro de la tarjeta y el
-     "En línea" ya está arriba, en la barra. Son unos 70 px menos de
-     panel, que se los queda el mapa. */
-  sh.innerHTML = tarjetaSolicitudDidi(s, S.cercanaIdx, total);
-
+  return `${sola ? '' : '<div class="sec"><h3>Sumar servicios</h3><span class="dim">de paso en tu ruta</span></div>'}
+    ${tarjetaSolicitudDidi(S.cercanas[S.cercanaIdx], S.cercanaIdx, total)}${nota}`;
+}
+function armarCercanas() {
+  const off = $('#c-off'); if (off) off.onclick = alternarLinea;
+  const total = S.cercanas.length;
+  if (!total || !$('#didi-sol-card')) return;
   // Navegación por la lista (flechas anterior / siguiente)
   const prevBtn = $('#didi-prev');
   const nextBtn = $('#didi-next');
@@ -3925,33 +4882,47 @@ async function puedoOfertar(s) {
 }
 
 async function enviarOferta(s, precio) {
-  if (S.solicitud && !['finalizado', 'cancelado'].includes(S.solicitud.estado)) {
-    return toast('Ya tienes un servicio en curso. Debes finalizarlo antes de aceptar otro.', 'bad');
+  if (!cupoPara(s)) {
+    return toast(s.tipo === 'viaje'
+      ? 'Ya llevas un viaje: termínalo antes de aceptar otro pasajero'
+      : 'Llegaste al máximo de envíos de este tipo. Entrega uno antes de sumar otro', 'bad');
   }
   if (!await puedoOfertar(s)) return;
   const eta = minRuta(kmRuta(S.pos, { lat: s.origen_lat, lng: s.origen_lng }));
   try {
     await S.api.crearOferta(s, precio, eta);
     S.ofertaEnviada = { solicitud_id: s.id, precio };
-    toast(`Oferta de ${money(precio)} enviada`);
-    S.subs.push(S.api.onSolicitud(s.id, sol => {
-      const mia = sol.conductor_id === S.user.id;
-      if (sol.estado === 'aceptado' && mia) {
-        S.solicitud = { ...s, ...sol };
+    /* Si la solicitud es de asignación automática la base ya la asignó:
+       se relee la lista de inmediato en vez de esperar al siguiente ciclo. */
+    try {
+      const l = await S.api.misActivos('conductor');
+      if (l.some(x => x.id === s.id)) {
+        S.propios.add(s.id + ':aceptado');
+        S.activos = l;
         S.ofertaEnviada = null;
-        S.siguiente = null;
-        S.paso = 'viaje';
-        dibujarViaje(S.solicitud);
-        S.subs.push(S.api.onMensajes(sol.id, alRecibirMensajes));
-        render();
-      } else if (['cancelado', 'aceptado'].includes(sol.estado) && !mia) {
-        if (S.ofertaEnviada && S.ofertaEnviada.solicitud_id === s.id) {
-          S.ofertaEnviada = null;
-          toast('Esa solicitud ya fue tomada por otro conductor');
-        }
+        S.cercanas = S.cercanas.filter(x => x.id !== s.id);
+        sonido('aceptado'); vibrar(RING_VIBRA);
+        toast(`${s.tipo === 'paquete' ? 'Envío' : 'Viaje'} asignado. Ya está en tu ruta`);
+        sincronizarSeguimiento();
+        mapa.firma = null;
+        return render();
+      }
+    } catch (e) {}
+    toast(`Oferta de ${money(precio)} enviada. Te avisamos si la aceptan`);
+    /* Oferta pendiente (el pasajero elige): si otro se la lleva o se cancela
+       se avisa; si me la aceptan, el monitor de servicios la trae. */
+    const id = s.id;
+    const quitar = S.api.onSolicitud(id, sol => {
+      if (sol.estado === 'buscando') return;
+      if (sol.conductor_id !== S.user.id && S.ofertaEnviada && S.ofertaEnviada.solicitud_id === id) {
+        S.ofertaEnviada = null;
+        toast(sol.estado === 'cancelado' ? 'El pasajero canceló esa solicitud' : 'Esa solicitud se la llevó otro conductor');
         render();
       }
-    }));
+      unsub(quitar);
+      S.subsOferta = S.subsOferta.filter(f => f !== quitar);
+    });
+    S.subsOferta.push(quitar);
     render();
   } catch (e) {
     if (RLS(e)) {
@@ -3967,98 +4938,6 @@ async function enviarOferta(s, precio) {
     }
     toast(explicarError(e, 'crearOferta'), 'bad');
   }
-}
-
-/* Arranca el seguimiento en vivo del servicio recién aceptado. El dibujo
-   del mapa lo hace sincronizarMapa() desde render(): aquí solo quedan los
-   efectos que no son pintar (GPS propio del conductor, posición del carro
-   para el pasajero). */
-async function dibujarViaje(s) {
-  if (S.modo === 'conductor') seguirMiGps(true);
-  else seguirConductor(s);
-  mapa.firma = null;
-  await sincronizarMapa();
-}
-
-const ACCION = {
-  aceptado:  s => ({ t: 'Voy en camino', next: 'en_camino' }),
-  en_camino: s => ({ t: s.tipo === 'paquete' ? 'Recogí el paquete' : 'Recogí al pasajero', next: 'a_bordo' }),
-  a_bordo:   s => ({ t: s.tipo === 'paquete' ? 'Entregué el paquete' : 'Finalizar viaje', next: 'finalizado' })
-};
-
-function viajeConductor(sh) {
-  const s = S.solicitud;
-  const a = ACCION[s.estado] ? ACCION[s.estado](s) : null;
-  const esEnvio = s.tipo === 'paquete';
-  const yendoAlDestino = s.estado === 'a_bordo';
-  const meta = yendoAlDestino
-    ? { lat: +s.destino_lat, lng: +s.destino_lng }
-    : { lat: +s.origen_lat, lng: +s.origen_lng };
-  const km = kmRuta(S.pos, meta);
-  const min = minRuta(km);
-  const o = otroLado(s);
-  const nuevos = Math.max(0, S.mensajes.filter(m => m.emisor_id === 'otro').length - S.leidos);
-
-  const chips = [
-    !esEnvio && s.pasajeros ? `<span class="chipdato">${IC.personas('sm')}${s.pasajeros} pasajero${s.pasajeros > 1 ? 's' : ''}</span>` : '',
-    esEnvio && s.tamano ? `<span class="chipdato">${IC.caja('sm')}${(TAMANOS[s.tamano] || {}).t || ''}</span>` : '',
-    esEnvio && s.descripcion ? `<span class="chipdato">${IC.sobre('sm')}${esc(s.descripcion)}</span>` : '',
-    esEnvio && s.destinatario ? `<span class="chipdato">${IC.pin('sm')}Entregar a ${esc(s.destinatario)}</span>` : '',
-    s.notas ? `<span class="chipdato">${IC.nota('sm')}${esc(s.notas)}</span>` : ''
-  ].filter(Boolean).join('');
-
-  sh.innerHTML = `
-    <div class="head"><div class="grow"><h2>${esEnvio ? 'Envío aceptado' : 'Viaje aceptado'}</h2>
-      <div class="dim">${(ETIQUETAS[s.estado] || ETIQUETAS.aceptado)(s)[1]}</div></div></div>
-
-    <div class="tira" style="margin-top:0">
-      <div class="t1"><span class="marca ${yendoAlDestino ? 'b' : 'a'}"></span>
-        <span><span class="et">${yendoAlDestino ? (esEnvio ? 'Punto de entrega' : 'Destino del pasajero') : (esEnvio ? 'Recoger el paquete' : 'Recoger al pasajero')}</span><br>
-        <span class="vl">${min} min · ${km} km</span></span></div>
-      <div class="t1"><span class="marca" style="background:var(--azul)"></span>
-        <span><span class="et">Ganas en efectivo</span><br><span class="vl">${money(s.precio_final || s.precio_ofrecido)}</span></span></div>
-    </div>
-
-    ${botonWaze(meta, yendoAlDestino ? 'Navegar a la entrega' : 'Navegar a la recogida')}
-    ${a ? `<button class="btn primary full" id="c-next" style="margin-top:8px">${a.t}</button>` : ''}
-
-    <div class="acciones">
-      <button class="btn suave" id="abrir-chat" style="justify-content:flex-start;overflow:hidden">
-        <span style="display:flex;flex-direction:column;align-items:flex-start;min-width:0">
-          <span style="font-size:13.5px">${esc((o.nombre || '').split(' ')[0] || 'Pasajero')}</span>
-          <span style="font-size:11.5px;font-weight:500;opacity:.8">Escribir mensaje</span>
-        </span>
-      </button>
-      <a class="iconacc" href="tel:${esc(o.tel)}" aria-label="Llamar">${IC.telefono()}</a>
-      <button class="iconacc" id="c-mapa" aria-label="Ver el recorrido completo">${IC.ruta()}</button>
-    </div>
-    ${nuevos ? `<div class="dim" style="margin-top:6px">${nuevos} mensaje(s) sin leer</div>` : ''}
-
-    ${yendoAlDestino ? `<div class="dim oculta-compacta" id="restante" style="text-align:center;margin-top:8px">Calculando distancia al punto de entrega...</div>` : ''}
-
-    <div class="row oculta-compacta" style="margin-top:10px">
-      <button class="btn sm" id="c-ayuda">Reportar un problema</button>
-      <button class="btn danger sm" id="c-cancel">Cancelar</button>
-    </div>`;
-
-  $('#abrir-chat').onclick = abrirChat;
-  $('#c-mapa').onclick = () => modalRecorrido(s);
-  $('#c-ayuda').onclick = () => modalNuevoTicket(s);
-  if (a) $('#c-next').onclick = async () => {
-    const btn = $('#c-next'); btn.disabled = true;
-    try {
-      await S.api.cambiarEstado(s.id, a.next);
-      s.estado = a.next;
-      if (a.next === 'a_bordo') vigilarProximidad(s);
-      if (a.next === 'finalizado') { detenerProximidad(); s.precio_final = s.precio_final || s.precio_ofrecido; S.paso = 'calificar'; }
-      render();
-    } catch (e) { toast(e.message, 'bad'); btn.disabled = false; }
-  };
-  $('#c-cancel').onclick = async () => {
-    if (!await cancelarCon(s)) return;
-    detenerProximidad();
-    resetViaje(); mapa.limpiar(); render();
-  };
 }
 
 /* ---------- recorrido completo ---------- */
@@ -4153,21 +5032,6 @@ function modalRecorrido(s, conAcciones = false) {
   }
 }
 
-/* ---------- aviso a 2 km del destino ---------- */
-/* Se cuelga del mismo watchPosition que publica la ubicación del
-   conductor, para no abrir dos suscripciones al GPS a la vez. */
-function vigilarProximidad(s) {
-  S.avisoProx = false;
-  const B = { lat: +s.destino_lat, lng: +s.destino_lng };
-  alMoverse.push(p => {
-    const d = haversine(p, B);
-    const el = $('#restante');
-    if (el) el.textContent = d < .3 ? 'Estás llegando al punto de entrega' : `Faltan ${d.toFixed(1)} km para la entrega`;
-  });
-  seguirMiGps(true);
-}
-function detenerProximidad() { seguirMiGps(false); }
-
 /* ---------- actividad ---------- */
 const montoDe = x => +x.precio_final || +x.precio_ofrecido || 0;
 
@@ -4238,7 +5102,7 @@ function modalServicio(x) {
     cerrarModal();
     S.tipo = x.tipo;
     S.tamano = x.tamano || 'pequeno';
-    S.urgencia = x.urgencia || 'urgente';
+    S.urgencia = x.urgencia === '1h' ? '2h' : (x.urgencia || 'urgente');
     S.pasajeros = x.pasajeros || 1;
     S.origen  = { lat: +x.origen_lat,  lng: +x.origen_lng,  texto: x.origen_texto };
     S.destino = { lat: +x.destino_lat, lng: +x.destino_lng, texto: x.destino_texto };
@@ -4251,6 +5115,209 @@ function modalServicio(x) {
     mapa.encuadrarRuta();
     if (S.paso === 'form') render();
   };
+}
+
+/* ============================================================
+   Identidad: foto del rostro, foto de la cédula y verificación diaria
+   ------------------------------------------------------------
+   La cámara corre dentro de la página (getUserMedia), igual en el
+   navegador y en el WebView del APK. face-api detecta el rostro y la
+   sonrisa (prueba de que hay una persona real frente a la cámara, no una
+   foto) y saca un "descriptor" de 128 números. La comparación contra el
+   rostro del registro la hace la base (registrar_verificacion), no la
+   página, para que no se pueda saltar desde el navegador.
+   ============================================================ */
+const FACE_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15';
+const FACE = { carga: null };
+function cargarFaceApi() {
+  if (FACE.carga) return FACE.carga;
+  FACE.carga = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = FACE_URL + '/dist/face-api.js';
+    sc.integrity = 'sha384-M5nePoB6/w/a9JhtegEibSLGiJy/+QMZZMfvcxjWVCQW/HPwrQ7i21V/Px/8AyVA';
+    sc.crossOrigin = 'anonymous';
+    sc.onload = async () => {
+      try {
+        const f = window.faceapi, M = FACE_URL + '/model';
+        await Promise.all([
+          f.nets.tinyFaceDetector.loadFromUri(M),
+          f.nets.faceLandmark68Net.loadFromUri(M),
+          f.nets.faceRecognitionNet.loadFromUri(M),
+          f.nets.faceExpressionNet.loadFromUri(M)
+        ]);
+        res(f);
+      } catch (e) { FACE.carga = null; rej(e); }
+    };
+    sc.onerror = () => { FACE.carga = null; rej(new Error('No se pudo cargar el verificador facial. Revisa tu conexión')); };
+    document.head.appendChild(sc);
+  });
+  return FACE.carga;
+}
+
+/* Foto reducida a 960 px de ancho en JPEG: suficiente para reconocer a
+   alguien y liviana para subir con datos móviles. */
+function fotoDe(video, espejo) {
+  const w = Math.min(960, video.videoWidth || 960);
+  const h = Math.round(w * (video.videoHeight || 1280) / (video.videoWidth || 960));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  if (espejo) { x.translate(w, 0); x.scale(-1, 1); }
+  x.drawImage(video, 0, 0, w, h);
+  return new Promise(r => c.toBlob(r, 'image/jpeg', .86));
+}
+
+/* Abre la cámara en un modal.
+   tipo 'rostro': frontal, espera un rostro centrado y una sonrisa, y
+   dispara solo. Devuelve { blob, descriptor }.
+   tipo 'cedula': trasera, con un marco; el usuario toca "Tomar foto". */
+function capturar(tipo, titulo, ayuda) {
+  return new Promise(async res => {
+    const rostro = tipo === 'rostro';
+    modal(`<div class="grip"></div>
+      <div class="head"><div class="grow"><h2>${esc(titulo)}</h2><div class="dim">${esc(ayuda)}</div></div>
+        <button class="back" id="cam-x" aria-label="Cerrar">✕</button></div>
+      <div class="cam">
+        <video id="cam-v" playsinline autoplay muted class="${rostro ? 'espejo' : ''}"></video>
+        <div class="guia"><div class="${rostro ? 'ovalo' : 'rect'}" id="cam-guia"></div></div>
+        <div class="msg-cam" id="cam-msg">Abriendo la cámara...</div>
+      </div>
+      ${rostro ? '' : `<button class="btn primary full" id="cam-ok" disabled>${IC.escudo('sm')} Tomar foto</button>`}
+      ${!rostro && !enApp() ? `<label class="btn ghost full" style="margin-top:6px">Subir una foto desde el dispositivo
+        <input type="file" accept="image/*" id="cam-file" style="display:none"></label>` : ''}`);
+    let stream = null, parar = false, listo = false;
+    const fin = v => {
+      if (listo) return; listo = true; parar = true;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      alCerrarModal = null;
+      cerrarModal();
+      res(v);
+    };
+    alCerrarModal = () => { parar = true; if (stream) stream.getTracks().forEach(t => t.stop()); if (!listo) { listo = true; res(null); } };
+    $('#cam-x').onclick = () => fin(null);
+    const msg = t => { const m = $('#cam-msg'); if (m) m.textContent = t; };
+    const archivo = $('#cam-file');
+    if (archivo) archivo.onchange = () => { const f = archivo.files[0]; if (f) fin({ blob: f }); };
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: rostro ? 'user' : { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false
+      });
+    } catch (e) {
+      msg('No pudimos abrir la cámara. Da permiso de cámara a Ruta y vuelve a intentarlo.');
+      return;
+    }
+    if (parar) { stream.getTracks().forEach(t => t.stop()); return; }
+    const v = $('#cam-v');
+    v.srcObject = stream;
+    await v.play().catch(() => {});
+
+    if (!rostro) {
+      msg('Encuadra la parte frontal de tu cédula dentro del marco');
+      const ok = $('#cam-ok');
+      ok.disabled = false;
+      ok.onclick = async () => { ok.disabled = true; fin({ blob: await fotoDe(v, false) }); };
+      return;
+    }
+
+    msg('Preparando el verificador facial...');
+    let f;
+    try { f = await cargarFaceApi(); }
+    catch (e) { msg(e.message || 'No se pudo cargar el verificador'); return; }
+    const opts = new f.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: .5 });
+    let sonrisas = 0;
+    const t0 = Date.now();
+    msg('Pon tu rostro dentro del óvalo, con buena luz');
+    while (!parar) {
+      let d = null;
+      try { d = await f.detectSingleFace(v, opts).withFaceLandmarks().withFaceExpressions().withFaceDescriptor(); } catch (e) {}
+      if (parar) break;
+      const guia = $('#cam-guia');
+      if (!d) {
+        sonrisas = 0;
+        if (guia) guia.classList.remove('bien');
+        msg(Date.now() - t0 > 25000 ? 'No te vemos bien: acércate, quita gafas o gorra y busca más luz' : 'Pon tu rostro dentro del óvalo');
+      } else {
+        const bx = d.detection.box, W = v.videoWidth || 640;
+        if (bx.width < W * .22) { msg('Acércate un poco más'); sonrisas = 0; }
+        else {
+          if (guia) guia.classList.add('bien');
+          if ((d.expressions.happy || 0) > .85) {
+            sonrisas++;
+            msg('¡Así! Quieto un momento...');
+            if (sonrisas >= 2) {
+              const blob = await fotoDe(v, true);
+              return fin({ blob, descriptor: Array.from(d.descriptor).map(n => +n.toFixed(6)) });
+            }
+          } else { sonrisas = 0; msg('Ahora sonríe 😊'); }
+        }
+      }
+      await sleep(220);
+    }
+  });
+}
+
+/* Activa la cuenta: rostro con sonrisa + cédula, se suben al almacenamiento
+   privado y la base marca la cuenta activa. alRegistrarse: viene recién
+   creada la cuenta y se ofrece "Hacerlo después". */
+function flujoIdentidad(alRegistrarse) {
+  if (!S.user) return;
+  modal(`<div class="grip"></div>
+    <h2>${alRegistrarse ? '¡Cuenta creada! Ahora actívala' : 'Activa tu cuenta'}</h2>
+    <p class="dim" style="margin:6px 0 12px">Para cuidar a pasajeros y conductores, cada cuenta se verifica con:</p>
+    <div class="card plano">
+      <div class="leg"><div class="n">1</div><div class="grow"><b>Una foto de tu rostro sonriendo</b><div class="dim">La cámara la toma sola cuando sonríes</div></div></div>
+      <div class="leg"><div class="n">2</div><div class="grow"><b>La parte frontal de tu cédula</b><div class="dim">Que se lean bien el nombre y el número</div></div></div>
+    </div>
+    <label class="check"><input type="checkbox" id="id-ok"><span>Autorizo a Ruta a tratar mi imagen y mis datos biométricos para verificar mi identidad, según los <button type="button" id="id-ter" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y la Política de Privacidad</button>.</span></label>
+    <button class="btn primary full" id="id-go" disabled>Empezar</button>
+    <button class="btn ghost full" id="id-luego">${alRegistrarse ? 'Hacerlo después (mi cuenta quedará inactiva)' : 'Ahora no'}</button>`);
+  $('#id-ok').onchange = e => { $('#id-go').disabled = !e.target.checked; };
+  $('#id-ter').onclick = async () => { await modalTerminos(false); flujoIdentidad(alRegistrarse); };
+  $('#id-luego').onclick = () => {
+    cerrarModal();
+    if (alRegistrarse) toast('Tu cuenta quedó inactiva. Actívala cuando quieras desde Inicio', 'bad');
+  };
+  $('#id-go').onclick = async () => {
+    cerrarModal();
+    const cara = await capturar('rostro', 'Foto de tu rostro', 'Mira a la cámara y sonríe');
+    if (!cara) return toast('Verificación cancelada', 'bad');
+    const ced = await capturar('cedula', 'Tu cédula (parte frontal)', 'Sobre una mesa, con buena luz y sin reflejos');
+    if (!ced) return toast('Falta la foto de tu cédula: tu cuenta sigue inactiva', 'bad');
+    modal(`<div class="grip"></div><div class="wait"><div class="spin"></div><div class="grow"><h3>Activando tu cuenta...</h3><div class="dim">Subiendo tus fotos de forma segura</div></div></div>`);
+    try {
+      const uid = S.user.id;
+      const f1 = await S.api.subirFoto(`${uid}/rostro.jpg`, cara.blob);
+      const f2 = await S.api.subirFoto(`${uid}/cedula.jpg`, ced.blob);
+      S.perfil = { ...S.perfil, ...await S.api.registrarIdentidad(f1, f2, cara.descriptor) };
+      cerrarModal();
+      avisar('Cuenta activada', S.modo === 'conductor' ? 'Ya verificamos tu identidad. Si aún no estás habilitado, un administrador lo revisará.' : 'Ya puedes pedir viajes y envíos', 'mensaje');
+      pintarTop(); render();
+    } catch (e) {
+      cerrarModal();
+      toast(explicarError(e, 'registrarIdentidad'), 'bad');
+    }
+  };
+}
+
+/* Verificación del día: selfie con sonrisa, comparada en la base. */
+async function flujoVerificacion() {
+  if (!S.user) return;
+  const cara = await capturar('rostro', 'Verificación de hoy', 'Mira a la cámara y sonríe');
+  if (!cara) return;
+  modal(`<div class="grip"></div><div class="wait"><div class="spin"></div><div class="grow"><h3>Comparando con tu registro...</h3></div></div>`);
+  try {
+    const hoy = fechaQuito().toISOString().slice(0, 10);
+    const path = await S.api.subirFoto(`${S.user.id}/verificaciones/${hoy}-${Date.now()}.jpg`, cara.blob);
+    S.perfil = { ...S.perfil, ...await S.api.registrarVerificacion(path, cara.descriptor) };
+    cerrarModal();
+    toast('Identidad verificada. ¡Buen día!');
+    sonido('enviado');
+    pintarTop(); render();
+  } catch (e) {
+    cerrarModal();
+    toast(explicarError(e, 'registrarVerificacion'), 'bad');
+  }
 }
 
 /* ---------- perfil ---------- */
@@ -4272,6 +5339,17 @@ function pintarPerfil(sh) {
       <div class="kv"><span class="k">Correo</span><span class="v">${esc(p.correo || '—')}</span></div>
     </div>
 
+    <div class="sec"><h3>Identidad</h3></div>
+    <div class="card">
+      <div class="kv"><span class="k">Cuenta</span><span class="v">${p.cuenta_activa
+        ? '<span class="badge ok">Activa</span>' : '<span class="badge warn">Inactiva</span>'}</span></div>
+      <div class="kv"><span class="k">Verificación de hoy</span><span class="v">${verificadoHoy()
+        ? '<span class="badge ok">Hecha</span>' : '<span class="badge warn">Pendiente</span>'}</span></div>
+      ${!p.cuenta_activa ? `<button class="btn primary full sm" id="pf-ident" style="margin-top:8px">Enviar mi foto y mi cédula</button>`
+        : !verificadoHoy() ? `<button class="btn primary full sm" id="pf-verif" style="margin-top:8px">Verificarme ahora</button>`
+        : `<button class="btn ghost full sm" id="pf-ident" style="margin-top:6px">Actualizar mi foto y mi cédula</button>`}
+    </div>
+
     <div class="sec"><h3>Mi cuenta</h3></div>
     <div class="card" style="padding:2px 14px">
       <button class="rowbtn" id="pf-lugares">
@@ -4287,6 +5365,14 @@ function pintarPerfil(sh) {
       <button class="rowbtn" id="pf-pin">
         <div class="ico">${IC.candado()}</div>
         <div class="grow"><div class="t">Cambiar mi PIN</div><div class="s">La clave real es tu PIN seguido de 99</div></div>
+        <div class="fin">›</div></button>
+      <button class="rowbtn" id="pf-sonido">
+        <div class="ico">${IC.chat()}</div>
+        <div class="grow"><div class="t">Sonidos de aviso</div><div class="s">${leerLocal('sonido', '1') === '0' ? 'Apagados' : 'Encendidos · toca para probar o apagar'}</div></div>
+        <div class="fin">›</div></button>
+      <button class="rowbtn" id="pf-terminos">
+        <div class="ico">${IC.escudo()}</div>
+        <div class="grow"><div class="t">Términos y privacidad</div><div class="s">Aceptados${p.terminos_aceptados_en ? ' el ' + new Date(p.terminos_aceptados_en).toLocaleDateString('es-EC') : ''}</div></div>
         <div class="fin">›</div></button>
     </div>
 
@@ -4321,20 +5407,37 @@ function pintarPerfil(sh) {
   $('#pf-pin').onclick = modalCambiarPin;
   const bv = $('#pf-veh'); if (bv) bv.onclick = () => modalVehiculo();
   const be = $('#pf-veh-ed'); if (be) be.onclick = () => modalVehiculo(S.vehiculo);
-  $('#pf-salir').onclick = async () => {
-    if (S.solicitud && !['finalizado', 'cancelado'].includes(S.solicitud.estado) &&
-        !await confirmar('Tienes un servicio en curso', 'Si cierras sesión ahora perderás el seguimiento en el mapa y el chat.', 'Cerrar sesión igual')) return;
-    try { await S.api.salir(); } catch (e) {}
-    limpiarSubs(); limpiarSupSubs(); detenerProximidad();
-    if (S.subSop) { try { S.subSop(); } catch (e) {} S.subSop = null; }
-    S.user = null; S.perfil = null; S.vehiculo = null; S.solicitud = null;
-    S.origen = null; S.destino = null; S.enLinea = false; S.cercanas = [];
-    S.lugares = []; S.recientes = []; S.tickets = null; S.sinLeerSop = 0; S.esSoporte = false;
-    pintarBadgeSoporte();
-    if (mapa.m) mapa.limpiar();
-    limpiarPin('login');
-    pantallaAcceso();
+  const bi = $('#pf-ident'); if (bi) bi.onclick = () => flujoIdentidad(false);
+  const bvf = $('#pf-verif'); if (bvf) bvf.onclick = flujoVerificacion;
+  $('#pf-terminos').onclick = () => modalTerminos(false);
+  $('#pf-sonido').onclick = async () => {
+    const on = leerLocal('sonido', '1') !== '0';
+    if (on && await confirmar('Sonidos de aviso', 'Suenan cuando te asignan un servicio, cuando llega tu conductor y con mensajes nuevos. ¿Apagarlos?', 'Apagar sonidos')) {
+      guardarLocal('sonido', '0'); toast('Sonidos apagados');
+    } else {
+      guardarLocal('sonido', '1'); sonido('aceptado'); toast('Sonidos encendidos');
+    }
+    render();
   };
+  $('#pf-salir').onclick = async () => {
+    if (S.activos.length &&
+        !await confirmar('Tienes servicios en curso', 'Siguen activos aunque cierres sesión, pero dejarás de recibir avisos hasta que vuelvas a entrar.', 'Cerrar sesión igual')) return;
+    cerrarSesion();
+  };
+}
+
+async function cerrarSesion() {
+  if (S.modo === 'conductor' && S.enLinea) { try { await S.api.setEnLinea(false, S.pos); } catch (e) {} }
+  try { await S.api.salir(); } catch (e) {}
+  detenerTodo(); limpiarSupSubs();
+  if (S.subSop) { try { S.subSop(); } catch (e) {} S.subSop = null; }
+  S.user = null; S.perfil = null; S.vehiculo = null; S.solicitud = null; S.arrancadoPara = null;
+  S.origen = null; S.destino = null; S.enLinea = false; S.cercanas = []; S.todasCercanas = [];
+  S.lugares = []; S.recientes = []; S.tickets = null; S.sinLeerSop = 0; S.esSoporte = false;
+  pintarBadgeSoporte();
+  if (mapa.m) mapa.limpiar();
+  limpiarPin('login');
+  pantallaAcceso();
 }
 
 function modalSoporteEdicion() {
@@ -4487,10 +5590,18 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 [['#hc-1', 'carro'], ['#hc-2', 'caja'], ['#hc-3', 'reloj']].forEach(([sel, ic]) => {
   const el = $(sel); if (el) el.insertAdjacentHTML('afterbegin', IC[ic]('sm'));
 });
-armarAsa();
+armarMenuTop();
 armarPines();
 window.addEventListener('online', estadoRed);
 window.addEventListener('offline', estadoRed);
+/* Al volver a la app (o a la pestaña) se relee todo de inmediato: lo que
+   cambió en segundo plano aparece al instante, con su aviso. */
+const alVolver = () => {
+  if (document.visibilityState !== 'visible' || !S.user) return;
+  if (S.subActivos && S.subActivos.refrescar) S.subActivos.refrescar();
+};
+document.addEventListener('visibilitychange', alVolver);
+window.addEventListener('online', alVolver);
 estadoRed();
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
@@ -4513,6 +5624,7 @@ $('#btn-google').onclick = entrarConGoogle;
 if ($('#btn-cfg')) $('#btn-cfg').onclick = modalConfig;
 if ($('#btn-diag')) $('#btn-diag').onclick = () => modalDiagnostico();
 if ($('#btn-politicas')) $('#btn-politicas').onclick = modalPoliticas;
+$('#rg-ver-terminos').onclick = e => { e.preventDefault(); modalTerminos(false); };
 $('#btn-linea').onclick = alternarLinea;
 $('#btn-power').onclick = alternarLinea;
 $('#avatar').onclick = () => setVista('perfil');
