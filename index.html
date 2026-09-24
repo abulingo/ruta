@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -60,6 +60,12 @@
   --sombra-alta:0 -10px 34px rgba(13,45,110,.12);
   --sombra-azul:0 8px 20px rgba(10,90,255,.28);
   --velo:rgba(255,255,255,.82);
+  /* Franjas del sistema (barra de estado arriba, botones o gesto abajo).
+     En el navegador salen de env(); dentro del APK el WebView no siempre
+     las informa, así que Flutter escribe --sat y --sab con la medida real
+     y los botones de abajo ya no quedan detrás de los del teléfono. */
+  --sat:env(safe-area-inset-top, 0px);
+  --sab:env(safe-area-inset-bottom, 0px);
 }
 /* El tema lo fija el script en <html data-tema>, resolviendo antes
    la preferencia del sistema. Por eso aquí solo hace falta un bloque. */
@@ -111,7 +117,7 @@ h3{font-size:16px;font-weight:600}
 
 /* ---------- acceso ---------- */
 .auth{position:absolute;inset:0;overflow-y:auto;background:var(--fondo)}
-.hero{position:relative;padding:24px 20px 62px;background:linear-gradient(150deg,#0A5AFF 0%,#0842C4 62%,#062E8C 100%);color:#fff;overflow:hidden}
+.hero{position:relative;padding:calc(24px + var(--sat)) 20px 62px;background:linear-gradient(150deg,#0A5AFF 0%,#0842C4 62%,#062E8C 100%);color:#fff;overflow:hidden}
 .hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.09)}
 .hero::before{width:210px;height:210px;top:-70px;right:-50px}
 .hero::after{width:150px;height:150px;bottom:-60px;left:-40px}
@@ -173,7 +179,7 @@ textarea.input{resize:none;min-height:60px}
    sobre cualquier zona del mapa. */
 .topbar{
   position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:var(--s2);
-  background:transparent;padding:8px var(--s3);padding-top:calc(8px + env(safe-area-inset-top));
+  background:transparent;padding:8px var(--s3);padding-top:calc(8px + var(--sat));
   border-bottom:0;z-index:650;pointer-events:none
 }
 .topbar .grow{flex:1}
@@ -230,7 +236,7 @@ textarea.input{resize:none;min-height:60px}
 .sheet{
   position:relative;z-index:610;background:var(--bg);border-radius:22px 22px 0 0;
   box-shadow:var(--sombra-alta);max-height:62dvh;overflow-y:auto;
-  padding:0 var(--s3) calc(var(--s3) + env(safe-area-inset-bottom));overscroll-behavior:contain;
+  padding:0 var(--s3) calc(var(--s3) + var(--sab));overscroll-behavior:contain;
 }
 .grip{width:38px;height:4px;border-radius:4px;background:var(--line2);margin:2px auto 10px}
 .head,.sheet .head{display:flex;align-items:center;gap:10px;margin-bottom:8px;width:100%}
@@ -251,6 +257,13 @@ textarea.input{resize:none;min-height:60px}
 .locbtn:last-child{border-bottom:0}
 .locbtn .t{font-size:14.5px;font-weight:500}
 .locbtn .s{font-size:12px;color:var(--dim)}
+/* paradas intermedias del pedido: cada una con su botón para quitarla */
+.locfila{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}
+.locfila .locbtn{border-bottom:0;flex:1;min-width:0}
+.locfila .locbtn .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.locfila .quitar{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:var(--muted);background:var(--panel2);border:1.5px solid var(--line);flex:none}
+.num-mini{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#E0912A;color:#fff;font-size:11px;font-weight:700;margin-right:6px;vertical-align:1px}
+.segmented button .ic{display:inline-block;vertical-align:-3px;margin-right:5px}
 
 .price-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:2px 0 8px}
 .price-hero .amount{font-family:"Space Grotesk";font-weight:700;font-size:40px;line-height:1;letter-spacing:-.045em;color:var(--azul-2)}
@@ -448,12 +461,12 @@ textarea.input{resize:none;min-height:60px}
 .diag .t{font-weight:600;font-size:14px}
 .diag .s{font-size:12.5px;color:var(--muted)}
 
-#toasts{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;width:min(460px,92vw)}
+#toasts{position:fixed;top:calc(14px + var(--sat));left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;width:min(460px,92vw)}
 .toast{background:var(--text);color:#fff;border-radius:13px;padding:12px 15px;font-size:14px;box-shadow:0 10px 28px rgba(13,45,110,.28);animation:drop .2s ease}
 .toast.bad{background:var(--bad)}
 @keyframes drop{from{opacity:0;transform:translateY(-10px)}}
 .modal{position:fixed;inset:0;background:rgba(13,27,46,.45);z-index:1500;display:grid;place-items:end center;backdrop-filter:blur(3px)}
-.modal .box{background:var(--bg);border-radius:24px 24px 0 0;padding:16px 14px 20px;width:min(520px,100%);max-height:90dvh;overflow-y:auto}
+.modal .box{background:var(--bg);border-radius:24px 24px 0 0;padding:16px 14px calc(20px + var(--sab));width:min(520px,100%);max-height:90dvh;overflow-y:auto}
 @media(min-width:560px){.modal{place-items:center}.modal .box{border-radius:24px}}
 .loading{position:fixed;inset:0;background:linear-gradient(150deg,#0A5AFF,#0842C4);display:grid;place-items:center;z-index:3000}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
@@ -516,7 +529,7 @@ textarea.input{resize:none;min-height:60px}
 
 /* ---------- avisos de conexión ---------- */
 #red{
-  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + var(--sab));
   z-index:1400;background:var(--warn);color:#fff;border-radius:999px;padding:8px 16px;
   font-size:13px;font-weight:600;box-shadow:var(--sombra);white-space:nowrap
 }
@@ -544,11 +557,11 @@ textarea.input{resize:none;min-height:60px}
 .card{padding:var(--s3)}
 .card+.card{margin-top:var(--s2)}
 .field{margin-bottom:var(--s2)}
-.auth-card{padding:var(--s4) var(--s4) var(--s6)}
+.auth-card{padding:var(--s4) var(--s4) calc(var(--s6) + var(--sab))}
 .empty{padding:var(--s5) var(--s4)}
 .stats{gap:var(--s2);margin-bottom:var(--s3)}
 @media(max-height:680px){
-  .hero{padding:18px 20px 54px}
+  .hero{padding:calc(18px + var(--sat)) 20px 54px}
   h1{font-size:24px}
   .price-hero .amount{font-size:34px}
   .sheet{max-height:66dvh}
@@ -613,6 +626,7 @@ textarea.input{resize:none;min-height:60px}
   font-family:"Space Grotesk",Inter,sans-serif;font-weight:700;font-size:14px}
 .parada-num.recoger{background:#00875A}
 .parada-num.entregar{background:#DE350B}
+.parada-num.parada{background:#E0912A}
 .parada-sig .quien{font-weight:700;font-size:15px}
 .parada-sig .dir{font-size:13px;color:var(--muted);margin:2px 0 8px}
 .paradas{margin-top:10px}
@@ -627,6 +641,8 @@ textarea.input{resize:none;min-height:60px}
   border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);font-family:"Space Grotesk",Inter,sans-serif}
 .mk .num-parada.recoger{background:#00875A}
 .mk .num-parada.entregar{background:#DE350B}
+.mk .num-parada.parada{background:#E0912A}
+.mk .num-parada.chica{width:22px;height:22px;font-size:11.5px}
 .cupo{font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
 
 /* ---------- identidad, cámara y candado de cuenta ---------- */
@@ -640,8 +656,6 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
 .cam .guia{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center}
 .cam .guia .ovalo{width:62%;aspect-ratio:3/4;border-radius:50%;border:3px dashed rgba(255,255,255,.85);box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s}
 .cam .guia .ovalo.bien{border-color:#2BC275;border-style:solid}
-.cam .guia .rect{width:88%;aspect-ratio:1.58;border-radius:14px;border:3px dashed rgba(255,255,255,.85);box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s}
-.cam .guia .rect.bien{border-color:#2BC275;border-style:solid}
 .cam img.previa{width:100%;height:100%;object-fit:contain;display:block;background:#000}
 .cam canvas.marco{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .pasos-cam{display:flex;gap:6px;margin:4px 0 0}
@@ -813,6 +827,13 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
           </div>
         </div>
         <div id="veh" class="hidden">
+          <div class="field"><label>Tipo de vehículo</label>
+            <div class="segmented" id="rg-tipo">
+              <button type="button" data-vt="carro" class="on">Carro</button>
+              <button type="button" data-vt="moto">Moto</button>
+            </div>
+            <p class="fine" id="rg-tipo-nota" style="margin:6px 0 0">Con carro haces viajes y envíos.</p>
+          </div>
           <div class="row">
             <div class="field"><label for="rg-placa">Placa</label><input id="rg-placa" class="input" maxlength="8" placeholder="PBA-1234"></div>
             <div class="field"><label for="rg-anio">Año</label><input id="rg-anio" class="input" inputmode="numeric" maxlength="4" placeholder="2019"></div>
@@ -825,9 +846,9 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
         </div>
         <label class="check" for="rg-terminos">
           <input type="checkbox" id="rg-terminos">
-          <span>Leí y acepto los <button type="button" id="rg-ver-terminos" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y Condiciones y la Política de Privacidad</button>, incluido el uso de mi foto y la de mi cédula para verificar mi identidad, y que Ruta me contacte por correo o WhatsApp sobre mi cuenta.</span>
+          <span>Leí y acepto los <button type="button" id="rg-ver-terminos" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y Condiciones y la Política de Privacidad</button>, incluido el uso de la foto de mi rostro para verificar mi identidad, y que Ruta me contacte por correo o WhatsApp sobre mi cuenta.</span>
         </label>
-        <p class="fine" style="margin:0 0 8px">Después de crear la cuenta te pediremos una foto de tu rostro y de tu cédula (parte frontal). Puedes dejarlo para después, pero tu cuenta quedará <b>inactiva</b> hasta que las envíes.</p>
+        <p class="fine" style="margin:0 0 8px">Después de crear la cuenta te pediremos una foto de tu rostro. Un administrador revisa tus datos y activa tu cuenta; mientras tanto queda <b>en revisión</b>.</p>
         <button class="btn primary full" id="btn-registro" style="margin-top:6px">Crear cuenta</button>
       </div>
 
@@ -968,6 +989,7 @@ const IC = {
   reloj:    c => svgi('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.2 2"/>', c),
   agenda:   c => svgi('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', c),
   carro:    c => svgi('<path d="M4.5 16.5v2.2h3v-2.2M16.5 16.5v2.2h3v-2.2"/><path d="M3.2 16.5h17.6v-4l-1.8-4.4a1.6 1.6 0 0 0-1.5-1H7a1.6 1.6 0 0 0-1.5 1L3.2 12.5z"/><path d="M6.5 14.4h.01M17.5 14.4h.01"/>', c),
+  moto:     c => svgi('<circle cx="5.5" cy="16.5" r="3"/><circle cx="18.5" cy="16.5" r="3"/><path d="M5.5 16.5 9.2 11h4.6l2.2 5.5"/><path d="M13.8 11 12.5 7.5H10M15 6.5h2.4l1.1 3.6-2.3 6.4"/>', c),
   pin:      c => svgi('<path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>', c),
   bandera:  c => svgi('<path d="M5 21V4M5 4.8h11.5l-1.8 3.4 1.8 3.4H5"/>', c),
   ruta:     c => svgi('<circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M15.5 5.5H9.8a3.3 3.3 0 0 0 0 6.6h4.4a3.3 3.3 0 0 1 0 6.4H8.5"/>', c),
@@ -1284,10 +1306,18 @@ const minRuta = km => Math.max(4, Math.round(km / 21 * 60 + 2));
 
 /* ---- 3. Tarifas ---- */
 const TAMANOS = {
-  pequeno: { f: 1.00, t: 'Pequeño', s: 'Sobre, documentos, hasta 3 kg', i: 'sobre' },
-  mediano: { f: 1.10, t: 'Mediano', s: 'Caja de zapatos, hasta 10 kg',  i: 'caja' },
-  grande:  { f: 1.20, t: 'Grande',  s: 'Bulto grande, hasta 25 kg',     i: 'bulto' }
+  pequeno: { f: 1.00, t: 'Pequeño', s: 'Sobre, documentos, hasta 5 kg', i: 'sobre' },
+  mediano: { f: 1.12, t: 'Mediano', s: 'Caja mediana, hasta 20 kg',     i: 'caja' },
+  grande:  { f: 1.25, t: 'Grande',  s: 'Bulto grande, hasta 40 kg',     i: 'bulto' }
 };
+/* Vehículo del envío. La moto cobra menos (f), pero el precio se muestra
+   ya rebajado, sin anunciar el descuento; nunca baja de su mínimo. */
+const VEHICULOS = {
+  carro: { f: 1.00, t: 'Carro', i: 'carro' },
+  moto:  { f: 0.60, t: 'Moto',  i: 'moto', min: 1.50 }
+};
+const vehDe = k => VEHICULOS[k] || VEHICULOS.carro;
+const MAX_PARADAS = 3;
 const URGENCIAS = {
   urgente: { d: 0.00, t: 'Urgente', s: 'Sale ahora mismo', i: 'rayo' },
   '2h':    { d: 0.20, t: 'Dentro de 2 horas', s: 'El conductor lo recoge en su ruta', i: 'reloj' },
@@ -1337,17 +1367,22 @@ function tarifa(km, tipo, opts = {}) {
   const factorMin = factorTiempoLocal();
   let p = 0.22 * km + factorMin * min;
 
+  const veh = tipo === 'paquete' ? vehDe(opts.vehiculo) : VEHICULOS.carro;
   if (tipo === 'paquete') {
     p *= (TAMANOS[opts.tamano || 'pequeno'] || TAMANOS.pequeno).f;
+    p *= veh.f;
   }
 
   // Tarifa base/bruta calculada según la fórmula
   const bruto = Math.max(1.50, Math.round(p * 20) / 20);
-  const desc = tipo === 'paquete' ? urgDe(opts.urgencia || 'urgente').d : 0;
-  let final = Math.round(bruto * (1 - desc) * 20) / 20;
+  let final = Math.round(bruto * (1 - (tipo === 'paquete' ? urgDe(opts.urgencia || 'urgente').d : 0)) * 20) / 20;
   if (tipo !== 'paquete') {
     final = Math.max(1.50, final);
   }
+  if (veh.min) final = Math.max(veh.min, final);
+  /* El descuento que se muestra es el que de verdad queda: con el mínimo
+     de la moto, un envío corto de 2 h o 5 h puede quedar sin rebaja. */
+  const desc = bruto > final ? Math.round((1 - final / bruto) * 100) / 100 : 0;
 
   // Para viajes de personas, el pasajero puede rebajar hasta $0.25 respecto al precio de la fórmula (mínimo $1.50)
   const minPermitido = tipo === 'paquete' ? final : Math.max(1.50, +(final - 0.25).toFixed(2));
@@ -1359,9 +1394,13 @@ function tarifa(km, tipo, opts = {}) {
 const S = {
   api: null, user: null, perfil: null, vehiculo: null,
   modo: 'pasajero', vista: 'inicio', paso: 'form',
-  tipo: 'viaje', urgencia: 'urgente', tamano: 'pequeno', pasajeros: 1, pasoEnvio: 'tamano',
+  /* Arranca en Envío: es lo que más se pide. */
+  tipo: 'paquete', urgencia: 'urgente', tamano: 'pequeno', vehEnvio: 'carro', pasajeros: 1, pasoEnvio: 'tamano',
   notas: '', descripcion: '', destinatario: '', destTel: '',
   origen: null, destino: null, km: 0, dur: 0, precio: 0, sugerido: 0,
+  /* paradas intermedias del pedido que se arma, y el último punto que el
+     pasajero eligió (el mapa se acerca a ese hasta que toca Continuar) */
+  paradas: [], paradaIdx: null, ultimoPunto: null,
   solicitud: null, ofertas: [], mensajes: [], historial: [],
   enLinea: false, pos: { lat: -0.1807, lng: -78.4678 },
   cercanas: [], cercanaIdx: 0, ofertaEnviada: null, eligiendo: null, subs: [],
@@ -1484,12 +1523,27 @@ async function rutaMulti(puntos) {
       km: +(rt.distance / 1000).toFixed(2), min: Math.max(2, Math.round(rt.duration / 60))
     });
   } catch (e) {
-    return { pts: ps.map(p => [p.lat, p.lng]), km: 0, min: 0 };
+    const km = kmTramos(ps);
+    return { pts: ps.map(p => [p.lat, p.lng]), km, min: minRuta(km) };
   }
 }
+/* Distancia estimada sumando tramo por tramo (sin red). */
+const kmTramos = pts => +pts.filter(Boolean).reduce((a, p, i, l) => i ? a + kmRuta(l[i - 1], p) : 0, 0).toFixed(2);
+/* Paradas intermedias guardadas en una solicitud (jsonb), ya limpias. */
+const paradasDe = s => (Array.isArray(s && s.paradas) ? s.paradas : [])
+  .filter(p => p && p.lat != null && p.lng != null)
+  .map(p => ({ lat: +p.lat, lng: +p.lng, texto: p.texto || '' }));
+/* Recorrido completo de una solicitud: recogida, paradas y destino. */
+const puntosDe = s => [{ lat: +s.origen_lat, lng: +s.origen_lng }, ...paradasDe(s), { lat: +s.destino_lat, lng: +s.destino_lng }];
+/* El pedido que el pasajero está armando. */
+const puntosPedido = () => [S.origen, ...S.paradas, S.destino].filter(Boolean);
+/* Mientras el pasajero pone sus puntos, el mapa se queda acercado al
+   último que eligió; el recorrido completo se ve al tocar Continuar. */
+const focoPedido = () => (S.modo === 'pasajero' && S.vista === 'inicio' && S.paso === 'form' && !S.solicitud)
+  ? (S.ultimoPunto || S.destino || S.origen) : null;
 
 const mapa = {
-  m: null, capa: null, mkA: null, mkB: null, mkC: null, mkYo: null, linea: null, borde: null, anim: null,
+  m: null, capa: null, mkA: null, mkB: null, mkC: null, mkYo: null, linea: null, borde: null, anim: null, mkParadas: [],
   init() {
     this.m = L.map('map', {
       zoomControl: false,
@@ -1546,7 +1600,9 @@ const mapa = {
     this.reencuadrarPuntos();
   },
   reencuadrarPuntos() {
-    if (!this.m) return;
+    if (!this.m || S.eligiendo) return;   // eligiendo un punto: el mapa es del usuario
+    const foco = focoPedido();
+    if (foco) { this.m.setView([foco.lat, foco.lng], Math.max(this.m.getZoom(), 15), { animate: false }); return; }
     try {
       if (this.capasDidi && this.capasDidi.length) {
         /* El carro del conductor vive fuera de capasDidi (no se borra al
@@ -1574,6 +1630,19 @@ const mapa = {
       permanent: true, direction: 'top', offset: [0, -8],
       className: 'didi-tooltip ' + (cual === 'a' ? 'didi-tooltip-a' : 'didi-tooltip-b')
     });
+  },
+  /* Paradas intermedias numeradas (naranja), entre la recogida y el destino. */
+  marcarParadas(lista) {
+    this.quitarParadas();
+    (lista || []).forEach((p, i) => {
+      const mk = L.marker([p.lat, p.lng], { icon: this.icono(`<div class="num-parada parada chica">${i + 1}</div>`, 22), zIndexOffset: 200 }).addTo(this.m);
+      mk.bindTooltip(`Parada ${i + 1}${p.texto ? ': ' + esc(p.texto) : ''}`, { direction: 'top', offset: [0, -10], className: 'didi-tooltip' });
+      this.mkParadas.push(mk);
+    });
+  },
+  quitarParadas() {
+    (this.mkParadas || []).forEach(l => { try { this.m.removeLayer(l); } catch (_) {} });
+    this.mkParadas = [];
   },
   /* Recogida y destino rotulados sobre el mapa con su tiempo y su
      distancia: es lo primero que mira el conductor, y al pasajero le
@@ -1603,7 +1672,7 @@ const mapa = {
     this.mkYo = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="me"></div>') }).addTo(this.m);
   },
   conductor(ll) {
-    if (!this.mkC) this.mkC = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="car">' + IC.carro() + '</div>', 36) }).addTo(this.m);
+    if (!this.mkC) this.mkC = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="car">' + IC[miVehiculo()]() + '</div>', 36) }).addTo(this.m);
     else this.mkC.setLatLng([ll.lat, ll.lng]);
   },
   limpiarConductor() {
@@ -1622,10 +1691,10 @@ const mapa = {
   /* Un carro por conductor: el pasajero con varios envíos ve a todos
      los que llevan sus cosas a la vez. */
   coches: {},
-  coche(id, ll, rotulo) {
+  coche(id, ll, rotulo, tipo) {
     const c = this.coches[id];
     if (c) { c.setLatLng([ll.lat, ll.lng]); return; }
-    this.coches[id] = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="car">' + IC.carro() + '</div>', 36), zIndexOffset: 500 }).addTo(this.m);
+    this.coches[id] = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="car">' + IC[tipo === 'moto' ? 'moto' : 'carro']() + '</div>', 36), zIndexOffset: 500 }).addTo(this.m);
     if (rotulo) this.coches[id].bindTooltip(esc(rotulo), { direction: 'top', offset: [0, -16], className: 'didi-tooltip' });
   },
   limpiarCoches(salvo) {
@@ -1661,11 +1730,13 @@ const mapa = {
       const a = L.marker([A.lat, A.lng], { icon: this.icono('<div class="didi-mk-a">' + IC.pin('sm') + '</div>', 28) }).addTo(this.m)
         .bindTooltip('Nueva: recoger', { permanent: true, direction: 'top', className: 'didi-tooltip didi-tooltip-a' });
       const b = L.marker([B.lat, B.lng], { icon: this.icono('<div class="didi-mk-b">' + IC.bandera('sm') + '</div>', 28) }).addTo(this.m);
-      const l = L.polyline([[A.lat, A.lng], [B.lat, B.lng]], { color: '#FF7D00', weight: 4, dashArray: '6, 8' }).addTo(this.m);
+      const l = L.polyline(puntosDe(vista).map(p => [p.lat, p.lng]), { color: '#FF7D00', weight: 4, dashArray: '6, 8' }).addTo(this.m);
       this.capasDidi.push(a, b, l);
+      paradasDe(vista).forEach((p, i) => this.capasDidi.push(
+        L.marker([p.lat, p.lng], { icon: this.icono(`<div class="num-parada parada chica">${i + 1}</div>`, 22) }).addTo(this.m)));
     }
     const pts = [S.pos, ...paradas.map(p => p.p)];
-    const encuadre = [...pts, ...(vista ? [{ lat: +vista.origen_lat, lng: +vista.origen_lng }, { lat: +vista.destino_lat, lng: +vista.destino_lng }] : [])];
+    const encuadre = [...pts, ...(vista ? puntosDe(vista) : [])];
     this.ajustar(L.latLngBounds(encuadre.map(p => [p.lat, p.lng])));
     if (paradas.length) {
       const r = await rutaMulti(pts);
@@ -1707,6 +1778,20 @@ const mapa = {
     this.dibujarLinea(puntosCurva(a, b));            // provisional mientras llega la ruta real
     const r = await rutaReal(a, b);
     if (mio !== this.token) return r;                 // el usuario ya cambió los puntos
+    this.dibujarLinea(r.pts);
+    this.ultima = r;
+    return r;
+  },
+  /* Igual que ruta(), pero pasando por todas las paradas en orden. */
+  async rutaVarias(pts) {
+    const ps = (pts || []).filter(Boolean);
+    if (ps.length <= 2) return this.ruta(ps[0], ps[1]);
+    [this.borde, this.linea].forEach(l => { if (l) this.m.removeLayer(l); });
+    this.borde = this.linea = null;
+    const mio = ++this.token;
+    this.dibujarLinea(ps.map(p => [p.lat, p.lng]));   // provisional
+    const r = await rutaMulti(ps);
+    if (mio !== this.token) return r;
     this.dibujarLinea(r.pts);
     this.ultima = r;
     return r;
@@ -1763,6 +1848,7 @@ const mapa = {
   limpiar() {
     this.firma = null;
     ['mkA', 'mkB'].forEach(k => { if (this[k]) { this.m.removeLayer(this[k]); this[k] = null; } });
+    this.quitarParadas();
     [this.borde, this.linea].forEach(l => { if (l) this.m.removeLayer(l); });
     this.borde = this.linea = null;
     this.limpiarConductor();
@@ -1813,6 +1899,13 @@ const mapa = {
     });
     this.capasDidi.push(mkB);
 
+    const intermedias = paradasDe(s);
+    intermedias.forEach((p, i) => {
+      const mk = L.marker([p.lat, p.lng], { icon: this.icono(`<div class="num-parada parada chica">${i + 1}</div>`, 22), zIndexOffset: 200 }).addTo(this.m);
+      mk.bindTooltip(`Parada ${i + 1}${p.texto ? ': ' + esc(p.texto) : ''}`, { direction: 'top', offset: [0, -10], className: 'didi-tooltip' });
+      this.capasDidi.push(mk);
+    });
+
     if (posConductor) {
       const rutaIda = await rutaReal(posConductor, A);
       if (!vigente()) return;
@@ -1821,13 +1914,13 @@ const mapa = {
       this.capasDidi.push(lineaIdaBorde, lineaIda);
     }
 
-    const rutaViaje = await rutaReal(A, B);
+    const rutaViaje = await rutaMulti(puntosDe(s));
     if (!vigente()) return;
     const lineaViajeBorde = L.polyline(rutaViaje.pts, { color: '#002B7A', weight: 8, opacity: 0.85 }).addTo(this.m);
     const lineaViaje = L.polyline(rutaViaje.pts, { color: '#0A5AFF', weight: 5, opacity: 1, lineJoin: 'round', lineCap: 'round' }).addTo(this.m);
     this.capasDidi.push(lineaViajeBorde, lineaViaje);
 
-    const puntos = [posConductor, A, B].filter(Boolean).map(p => [p.lat, p.lng]);
+    const puntos = [posConductor, A, ...intermedias, B].filter(Boolean).map(p => [p.lat, p.lng]);
     this.ajustar(L.latLngBounds(puntos));
   },
   mover(desde, hasta, ms, alLlegar) {
@@ -2042,7 +2135,7 @@ function crearAPI(url, key) {
          3. consulta completa cada 6 s, que además limpia las ya tomadas */
     cercanas(cb) {
       let lista = [], vivo = true, tPronto = null;
-      const sirve = s => s.estado === 'buscando' &&
+      const sirve = s => s.estado === 'buscando' && puedoLlevar(s) &&
         (s.tipo === 'paquete' || haversine(S.pos, { lat: +s.origen_lat, lng: +s.origen_lng }) <= RADIO_VIAJES_KM);
       const emitir = () => { if (vivo) cb(lista.filter(sirve)); };
       const cargar = async () => {
@@ -2136,8 +2229,8 @@ function crearAPI(url, key) {
       if (error) throw error;
       return path;
     },
-    async registrarIdentidad(foto, cedula, descriptor) {
-      const { data, error } = await sb.rpc('registrar_identidad', { p_foto: foto, p_cedula: cedula, p_descriptor: descriptor });
+    async registrarIdentidad(foto, descriptor) {
+      const { data, error } = await sb.rpc('registrar_identidad', { p_foto: foto, p_descriptor: descriptor });
       if (error) throw error;
       return data;
     },
@@ -2339,7 +2432,7 @@ function pintarEstadoCfg() {
 
 /* Cambia la versión cuando cambie el texto: a quien aceptó una versión
    anterior se le vuelve a pedir que acepte. */
-const TERMINOS_VERSION = '2026-09-b';
+const TERMINOS_VERSION = '2026-09-c';
 const CORREO_SOPORTE = 'abulingo.help@gmail.com';
 const TEXTO_TERMINOS = `
   <p><b>Versión ${TERMINOS_VERSION}.</b> Al crear una cuenta o usar Ruta aceptas estas condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
@@ -2350,9 +2443,9 @@ const TEXTO_TERMINOS = `
   <h4>2. Requisitos y cuenta</h4>
   <ul>
     <li>Debes ser mayor de 18 años y dar datos reales: nombre, número de cédula, celular y correo.</li>
-    <li>Para activar tu cuenta debes enviar una foto de tu rostro y una foto de la parte frontal de tu cédula. Si decides no enviarlas, tu cuenta queda <b>inactiva</b> y no podrás pedir ni realizar servicios.</li>
+    <li>Para usar Ruta debes registrar una foto de tu rostro. Un administrador revisa tus datos y activa tu cuenta; hasta entonces queda <b>en revisión</b> y no podrás pedir ni realizar servicios.</li>
     <li>Cada día, antes de usar la app, debes verificar tu identidad con la cámara (una foto sonriendo que se compara con la de tu registro).</li>
-    <li>Los conductores además deben ser habilitados manualmente por un administrador, con su vehículo aprobado, y son responsables de contar con licencia, matrícula, SOAT/seguros y demás permisos que exija la ley y la autoridad de tránsito competente.</li>
+    <li>Los conductores además deben ser habilitados manualmente por un administrador, con su vehículo (carro o moto) aprobado; con moto solo se hacen envíos, y son responsables de contar con licencia, matrícula, SOAT/seguros y demás permisos que exija la ley y la autoridad de tránsito competente.</li>
     <li>Tu PIN es personal. Eres responsable de lo que se haga con tu cuenta.</li>
   </ul>
 
@@ -2365,7 +2458,7 @@ const TEXTO_TERMINOS = `
 
   <h4>3. Precios y pago</h4>
   <ul>
-    <li>Viajes: el pasajero propone el precio (mínimo $1.50 USD) y el conductor lo acepta o contraoferta. Envíos: tarifa fija calculada por distancia, tiempo, tamaño y urgencia.</li>
+    <li>Viajes: el pasajero propone el precio (mínimo $1.50 USD) y el conductor lo acepta o contraoferta. Envíos: tarifa fija calculada por distancia, tiempo, tamaño, vehículo (carro o moto) y urgencia. Viajes y envíos pueden tener hasta 3 paradas en el camino.</li>
     <li>El pago es en efectivo, directo al conductor, al terminar el servicio. Ruta no cobra por adelantado ni solicita datos de tarjetas.</li>
   </ul>
 
@@ -2389,7 +2482,7 @@ const TEXTO_TERMINOS = `
   <h4>7. Protección de datos personales</h4>
   <ul>
     <li>Tratamos tus datos conforme a la <b>Ley Orgánica de Protección de Datos Personales (LOPDP)</b> del Ecuador. Responsable del tratamiento: César Santana, ${CORREO_SOPORTE}.</li>
-    <li>Datos que tratamos: identificación y contacto, fotos de rostro y cédula, un patrón numérico de tu rostro, ubicación (también con la app en segundo plano mientras tengas la sesión abierta: los conductores en línea para recibir solicitudes cercanas y los pasajeros para el seguimiento de sus servicios), historial de servicios, mensajes y calificaciones.</li>
+    <li>Datos que tratamos: identificación y contacto, fotos de tu rostro, un patrón numérico de tu rostro, ubicación (también con la app en segundo plano mientras tengas la sesión abierta: los conductores en línea para recibir solicitudes cercanas y los pasajeros para el seguimiento de sus servicios), historial de servicios, mensajes y calificaciones.</li>
     <li>Los datos biométricos (rostro) son <b>datos sensibles</b>: al aceptar das tu <b>consentimiento expreso</b> para usarlos solo para verificar tu identidad y prevenir suplantaciones y fraudes. Se guardan en almacenamiento privado al que solo accede la administración.</li>
     <li>Tu ubicación se comparte con la otra parte solo mientras hay un servicio en curso: el pasajero ve al conductor en viajes y envíos; el conductor ve al pasajero solo en viajes.</li>
     <li>Conservamos los datos mientras tengas una cuenta y el tiempo que exija la ley o la atención de reclamos. No vendemos tus datos.</li>
@@ -2591,8 +2684,10 @@ async function registrar() {
   if (!celularValido(celular)) return toast('El celular debe tener 10 dígitos y empezar en 09', 'bad');
   if (!correoValido(correo)) return toast('Revisa el correo', 'bad');
   if (pin.length !== 4) return toast('El PIN necesita 4 dígitos', 'bad');
-  if (rol === 'conductor' && !normalizarPlaca($('#rg-placa').value.trim()))
-    return toast('La placa va con tres letras y tres o cuatro números, como PBA-1234', 'bad');
+  const bt = $('#rg-tipo button.on');
+  const tipoVeh = bt ? bt.dataset.vt : 'carro';
+  if (rol === 'conductor' && !normalizarPlaca($('#rg-placa').value.trim(), tipoVeh))
+    return toast(AYUDA_PLACA[tipoVeh], 'bad');
   if (!$('#rg-terminos').checked) return toast('Debes aceptar los Términos y Condiciones para crear tu cuenta', 'bad');
 
   const api = conectar();
@@ -2629,7 +2724,8 @@ async function registrar() {
     await guardarPerfilNuevo({ nombre, cedula, celular, correo, rol, terminos: true });
     if (rol === 'conductor') {
       const veh = {
-        placa: normalizarPlaca($('#rg-placa').value.trim()),
+        tipo: tipoVeh,
+        placa: normalizarPlaca($('#rg-placa').value.trim(), tipoVeh),
         marca: $('#rg-marca').value.trim() || null,
         modelo: $('#rg-modelo').value.trim() || null,
         color: $('#rg-color').value.trim() || null,
@@ -2991,7 +3087,7 @@ function sincronizarSeguimiento() {
       const s = act.find(x => x.conductor_id === cid);
       S.subPosCond[cid] = S.api.onPosConductor(cid, p => {
         S.posCond[cid] = p;
-        mapa.coche(cid, p, `${nombreCorto(s && s.conductor_nombre)} ${s && s.placa ? '· ' + s.placa : ''}`);
+        mapa.coche(cid, p, `${nombreCorto(s && s.conductor_nombre)} ${s && s.placa ? '· ' + s.placa : ''}`, s && s.vehiculo_tipo);
         if (S.solicitud && S.solicitud.conductor_id === cid) S.posConductor = p;
         pintarEta();
       });
@@ -3094,7 +3190,7 @@ function ubicarme() {
   mapa.yo(S.pos);
   const marcarOrigen = () => {
     S.origen = { ...S.pos, texto: 'Mi ubicación actual' };
-    if (S.destino) { S.km = kmRuta(S.origen, S.destino); S.dur = minRuta(S.km); }
+    if (S.destino) { S.km = kmTramos(puntosPedido()); S.dur = minRuta(S.km); }
     mapa.firma = null;   // que el sync vuelva a dibujar con el punto nuevo
   };
   if (S.modo === 'pasajero' && !S.origen && !S.solicitud) marcarOrigen();
@@ -3127,6 +3223,10 @@ function estadoConductor() {
   if (!S.perfil) return { ok: false, motivo: 'Cargando tu perfil...' };
   if (S.perfil.desdeCache)
     return { ok: false, motivo: 'Estamos usando una copia guardada de tu perfil porque no hubo conexión. Vuelve a entrar con internet para trabajar.' };
+  /* El rostro va primero: es lo único que depende del conductor, lo demás
+     lo revisa el administrador. */
+  if (!rostroRegistrado())
+    return { ok: false, motivo: 'Registra la foto de tu rostro para empezar a trabajar.', identidad: true };
   if (!S.perfil.conductor_habilitado)
     return { ok: false, motivo: 'Tu cuenta de conductor está en revisión. Un administrador debe habilitarla desde el panel.' };
   if (!S.vehiculo)
@@ -3134,23 +3234,37 @@ function estadoConductor() {
   if (!S.vehiculo.aprobado)
     return { ok: false, motivo: 'Tu vehículo está en revisión. Un administrador debe aprobarlo desde el panel.' };
   if (!cuentaActiva())
-    return { ok: false, motivo: 'Tu cuenta está inactiva: envía tu foto y la de tu cédula.', identidad: true };
+    return { ok: false, motivo: 'Tu cuenta está en revisión. Un administrador debe activarla.', revision: true };
   if (!verificadoHoy())
     return { ok: false, motivo: 'Verifica tu identidad de hoy para empezar a trabajar.', verificar: true };
   return { ok: true };
 }
 const cuentaActiva = () => !!(S.perfil && S.perfil.cuenta_activa);
+const rostroRegistrado = () => !!(S.perfil && S.perfil.rostro_registrado);
+/* Con qué trabaja el conductor. La moto solo lleva envíos pedidos en moto;
+   el carro, viajes y envíos en carro. La base aplica la misma regla
+   (validar_oferta), esto solo evita mostrarle lo que no puede tomar. */
+const miVehiculo = () => (S.vehiculo && S.vehiculo.tipo === 'moto') ? 'moto' : 'carro';
+const puedoLlevar = s => miVehiculo() === 'moto'
+  ? s.tipo === 'paquete' && s.vehiculo === 'moto'
+  : s.vehiculo !== 'moto';
 const diaQuito = d => fechaQuito(new Date(d)).toDateString();
 const verificadoHoy = () => !!(S.perfil && S.perfil.verificado_en && diaQuito(S.perfil.verificado_en) === diaQuito(Date.now()));
 
 /* Tarjeta que reemplaza al formulario mientras la cuenta no esté lista. */
 function tarjetaCandado() {
   if (!S.perfil || S.perfil.desdeCache) return '';
+  if (!rostroRegistrado()) return `
+    <div class="candado">
+      <h3>Registra tu rostro</h3>
+      <p>Para pedir o realizar servicios necesitamos una foto de tu rostro. Con ella te verificamos cada día. Es para la seguridad de todos.</p>
+      <button class="btn primary full" data-candado="identidad">${IC.escudo('sm')} Tomar mi foto</button>
+    </div>`;
   if (!cuentaActiva()) return `
     <div class="candado">
-      <h3>Tu cuenta está inactiva</h3>
-      <p>Para pedir o realizar servicios necesitamos una foto de tu rostro y una de la parte frontal de tu cédula. Es para la seguridad de todos.</p>
-      <button class="btn primary full" data-candado="identidad">${IC.escudo('sm')} Activar mi cuenta</button>
+      <h3>Tu cuenta está en revisión</h3>
+      <p>Ya tenemos la foto de tu rostro. Un administrador revisa tus datos y activa tu cuenta; te avisaremos por correo o WhatsApp.</p>
+      <button class="btn full" data-candado="revisar">Ya me activaron, revisar</button>
     </div>`;
   if (!verificadoHoy()) return `
     <div class="candado">
@@ -3161,8 +3275,15 @@ function tarjetaCandado() {
   return '';
 }
 function armarCandado() {
-  $$('#sheetbody [data-candado]').forEach(b => b.onclick = () =>
-    b.dataset.candado === 'identidad' ? flujoIdentidad(false) : flujoVerificacion());
+  $$('#sheetbody [data-candado]').forEach(b => b.onclick = async () => {
+    const que = b.dataset.candado;
+    if (que === 'identidad') return flujoIdentidad(false);
+    if (que === 'verificar') return flujoVerificacion();
+    b.disabled = true;
+    try { await cargarPerfil(); } catch (e) {}
+    if (!cuentaActiva()) toast('Tu cuenta sigue en revisión. Te avisaremos cuando esté activa');
+    pintarTop(); render();
+  });
 }
 
 /* Centra el mapa: el conductor en su GPS, el pasajero en su punto de recogida */
@@ -3298,7 +3419,7 @@ function textoCupo() {
   const u = act.filter(x => x.tipo === 'paquete' && (x.urgencia || 'urgente') === 'urgente').length;
   const d = act.filter(x => x.tipo === 'paquete' && ['1h', '2h'].includes(x.urgencia)).length;
   const c = act.filter(x => x.tipo === 'paquete' && x.urgencia === '5h').length;
-  return `<div class="cupo"><span class="chipdato">${IC.carro('sm')}Viajes ${v}/1</span>
+  return `<div class="cupo">${miVehiculo() === 'moto' ? '' : `<span class="chipdato">${IC.carro('sm')}Viajes ${v}/1</span>`}
     <span class="chipdato">${IC.rayo('sm')}Urgentes ${u}/1</span>
     <span class="chipdato">${IC.reloj('sm')}2 h ${d}/${MAX_ENVIOS_2H}</span>
     <span class="chipdato">${IC.agenda('sm')}5 h ${c}/∞</span></div>`;
@@ -3351,7 +3472,10 @@ function firmaMapa() {
   const s = S.solicitud;
   if (s && ACTIVOS.includes(s.estado)) return ['pas', 'sv', s.id, s.estado].join('|');
   if (S.paso === 'pedidos') return ['pas', 'lista', act].join('|');
-  return ['pas', 'pide', p(S.origen), p(S.destino)].join('|');
+  /* En el formulario el mapa se acerca al último punto elegido; al tocar
+     Continuar cambia la firma y se muestra el recorrido completo. */
+  const enForm = S.paso === 'form';
+  return ['pas', 'pide', enForm ? 'punto:' + p(S.ultimoPunto) : 'ruta', p(S.origen), S.paradas.map(p).join(';'), p(S.destino)].join('|');
 }
 
 async function sincronizarMapa() {
@@ -3375,18 +3499,20 @@ async function sincronizarMapa() {
   if (s && ACTIVOS.includes(s.estado) && S.modo === 'pasajero') {
     const A = { lat: +s.origen_lat, lng: +s.origen_lng };
     const B = { lat: +s.destino_lat, lng: +s.destino_lng };
+    const intermedias = paradasDe(s);
     mapa.limpiarDidi();
-    const km = +s.distancia_km || kmRuta(A, B);
+    const km = +s.distancia_km || kmTramos(puntosDe(s));
     mapa.etiquetarViaje(A, B, null, { km, min: +s.duracion_min || minRuta(km) });
+    mapa.marcarParadas(intermedias);
     const pc = S.posCond[s.conductor_id];
-    mapa.encuadrar([A, B, pc]);
-    await mapa.ruta(A, B);
+    mapa.encuadrar([A, ...intermedias, B, pc]);
+    await mapa.rutaVarias(puntosDe(s));
     if (vigente()) mapa.encuadrarRuta([pc]);
     return;
   }
 
   /* 3. Pasajero viendo la lista de sus pedidos. */
-  if (S.modo === 'pasajero' && S.paso === 'pedidos') return mapa.dibujarPedidos(S.activos);
+  if (S.modo === 'pasajero' && S.paso === 'pedidos') { mapa.quitarParadas(); return mapa.dibujarPedidos(S.activos); }
 
   /* 4. Conductor revisando las solicitudes de la zona. */
   if (S.modo === 'conductor') {
@@ -3400,30 +3526,40 @@ async function sincronizarMapa() {
     return mapa.dibujarCarreraDidi(S.pos, c);
   }
 
-  /* 3. Pasajero armando el pedido: los dos puntos y la ruta entre
-        ellos, en cualquiera de los pasos (destino, detalles, precio). */
+  /* 5. Pasajero armando el pedido. Mientras elige puntos (formulario) el
+        mapa se acerca al que acaba de poner y solo marca los puntos; al
+        tocar Continuar aparece el trayecto completo, con sus paradas. */
   mapa.limpiarDidi();
-  if (S.origen && S.destino) {
-    mapa.etiquetarViaje(S.origen, S.destino, null, { km: S.km, min: S.dur });
-    mapa.encuadrar([S.origen, S.destino]);
-    const r = await mapa.ruta(S.origen, S.destino);
-    if (!vigente()) return;
-    if (r) {
-      S.km = r.km; S.dur = r.min;
-      mapa.etiquetarViaje(S.origen, S.destino, null, { km: r.km, min: r.min });
-      if (S.paso === 'form') render();
-    }
-    mapa.encuadrarRuta();
+  mapa.marcarParadas(S.paradas);
+  if (S.origen) mapa.punto('a', S.origen, 'Recogida'); else mapa.quitarPunto('a');
+  if (S.destino) mapa.punto('b', S.destino, 'Destino'); else mapa.quitarPunto('b');
+  const pts = puntosPedido();
+  const completo = S.origen && S.destino;
+  if (S.paso === 'form' || !completo) {
+    mapa.borrarRuta();
+    const foco = focoPedido() || S.destino || S.origen;
+    if (foco) mapa.m.setView([foco.lat, foco.lng], 16, { animate: true });
+    if (!completo) return;
+    /* La distancia real se calcula de fondo (queda en caché) para que el
+       precio del siguiente paso ya salga con ella. */
+    const r = await rutaMulti(pts);
+    if (!vigente() || !r || !r.km) return;
+    S.km = r.km; S.dur = r.min;
+    mapa.etiquetarViaje(S.origen, S.destino, null, { km: r.km, min: r.min });
     return;
   }
-  mapa.borrarRuta();
-  mapa.quitarPunto('b');
-  if (S.origen) {
-    mapa.punto('a', S.origen, 'Recogida');
-    mapa.m.setView([S.origen.lat, S.origen.lng], 16, { animate: true });
-  } else {
-    mapa.quitarPunto('a');
+  mapa.etiquetarViaje(S.origen, S.destino, null, { km: S.km, min: S.dur });
+  mapa.encuadrar(pts);
+  const r = await mapa.rutaVarias(pts);
+  if (!vigente()) return;
+  if (r && r.km) {
+    const cambio = r.km !== S.km;
+    S.km = r.km; S.dur = r.min;
+    mapa.etiquetarViaje(S.origen, S.destino, null, { km: r.km, min: r.min });
+    /* Los pasos de envío muestran precios: se repintan con la distancia real. */
+    if (cambio && S.paso === 'detalles' && S.tipo === 'paquete' && S.pasoEnvio !== 'datos') render();
   }
+  mapa.encuadrarRuta();
 }
 
 /* Mientras la pantalla sea la misma (datos que se refrescan solos) se
@@ -3451,9 +3587,11 @@ function render() {
 
 /* ---------- selector de ubicación ---------- */
 let tGeo = null;
-function abrirSelector(cual) {
+function abrirSelector(cual, idx) {
   S.eligiendo = cual;
-  const ref = (cual === 'origen' ? S.origen : S.destino) || S.origen || S.pos;
+  S.paradaIdx = cual === 'parada' && idx != null ? idx : null;
+  const actual = cual === 'origen' ? S.origen : cual === 'parada' ? S.paradas[S.paradaIdx] : S.destino;
+  const ref = actual || (cual === 'parada' ? S.paradas[S.paradas.length - 1] || S.origen : null) || S.origen || S.pos;
   mapa.m.setView([ref.lat, ref.lng], 16);
   $('#cross').classList.remove('hidden');
   render();
@@ -3485,6 +3623,7 @@ function etiquetaPunto() {
 const TITULOS_SEL = {
   origen:  ['¿Dónde te recogemos?', 'Mueve el mapa o busca una dirección'],
   destino: ['¿A dónde vamos?', 'Mueve el mapa o busca una dirección'],
+  parada:  ['¿Dónde paramos?', 'Un punto en el camino, antes del destino'],
   lugar:   ['¿Qué lugar quieres guardar?', 'Ubícalo en el mapa y luego ponle un nombre']
 };
 function pintarSelector(sh) {
@@ -3597,11 +3736,16 @@ async function fijarPunto(cual, ll, texto) {
   }
   if (cual === 'lugar') { cerrarSelector(); return editarLugar(ll, texto); }
   const p = { ...ll, texto };
-  if (cual === 'origen') { S.origen = p; mapa.punto('a', p, 'Recogida'); }
-  else { S.destino = p; mapa.punto('b', p, 'Destino'); }
+  if (cual === 'origen') S.origen = p;
+  else if (cual === 'parada') {
+    if (S.paradaIdx != null && S.paradas[S.paradaIdx]) S.paradas[S.paradaIdx] = p;
+    else if (S.paradas.length < MAX_PARADAS) S.paradas.push(p);
+  }
+  else S.destino = p;
+  S.ultimoPunto = p;
   cerrarSelector();
 
-  if (S.origen && S.destino) { S.km = kmRuta(S.origen, S.destino); S.dur = minRuta(S.km); }
+  if (S.origen && S.destino) { S.km = kmTramos(puntosPedido()); S.dur = minRuta(S.km); }
   /* El dibujo y el encuadre los hace sincronizarMapa() desde render():
      un solo sitio decide que se ve en el mapa, en vez de repartirlo en
      temporizadores que se pisaban entre si. */
@@ -4226,7 +4370,7 @@ function pasoPedidos(sh) {
     </div>
     ${lim.viaje ? '<p class="fine" style="margin:8px 0 0">Solo puedes tener un viaje a la vez; envíos, hasta 10.</p>' : ''}`;
   $$('#sheetbody [data-ped]').forEach(b => b.onclick = () => enfocar(lista[+b.dataset.ped]));
-  const nuevo = tipo => { S.tipo = tipo; S.paso = 'form'; S.destino = null; mapa.firma = null; render(); };
+  const nuevo = tipo => { S.tipo = tipo; S.paso = 'form'; S.destino = null; S.paradas = []; S.ultimoPunto = S.origen; mapa.firma = null; render(); };
   $('#pd-envio').onclick = () => nuevo('paquete');
   $('#pd-viaje').onclick = () => nuevo('viaje');
   pintarEta();
@@ -4261,6 +4405,11 @@ function pasoForm(sh) {
         <button class="locbtn" data-cual="origen">
           <div class="t">${o ? esc(o.texto) : 'Punto de recogida'}</div>
           <div class="s">${o ? 'Toca para cambiar' : 'Elige en el mapa o busca la dirección'}</div></button>
+        ${S.paradas.map((x, i) => `<div class="locfila">
+          <button class="locbtn" data-cual="parada" data-i="${i}">
+            <div class="t"><span class="num-mini">${i + 1}</span>${esc(x.texto || 'Parada')}</div>
+            <div class="s">Parada ${i + 1} · toca para cambiar</div></button>
+          <button class="quitar" data-quitar="${i}" aria-label="Quitar la parada ${i + 1}">${IC.cerrar('sm')}</button></div>`).join('')}
         <button class="locbtn" data-cual="destino">
           <div class="t">${d ? esc(d.texto) : (S.tipo === 'viaje' ? 'Destino' : 'Dirección de entrega')}</div>
           <div class="s">${d ? 'Toca para cambiar' : 'Elige en el mapa o busca la dirección'}</div></button>
@@ -4268,23 +4417,28 @@ function pasoForm(sh) {
       ${o && d ? `<button class="iconbtn" id="p-swap" aria-label="Intercambiar recogida y destino" title="Intercambiar">
         <svg viewBox="0 0 24 24"><path d="M7 20V5M7 5 4 8M7 5l3 3M17 4v15M17 19l3-3M17 19l-3-3"/></svg></button>` : ''}
     </div>
+    ${o && d && S.paradas.length < MAX_PARADAS ? `<button class="btn suave full sm" id="p-parada" style="margin-top:8px">+ Agregar parada${S.paradas.length ? '' : ' en el camino'}</button>` : ''}
     <button class="btn primary full" id="p-seguir" style="margin-top:12px" ${o && d && !lleno && !candado ? '' : 'disabled'}>Continuar</button>`;
   armarCandado();
   const ba = $('#p-activos');
   if (ba) ba.onclick = () => { if (S.activos.length === 1) enfocar(S.activos[0]); else { S.paso = 'pedidos'; mapa.firma = null; render(); } };
   $$('#sheetbody [data-tipo]').forEach(b => b.onclick = () => { S.tipo = b.dataset.tipo; render(); });
-  $$('#sheetbody .locbtn').forEach(b => b.onclick = () => abrirSelector(b.dataset.cual));
+  $$('#sheetbody .locbtn').forEach(b => b.onclick = () => abrirSelector(b.dataset.cual, b.dataset.i != null ? +b.dataset.i : null));
+  const recalcular = () => { S.km = kmTramos(puntosPedido()); S.dur = minRuta(S.km); render(); };
+  $$('#sheetbody [data-quitar]').forEach(b => b.onclick = () => {
+    S.paradas.splice(+b.dataset.quitar, 1);
+    S.ultimoPunto = S.destino;
+    recalcular();
+  });
+  const bp = $('#p-parada');
+  if (bp) bp.onclick = () => abrirSelector('parada', null);
   chipsLugares('#chips-inicio', l => fijarPunto('destino', { lat: l.lat, lng: l.lng }, l.etiqueta));
   const sw = $('#p-swap');
-  if (sw) sw.onclick = async () => {
+  if (sw) sw.onclick = () => {
     const a = S.origen; S.origen = S.destino; S.destino = a;
-    mapa.punto('a', S.origen); mapa.punto('b', S.destino);
-    S.km = kmRuta(S.origen, S.destino); S.dur = minRuta(S.km);
-    render();
-    const r = await mapa.ruta(S.origen, S.destino);
-    if (r) { S.km = r.km; S.dur = r.min; }
-    mapa.encuadrarRuta();
-    if (S.paso === 'form') render();
+    S.paradas.reverse();
+    S.ultimoPunto = S.origen;
+    recalcular();
   };
   $('#p-seguir').onclick = () => {
     if (S.tipo === 'paquete') S.pasoEnvio = 'tamano';
@@ -4317,6 +4471,12 @@ function pasoDetalles(sh) {
   };
 }
 
+/* Tarifa del pedido que se está armando, con todo lo elegido. */
+const tarifaPedido = (cambios = {}) => tarifa(S.km, S.tipo,
+  { tamano: S.tamano, urgencia: S.urgencia, vehiculo: S.vehEnvio, ...cambios });
+const pct = d => Math.round(d * 100);
+const textoParadas = n => n ? ` · ${n} parada${n > 1 ? 's' : ''}` : '';
+
 /* El envío se arma en tres pantallas cortas, igual que el viaje, en vez
    de un formulario largo: tamaño, cuándo sale y a quién se entrega.
    Elegir una opción avanza sola a la siguiente. */
@@ -4333,7 +4493,7 @@ function pasoEnvio(sh) {
   const resumen = () => {
     const t = TAMANOS[S.tamano] || TAMANOS.pequeno;
     const u = urgDe(S.urgencia);
-    const partes = [t.t];
+    const partes = [vehDe(S.vehEnvio).t, t.t];
     if (i >= 2) partes.push(u.t.toLowerCase());
     return `<div class="resumen-envio">${IC[t.i]('sm')}
       <span class="grow">${partes.join(' · ')}</span>
@@ -4345,11 +4505,15 @@ function pasoEnvio(sh) {
       <div class="head"><button class="back" id="b-atras" aria-label="Volver">${IC.atras('sm')}</button>
         <div class="grow"><h2>¿Qué tamaño tiene?</h2></div></div>
       ${barra}
+      <div class="segmented" id="env-veh" style="margin-bottom:10px" role="group" aria-label="Vehículo del envío">
+        ${Object.entries(VEHICULOS).map(([k, v]) => `<button data-veh="${k}" class="${(S.vehEnvio || 'carro') === k ? 'on' : ''}">${IC[v.i]('sm')}${v.t}</button>`).join('')}
+      </div>
       ${Object.entries(TAMANOS).map(([k, v]) => `
         <button class="opt ${S.tamano === k ? 'on' : ''}" data-tam="${k}" style="padding:12px 14px">
           <div class="ico">${IC[v.i]()}</div>
           <div class="grow"><div class="t">${v.t}</div><div class="s">${v.s}</div></div>
-          <div class="fin" style="color:var(--dim)">›</div></button>`).join('')}`;
+          <div class="p">${money(tarifaPedido({ tamano: k, urgencia: 'urgente' }).final)}<small style="color:var(--dim)">urgente</small></div></button>`).join('')}`;
+    $$('#sheet [data-veh]').forEach(b => b.onclick = () => { S.vehEnvio = b.dataset.veh; render(); });
     $$('#sheet [data-tam]').forEach(b => b.onclick = () => { S.tamano = b.dataset.tam; irA('urgencia'); });
     $('#b-atras').onclick = () => { S.paso = 'form'; render(); };
     return;
@@ -4362,11 +4526,11 @@ function pasoEnvio(sh) {
       ${barra}
       ${resumen()}
       ${Object.entries(URGENCIAS).map(([k, u]) => {
-        const t = tarifa(S.km, 'paquete', { tamano: S.tamano, urgencia: k });
+        const t = tarifaPedido({ urgencia: k });
         return `<button class="opt ${S.urgencia === k ? 'on' : ''}" data-urg="${k}">
           <div class="ico">${IC[u.i]()}</div>
           <div class="grow"><div class="t">${u.t}</div><div class="s">${u.s}</div></div>
-          <div class="p">${money(t.final)}${u.d ? `<small>−${u.d * 100}%</small>` : ''}</div>
+          <div class="p">${money(t.final)}${t.desc ? `<small>−${pct(t.desc)}%</small>` : ''}</div>
         </button>`;
       }).join('')}`;
     $$('#sheet [data-urg]').forEach(b => b.onclick = () => { S.urgencia = b.dataset.urg; irA('datos'); });
@@ -4404,14 +4568,14 @@ function pasoEnvio(sh) {
     if (!S.descripcion) return toast('Escribe qué contiene el paquete', 'bad');
     if (!S.destinatario) return toast('Falta el nombre de quien recibe', 'bad');
     if (!celularValido(S.destTel)) return toast('El celular de quien recibe debe tener 10 dígitos y empezar con 09', 'bad');
-    const t = tarifa(S.km, 'paquete', { tamano: S.tamano, urgencia: S.urgencia });
+    const t = tarifaPedido();
     S.sugerido = t.final; S.precio = t.final;
     S.paso = 'precio'; render();
   };
 }
 
 function pasoPrecio(sh) {
-  const t = tarifa(S.km, S.tipo, { tamano: S.tamano, urgencia: S.urgencia });
+  const t = tarifaPedido();
   if (S.tipo === 'paquete') return pasoPrecioFijo(sh, t);
   const minPermitido = t.minPermitido;
   if (S.precio < minPermitido) S.precio = t.final;
@@ -4428,7 +4592,7 @@ function pasoPrecio(sh) {
       <button class="switch ${S.auto ? 'on' : ''}" id="sw-auto"><i></i></button>
     </div>
     <div class="card oculta-compacta">
-      <div class="kv"><span class="k">Recorrido</span><span class="v">${S.km} km · ${S.dur} min</span></div>
+      <div class="kv"><span class="k">Recorrido</span><span class="v">${S.km} km · ${S.dur} min${textoParadas(S.paradas.length)}</span></div>
       <div class="kv"><span class="k">Pasajeros</span><span class="v">${S.pasajeros}</span></div>
       <div class="kv"><span class="k">Pago</span><span class="v">Efectivo al conductor</span></div>
     </div>
@@ -4448,14 +4612,15 @@ function pasoPrecioFijo(sh, t) {
       <h2>Precio del envío</h2><div class="dim">Tarifa fija, sin negociar</div></div></div>
     <div class="price-hero">
       <div class="amount">$${t.final.toFixed(2)} ${t.desc ? `<span>${money(t.bruto)}</span>` : ''}</div>
-      ${t.desc ? `<span class="badge ok">−${t.desc * 100}%</span>` : ''}
+      ${t.desc ? `<span class="badge ok">−${pct(t.desc)}%</span>` : ''}
     </div>
     <div class="card oculta-compacta">
-      <div class="kv"><span class="k">Recorrido</span><span class="v">${S.km} km · ${S.dur} min</span></div>
+      <div class="kv"><span class="k">Recorrido</span><span class="v">${S.km} km · ${S.dur} min${textoParadas(S.paradas.length)}</span></div>
+      <div class="kv"><span class="k">Vehículo</span><span class="v">${vehDe(S.vehEnvio).t}</span></div>
       <div class="kv"><span class="k">Tamaño</span><span class="v">${TAMANOS[S.tamano].t}</span></div>
       <div class="kv"><span class="k">Entrega</span><span class="v">${urgDe(S.urgencia).t}</span></div>
       <div class="kv"><span class="k">Plazo de entrega</span><span class="v">${textoPlazoUrgencia(S.urgencia)}</span></div>
-      <div class="kv"><span class="k">Descuento por esperar</span><span class="v">${t.desc ? `−${t.desc * 100}% (${money(t.bruto - t.final)})` : 'Sin descuento'}</span></div>
+      <div class="kv"><span class="k">Descuento por esperar</span><span class="v">${t.desc ? `−${pct(t.desc)}% (${money(t.bruto - t.final)})` : 'Sin descuento'}</span></div>
       <div class="kv"><span class="k">Total a pagar</span><span class="v">${money(t.final)}</span></div>
     </div>
     <button class="btn primary full" id="p-publicar" style="margin-top:12px">Pedir envío por ${money(t.final)}</button>`;
@@ -4464,9 +4629,11 @@ function pasoPrecioFijo(sh, t) {
 }
 
 async function publicar() {
-  const t = tarifa(S.km, S.tipo, { tamano: S.tamano, urgencia: S.urgencia });
+  const t = tarifaPedido();
   const d = {
     tipo: S.tipo,
+    vehiculo: S.tipo === 'paquete' ? (S.vehEnvio || 'carro') : 'carro',
+    paradas: S.paradas.map(p => ({ lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), texto: p.texto || '' })),
     urgencia: S.tipo === 'paquete' ? S.urgencia : null,
     tamano: S.tipo === 'paquete' ? S.tamano : null,
     descripcion: S.tipo === 'paquete' ? S.descripcion : null,
@@ -4489,13 +4656,14 @@ async function publicar() {
     S.activos = [...S.activos, nueva];
     /* Listo para armar el siguiente: el destino se borra, la recogida se
        queda (lo normal es mandar varios envíos desde el mismo sitio). */
-    S.destino = null; S.descripcion = ''; S.destinatario = ''; S.destTel = ''; S.notas = '';
+    S.destino = null; S.paradas = []; S.ultimoPunto = S.origen;
+    S.descripcion = ''; S.destinatario = ''; S.destTel = ''; S.notas = '';
     enfocar(nueva);
     sincronizarSeguimiento();
   } catch (e) {
     toast(explicarError(e, 'crearSolicitud'), 'bad');
     if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
-    if (/verifica|inactiva/i.test(e.message || '')) { try { await cargarPerfil(); } catch (_) {} S.paso = 'form'; render(); }
+    if (/verifica|activa|revisi/i.test(e.message || '')) { try { await cargarPerfil(); } catch (_) {} S.paso = 'form'; render(); }
   }
 }
 
@@ -4587,7 +4755,9 @@ function compartirViaje(s) {
   const txt =
     `Voy en Ruta con ${s.conductor_nombre || 'un conductor'}` +
     (s.placa ? ` (placa ${s.placa}${s.vehiculo_texto ? ', ' + s.vehiculo_texto : ''})` : '') + '.\n' +
-    `Salgo de: ${s.origen_texto}\nVoy a: ${s.destino_texto}\n` +
+    `Salgo de: ${s.origen_texto}\n` +
+    paradasDe(s).map((q, i) => `Parada ${i + 1}: ${q.texto || `${q.lat},${q.lng}`}\n`).join('') +
+    `Voy a: ${s.destino_texto}\n` +
     `Punto de recogida: https://www.google.com/maps?q=${s.origen_lat},${s.origen_lng}\n` +
     `Destino: https://www.google.com/maps?q=${s.destino_lat},${s.destino_lng}`;
   if (navigator.share) { navigator.share({ title: 'Mi viaje en Ruta', text: txt }).catch(() => {}); return; }
@@ -4617,6 +4787,7 @@ function pasoViaje(sh) {
     <div class="card"><div class="route">
       <div class="rail"><div class="l1"></div><div class="line"></div><div class="l2"></div></div>
       <div><div class="dim">Recogida</div><div style="font-weight:500">${esc(s.origen_texto)}</div></div>
+      ${paradasDe(s).map((q, i) => `<div style="margin-top:8px"><div class="dim">Parada ${i + 1}</div><div style="font-weight:500">${esc(q.texto || '')}</div></div>`).join('')}
       <div style="margin-top:10px"><div class="dim">${envio ? 'Entrega a ' + esc(s.destinatario || '') : 'Destino'}</div><div style="font-weight:500">${esc(s.destino_texto)}</div></div>
     </div></div>
     ${tarjetaMensajes(s)}
@@ -4663,7 +4834,7 @@ function pasoCalificar(sh, sArg) {
     S.porCalificar = S.porCalificar.filter(x => x.id !== s.id);
     if (!S.porCalificar.length) {
       resetViaje(); mapa.limpiar();
-      if (S.modo === 'pasajero' && !S.activos.length) { S.origen = null; S.destino = null; ubicarme(); }
+      if (S.modo === 'pasajero' && !S.activos.length) { S.origen = null; S.destino = null; S.paradas = []; S.ultimoPunto = null; ubicarme(); }
     }
     mapa.firma = null;
     render();
@@ -4691,10 +4862,18 @@ function pintarConductor(sh) {
    puede esperar: el pasajero a bordo, los envíos con el plazo encima y
    los urgentes. Los de 5 h van al final si no quedan de paso.
    ------------------------------------------------------------------ */
-const claveParada = p => p.s.id + ':' + p.tipo;
+const claveParada = p => p.s.id + ':' + p.tipo + (p.i != null ? ':' + p.i : '');
+/* Paradas intermedias por las que el conductor ya pasó. La base no lleva
+   ese avance (el servicio sigue "a bordo"), así que se recuerda en el
+   teléfono del conductor. */
+const paradasHechas = new Set((() => { try { return JSON.parse(leerLocal('paradas_hechas', '[]')) || []; } catch (e) { return []; } })());
+function marcarParadaHecha(k) {
+  paradasHechas.add(k);
+  guardarLocal('paradas_hechas', JSON.stringify([...paradasHechas].slice(-200)));
+}
 function prioridad(p) {
   const s = p.s;
-  if (s.tipo === 'viaje') return p.tipo === 'entregar' ? .25 : .45;
+  if (s.tipo === 'viaje') return p.tipo === 'recoger' ? .45 : .25;
   const m = plazoDe(s);
   if (m != null && m <= 20) return .3;
   const u = s.urgencia || 'urgente';
@@ -4706,14 +4885,21 @@ function planificarParadas() {
   const pend = [];
   S.activos.filter(s => EN_CURSO.includes(s.estado)).forEach(s => {
     const A = { lat: +s.origen_lat, lng: +s.origen_lng }, B = { lat: +s.destino_lat, lng: +s.destino_lng };
-    if (s.estado !== 'a_bordo') pend.push({ s, tipo: 'recoger', p: A });
-    pend.push({ s, tipo: 'entregar', p: B, trasRecoger: s.estado !== 'a_bordo' });
+    /* Cada parada va después de la anterior del mismo servicio: recoger,
+       las paradas en su orden y al final la entrega. */
+    let previa = null;
+    if (s.estado !== 'a_bordo') pend.push(previa = { s, tipo: 'recoger', p: A });
+    paradasDe(s).forEach((q, i) => {
+      const x = { s, tipo: 'parada', i, p: q, tras: previa };
+      if (paradasHechas.has(claveParada(x))) return;
+      pend.push(previa = x);
+    });
+    pend.push({ s, tipo: 'entregar', p: B, tras: previa });
   });
   const orden = [];
   let aqui = S.pos;
   while (orden.length < pend.length) {
-    const libres = pend.filter(x => !orden.includes(x) &&
-      (!x.trasRecoger || orden.some(o => o.s.id === x.s.id && o.tipo === 'recoger')));
+    const libres = pend.filter(x => !orden.includes(x) && (!x.tras || orden.includes(x.tras)));
     let mejor = libres[0], costo = Infinity;
     libres.forEach(x => {
       const c = (haversine(aqui, x.p) + .15) * prioridad(x);
@@ -4726,14 +4912,17 @@ function planificarParadas() {
 }
 function rotuloParada(p) {
   const s = p.s, envio = s.tipo === 'paquete';
+  if (p.tipo === 'parada') return `Parada ${p.i + 1} · ${envio ? 'envío a ' + (s.destinatario || 'destinatario') : nombreCorto(s.pasajero_nombre)}`;
   if (p.tipo === 'recoger') return envio ? 'Recoger paquete de ' + nombreCorto(s.pasajero_nombre) : 'Recoger a ' + nombreCorto(s.pasajero_nombre);
   return envio ? 'Entregar a ' + (s.destinatario || 'destinatario') : 'Dejar a ' + nombreCorto(s.pasajero_nombre);
 }
 /* Qué botón corresponde a cada parada. Los viajes pasan por "Voy en
    camino" para que el pasajero reciba el aviso; los envíos se recogen
    directo, que el conductor puede estar cargando varios. */
+const dirParada = p => p.tipo === 'recoger' ? p.s.origen_texto : p.tipo === 'parada' ? p.p.texto : p.s.destino_texto;
 function accionParada(p) {
   const s = p.s, envio = s.tipo === 'paquete';
+  if (p.tipo === 'parada') return s.estado === 'a_bordo' ? { t: 'Pasé por esta parada', local: true } : null;
   if (p.tipo === 'recoger') {
     if (!envio && s.estado === 'aceptado') return { t: 'Voy en camino', next: 'en_camino' };
     return { t: envio ? 'Recogí el paquete' : 'Recogí al pasajero', next: 'a_bordo' };
@@ -4752,12 +4941,13 @@ function panelRuta(sh) {
   const km = kmRuta(S.pos, sel.p), min = minRuta(km);
   const o = otroLado(s);
   const nuevos = sinLeer(s.id);
-  const dir = sel.tipo === 'recoger' ? s.origen_texto : s.destino_texto;
+  const dir = dirParada(sel);
   const chips = [
     `<span class="chipdato acento">${IC.billete('sm')}${money(s.precio_final || s.precio_ofrecido)}</span>`,
     envio ? `<span class="chipdato">${IC.caja('sm')}${(TAMANOS[s.tamano] || {}).t || 'Envío'} · ${urgDe(s.urgencia).t}</span>`
           : `<span class="chipdato">${IC.personas('sm')}${s.pasajeros || 1} pasajero${(s.pasajeros || 1) > 1 ? 's' : ''}</span>`,
     envio && s.descripcion ? `<span class="chipdato">${IC.sobre('sm')}${esc(s.descripcion)}</span>` : '',
+    paradasDe(s).length ? `<span class="chipdato">${IC.ruta('sm')}${paradasDe(s).length} parada${paradasDe(s).length > 1 ? 's' : ''} en el camino</span>` : '',
     s.notas ? `<span class="chipdato">${IC.nota('sm')}${esc(s.notas)}</span>` : ''
   ].filter(Boolean).join('');
 
@@ -4775,9 +4965,9 @@ function panelRuta(sh) {
         </div>
         ${envio ? chipPlazo(s) : ''}
       </div>
-      <div class="dir"><b>${sel.tipo === 'recoger' ? 'Recogida' : 'Entrega'}:</b> ${esc(dir || '')}</div>
+      <div class="dir"><b>${sel.tipo === 'recoger' ? 'Recogida' : sel.tipo === 'parada' ? 'Parada' : 'Entrega'}:</b> ${esc(dir || '')}</div>
       <div class="chipset" style="margin:0 0 10px">${chips}</div>
-      ${botonWaze(sel.p, sel.tipo === 'recoger' ? 'Navegar a la recogida' : 'Navegar a la entrega')}
+      ${botonWaze(sel.p, sel.tipo === 'recoger' ? 'Navegar a la recogida' : sel.tipo === 'parada' ? 'Navegar a la parada' : 'Navegar a la entrega')}
       ${a ? `<button class="btn primary full" id="c-next" style="margin-top:8px">${a.t}</button>` : ''}
       <div class="acciones">
         <button class="btn suave" id="abrir-chat" style="justify-content:flex-start;overflow:hidden">
@@ -4798,7 +4988,7 @@ function panelRuta(sh) {
         <button class="parada ${p === sel ? 'sel' : ''}" data-par="${esc(claveParada(p))}">
           <div class="parada-num ${p.tipo}">${i + 1}</div>
           <div class="grow"><div class="t">${esc(rotuloParada(p))}</div>
-            <div class="s">${esc((p.tipo === 'recoger' ? p.s.origen_texto : p.s.destino_texto) || '')}</div></div>
+            <div class="s">${esc(dirParada(p) || '')}</div></div>
           ${p.s.tipo === 'paquete' ? chipPlazo(p.s) : ''}
         </button>`).join('')}</div>` : ''}
 
@@ -4816,6 +5006,11 @@ function panelRuta(sh) {
   $('#c-ayuda').onclick = () => modalNuevoTicket(s);
   const on = $('#c-online'); if (on) on.onclick = alternarLinea;
   if (a) $('#c-next').onclick = async () => {
+    if (a.local) {
+      marcarParadaHecha(claveParada(sel));
+      S.paradaSel = null; mapa.firma = null; render();
+      return;
+    }
     const btn = $('#c-next'); btn.disabled = true;
     try {
       S.propios.add(s.id + ':' + a.next);
@@ -4873,13 +5068,15 @@ function tarjetaSolicitudDidi(s, idx, total) {
     esEnvio
       ? (s.tamano ? `<span class="chipdato">${IC.caja('sm')}${(TAMANOS[s.tamano] || {}).t || ''}</span>` : '')
       : (s.pasajeros ? `<span class="chipdato">${IC.personas('sm')}${s.pasajeros} pasajero${s.pasajeros > 1 ? 's' : ''}</span>` : ''),
-    urg ? `<span class="chipdato ${s.urgencia === 'urgente' ? 'urge' : ''}">${IC.reloj('sm')}${urg.t}</span>` : ''
+    urg ? `<span class="chipdato ${s.urgencia === 'urgente' ? 'urge' : ''}">${IC.reloj('sm')}${urg.t}</span>` : '',
+    paradasDe(s).length ? `<span class="chipdato">${IC.ruta('sm')}${paradasDe(s).length} parada${paradasDe(s).length > 1 ? 's' : ''}</span>` : ''
   ].filter(Boolean).join('');
 
   /* Lo que no cabe arriba. Solo se ve con el panel a media altura. */
   const extras = [
     esEnvio && s.descripcion ? `<span class="chipdato">${IC.sobre('sm')}${esc(s.descripcion)}</span>` : '',
     esEnvio && s.destinatario ? `<span class="chipdato">${IC.pin('sm')}Entregar a ${esc(s.destinatario)}</span>` : '',
+    ...paradasDe(s).map((q, i) => `<span class="chipdato"><span class="num-mini">${i + 1}</span>${esc(q.texto || 'Parada')}</span>`),
     s.notas ? `<span class="chipdato">${IC.nota('sm')}${esc(s.notas)}</span>` : '',
     porKm ? `<span class="chipdato">${IC.ruta('sm')}${money(porKm)} por km · ${totalKm} km en total</span>` : ''
   ].filter(Boolean).join('');
@@ -4908,7 +5105,7 @@ function tarjetaSolicitudDidi(s, idx, total) {
         <div class="didi-plata">
           <div class="didi-price">${money(precio)}</div>
           <div class="didi-tags">
-            <span class="badge solid">${esEnvio ? IC.caja('sm') : IC.carro('sm')}${esEnvio ? 'Envío' : 'Viaje'}</span>
+            <span class="badge solid">${esEnvio ? IC.caja('sm') : IC.carro('sm')}${esEnvio ? (s.vehiculo === 'moto' ? 'Envío en moto' : 'Envío') : 'Viaje'}</span>
           </div>
         </div>
       </div>
@@ -4945,7 +5142,7 @@ function pasoSolicitudes(sh) {
   const hab = estadoConductor();
   if (!hab.ok) {
     mapa.limpiarDidi();
-    if (hab.identidad || hab.verificar) {
+    if (hab.identidad || hab.revision || hab.verificar) {
       sh.innerHTML = tarjetaCandado();
       armarCandado();
       return;
@@ -4965,7 +5162,9 @@ function pasoSolicitudes(sh) {
     sh.innerHTML = `
       <div class="empty"><div class="big">${IC.poder()}</div>
         <h3 style="margin-bottom:6px;color:var(--text)">Estás fuera de línea</h3>
-        <p class="dim">Ponte en línea para ver los viajes a menos de ${RADIO_VIAJES_KM} km de ti y los envíos de cualquier parte de la ciudad. Puedes llevar 1 viaje, 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.</p></div>
+        <p class="dim">${miVehiculo() === 'moto'
+          ? 'Ponte en línea para ver los envíos en moto de cualquier parte de la ciudad. Puedes llevar 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.'
+          : `Ponte en línea para ver los viajes a menos de ${RADIO_VIAJES_KM} km de ti y los envíos de cualquier parte de la ciudad. Puedes llevar 1 viaje, 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.`}</p></div>
       <button class="btn primary full" id="c-online">Ponerme en línea</button>`;
     $('#c-online').onclick = alternarLinea;
     return;
@@ -5165,6 +5364,7 @@ function modalRecorrido(s, conAcciones = false) {
         <div class="v" id="leg1">${tramo(k1, m1)}</div></div>` : ''}
       <div class="leg"><div class="n">${soyConductor ? '2' : '1'}</div>
         <div class="grow"><div style="font-weight:600">${fijo ? 'Llevar el paquete' : 'Llevar al pasajero'}</div>
+          ${paradasDe(s).map((q, i) => `<div class="dim"><span class="num-mini">${i + 1}</span>${esc(q.texto || 'Parada')}</div>`).join('')}
           <div class="dim">${esc(s.destino_texto)}</div>
           ${soyConductor ? botonesNav(A, B) : ''}</div>
         <div class="v" id="leg2">${tramo(k2, m2)}</div></div>
@@ -5189,7 +5389,7 @@ function modalRecorrido(s, conAcciones = false) {
     const ico = (h, t = 22) => L.divIcon({ className: 'mk', html: h, iconSize: [t, t], iconAnchor: [t / 2, t / 2] });
     const capas = [];
 
-    const viaje = await rutaReal(A, B);
+    const viaje = await rutaMulti(puntosDe(s));
     if (!mapaSec) return;
     capas.push(L.polyline(viaje.pts, { color: CONTRA(), weight: 9 }).addTo(mapaSec));
     capas.push(L.polyline(viaje.pts, { color: AZUL(), weight: 5, lineJoin: 'round' }).addTo(mapaSec));
@@ -5200,7 +5400,7 @@ function modalRecorrido(s, conAcciones = false) {
       ida = await rutaReal(S.pos, A);
       if (!mapaSec) return;
       capas.push(L.polyline(ida.pts, { color: '#8FB4FF', weight: 5, dashArray: '7 9' }).addTo(mapaSec));
-      capas.push(L.marker([S.pos.lat, S.pos.lng], { icon: ico('<div class="car">' + IC.carro() + '</div>', 36) }).addTo(mapaSec));
+      capas.push(L.marker([S.pos.lat, S.pos.lng], { icon: ico('<div class="car">' + IC[miVehiculo()]() + '</div>', 36) }).addTo(mapaSec));
       if ($('#leg1')) $('#leg1').innerHTML = tramo(ida.km, ida.min);
     }
     if ($('#legT')) {
@@ -5211,6 +5411,8 @@ function modalRecorrido(s, conAcciones = false) {
 
     capas.push(L.marker([A.lat, A.lng], { icon: ico('<div class="pt"></div>') }).addTo(mapaSec).bindTooltip('Recogida'));
     capas.push(L.marker([B.lat, B.lng], { icon: ico('<div class="pt hollow"></div>') }).addTo(mapaSec).bindTooltip('Entrega'));
+    paradasDe(s).forEach((q, i) => capas.push(L.marker([q.lat, q.lng], { icon: ico(`<div class="num-parada parada chica">${i + 1}</div>`) })
+      .addTo(mapaSec).bindTooltip(`Parada ${i + 1}${q.texto ? ': ' + esc(q.texto) : ''}`)));
     const grupo = L.featureGroup(capas);
     mapaSec.fitBounds(grupo.getBounds(), { padding: [40, 40] });
     setTimeout(() => { if (mapaSec) mapaSec.invalidateSize(); }, 140);
@@ -5277,6 +5479,7 @@ function modalServicio(x) {
     <div class="card"><div class="route">
       <div class="rail"><div class="l1"></div><div class="line"></div><div class="l2"></div></div>
       <div><div class="dim">Salida</div><div style="font-weight:500">${esc(x.origen_texto || '—')}</div></div>
+      ${paradasDe(x).map((q, i) => `<div style="margin-top:8px"><div class="dim">Parada ${i + 1}</div><div style="font-weight:500">${esc(q.texto || '')}</div></div>`).join('')}
       <div style="margin-top:10px"><div class="dim">Llegada</div><div style="font-weight:500">${esc(x.destino_texto || '—')}</div></div>
     </div></div>
     <div class="card">
@@ -5300,21 +5503,20 @@ function modalServicio(x) {
     S.tamano = x.tamano || 'pequeno';
     S.urgencia = x.urgencia === '1h' ? '2h' : (x.urgencia || 'urgente');
     S.pasajeros = x.pasajeros || 1;
+    S.vehEnvio = x.vehiculo === 'moto' ? 'moto' : 'carro';
     S.origen  = { lat: +x.origen_lat,  lng: +x.origen_lng,  texto: x.origen_texto };
     S.destino = { lat: +x.destino_lat, lng: +x.destino_lng, texto: x.destino_texto };
-    S.km = kmRuta(S.origen, S.destino); S.dur = minRuta(S.km);
-    mapa.punto('a', S.origen); mapa.punto('b', S.destino);
+    S.paradas = paradasDe(x).slice(0, MAX_PARADAS);
+    S.ultimoPunto = S.destino;
+    S.km = kmTramos(puntosPedido()); S.dur = minRuta(S.km);
     S.paso = 'form';
+    mapa.firma = null;
     setVista('inicio');
-    const r = await mapa.ruta(S.origen, S.destino);
-    if (r) { S.km = r.km; S.dur = r.min; }
-    mapa.encuadrarRuta();
-    if (S.paso === 'form') render();
   };
 }
 
 /* ============================================================
-   Identidad: foto del rostro, foto de la cédula y verificación diaria
+   Identidad: foto del rostro y verificación diaria
    ------------------------------------------------------------
    La cámara corre dentro de la página (getUserMedia), igual en el
    navegador y en el WebView del APK. face-api detecta el rostro y la
@@ -5363,221 +5565,20 @@ function fotoDe(video, espejo) {
   return new Promise(r => c.toBlob(r, 'image/jpeg', .86));
 }
 
-/* ------------------------------------------------------------------
-   ¿Hay una cédula en la foto?
-   Busca un rectángulo con proporción de tarjeta (ID-1: 85.6 × 54 mm,
-   1.586) que ocupe buena parte del recuadro: bordes rectos y visibles en
-   los cuatro lados y algo impreso adentro. Trabaja sobre una copia de
-   ~260 px de ancho en escala de grises, así corre en cualquier teléfono.
-   Devuelve { ok, motivo, caja:{x,y,w,h} en coordenadas de la fuente }.
-   ------------------------------------------------------------------ */
-function detectarTarjeta(fuente, zona, minFraccion = .55) {
-  const fw = fuente.videoWidth || fuente.naturalWidth || fuente.width;
-  const fh = fuente.videoHeight || fuente.naturalHeight || fuente.height;
-  if (!fw || !fh) return { ok: false, motivo: 'Esperando la cámara...' };
-  const z = zona || { x: 0, y: 0, w: fw, h: fh };
-  const W = 260, H = Math.max(40, Math.round(W * z.h / z.w));
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const cx = cv.getContext('2d', { willReadFrequently: true });
-  cx.drawImage(fuente, z.x, z.y, z.w, z.h, 0, 0, W, H);
-  const px = cx.getImageData(0, 0, W, H).data;
-  const g = new Float32Array(W * H);
-  for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = px[j] * .299 + px[j + 1] * .587 + px[j + 2] * .114;
-  /* suavizado 3x3 para que el grano de la cámara no cuente como borde */
-  const b = new Float32Array(W * H);
-  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
-    let t = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) t += g[(y + dy) * W + x + dx];
-    b[y * W + x] = t / 9;
-  }
-  /* Sobel: gx marca bordes verticales, gy horizontales */
-  const gx = new Float32Array(W * H), gy = new Float32Array(W * H);
-  const mags = [];
-  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
-    const i = y * W + x;
-    const a = b[i - W - 1], c = b[i - W + 1], d = b[i + W - 1], f = b[i + W + 1];
-    gx[i] = (c + 2 * b[i + 1] + f) - (a + 2 * b[i - 1] + d);
-    gy[i] = (d + 2 * b[i + W] + f) - (a + 2 * b[i - W] + c);
-    if ((x + y) % 3 === 0) mags.push(Math.abs(gx[i]) + Math.abs(gy[i]));
-  }
-  mags.sort((p, q) => p - q);
-  const T = Math.max(40, mags[Math.floor(mags.length * .85)] || 0);
-  /* Perfiles: cuántos píxeles de borde horizontal hay en cada fila y de
-     borde vertical en cada columna. */
-  const esH = i => Math.abs(gy[i]) > T && Math.abs(gy[i]) > 1.3 * Math.abs(gx[i]);
-  const esV = i => Math.abs(gx[i]) > T && Math.abs(gx[i]) > 1.3 * Math.abs(gy[i]);
-  const filas = new Float32Array(H), cols = new Float32Array(W);
-  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
-    const i = y * W + x;
-    if (esH(i)) filas[y]++;
-    if (esV(i)) cols[x]++;
-  }
-  const suave = (arr, n) => arr.map((_, k) => { let t = 0; for (let d = -2; d <= 2; d++) t += arr[Math.min(n - 1, Math.max(0, k + d))] || 0; return t; });
-  const F = suave(Array.from(filas), H), C = suave(Array.from(cols), W);
-  /* Candidatos: picos del perfil (filas/columnas con muchos bordes). Una
-     cédula tiene líneas internas (franjas, foto) tan fuertes como su
-     contorno, así que no basta con el pico más alto: se prueban las
-     combinaciones y gana el rectángulo con los 4 lados más continuos. */
-  const picos = (arr, n) => {
-    const mx = Math.max(...arr) || 1, cand = [], out = [];
-    for (let i = 3; i < n - 3; i++)
-      if (arr[i] >= mx * .2 && arr[i] >= arr[i - 1] && arr[i] >= arr[i + 1]) cand.push(i);
-    cand.sort((a, b) => arr[b] - arr[a]);
-    /* un borde da varias filas seguidas con el mismo valor: se queda una */
-    for (const i of cand) {
-      if (out.every(j => Math.abs(j - i) > 5)) out.push(i);
-      if (out.length >= 10) break;
-    }
-    return out;
-  };
-  const PF = picos(F, H), PC = picos(C, W);
-  const banda = Math.max(3, Math.round(Math.min(W, H) * .06));
-  const memo = new Map();
-  const cubre = (lado, top, bot, izq, der) => {
-    const clave = lado + (lado === 't' ? top + ',' + izq + ',' + der : lado === 'b' ? bot + ',' + izq + ',' + der
-                                : lado === 'l' ? izq + ',' + top + ',' + bot : der + ',' + top + ',' + bot);
-    if (memo.has(clave)) return memo.get(clave);
-    const w = der - izq, h = bot - top;
-    let hits = 0, n = 0;
-    if (lado === 't' || lado === 'b') {
-      const y0 = lado === 't' ? top : bot;
-      for (let x = izq + Math.round(w * .08); x < der - Math.round(w * .08); x += 2) {
-        n++;
-        for (let y = y0 - banda; y <= y0 + banda; y++) if (y > 1 && y < H - 2 && esH(y * W + x)) { hits++; break; }
-      }
-    } else {
-      const x0 = lado === 'l' ? izq : der;
-      for (let y = top + Math.round(h * .1); y < bot - Math.round(h * .1); y += 2) {
-        n++;
-        for (let x = x0 - banda; x <= x0 + banda; x++) if (x > 1 && x < W - 2 && esV(y * W + x)) { hits++; break; }
-      }
-    }
-    const r = n ? hits / n : 0;
-    memo.set(clave, r);
-    return r;
-  };
-  /* Contraste del borde: el tono justo afuera del lado tiene que ser
-     distinto del de adentro. Una línea de texto o una raya da bordes, pero
-     con el mismo papel a ambos lados; el contorno de la cédula sobre la
-     mesa no. */
-  const contraste = (top, bot, izq, der) => {
-    const w = der - izq, h = bot - top, d = 4;
-    let peor = 1e9;
-    for (const lado of ['t', 'b', 'l', 'r']) {
-      let suma = 0, n = 0;
-      if (lado === 't' || lado === 'b') {
-        const y0 = lado === 't' ? top : bot, sg = lado === 't' ? -1 : 1;
-        for (let x = izq + Math.round(w * .1); x < der - Math.round(w * .1); x += 3) {
-          /* el borde exacto en esta columna (la cédula puede estar inclinada) */
-          let ye = -1, mx = 0;
-          for (let y = y0 - banda; y <= y0 + banda; y++) if (y > 1 && y < H - 2 && Math.abs(gy[y * W + x]) > mx) { mx = Math.abs(gy[y * W + x]); ye = y; }
-          const yf = ye + sg * d, yd = ye - sg * d;
-          if (ye < 0 || yf < 1 || yf > H - 2 || yd < 1 || yd > H - 2) continue;
-          suma += Math.abs(b[yf * W + x] - b[yd * W + x]); n++;
-        }
-      } else {
-        const x0 = lado === 'l' ? izq : der, sg = lado === 'l' ? -1 : 1;
-        for (let y = top + Math.round(h * .12); y < bot - Math.round(h * .12); y += 3) {
-          let xe = -1, mx = 0;
-          for (let x = x0 - banda; x <= x0 + banda; x++) if (x > 1 && x < W - 2 && Math.abs(gx[y * W + x]) > mx) { mx = Math.abs(gx[y * W + x]); xe = x; }
-          const xf = xe + sg * d, xd = xe - sg * d;
-          if (xe < 0 || xf < 1 || xf > W - 2 || xd < 1 || xd > W - 2) continue;
-          suma += Math.abs(b[y * W + xf] - b[y * W + xd]); n++;
-        }
-      }
-      if (n) peor = Math.min(peor, suma / n);
-    }
-    return peor === 1e9 ? 0 : peor;
-  };
-  let mejor = null, motivo = PF.length > 1 && PC.length > 1
-    ? 'Pon la cédula completa y horizontal sobre una superficie oscura'
-    : 'Acerca la cédula: que llene el recuadro';
-  for (const top of PF) for (const bot of PF) {
-    if (bot - top < H * .2) continue;
-    for (const izq of PC) for (const der of PC) {
-      const w = der - izq, h = bot - top;
-      if (w < W * minFraccion) continue;
-      const prop = w / h;
-      if (prop < 1.3 || prop > 1.95) { motivo = 'Pon la cédula horizontal, completa dentro del recuadro'; continue; }
-      /* se corta en cuanto un lado ya es peor que el mejor encontrado */
-      const lados = [];
-      let peor = 1;
-      for (const lado of ['t', 'b', 'l', 'r']) {
-        const c = cubre(lado, top, bot, izq, der);
-        lados.push(c); peor = Math.min(peor, c);
-        if (mejor && peor + .15 < mejor.peor) break;
-      }
-      if (lados.length < 4) continue;
-      if (peor >= .5 && contraste(top, bot, izq, der) < 18) { motivo = 'No distinguimos la cédula del fondo: ponla sobre una mesa de otro color'; continue; }
-      /* a igual continuidad, el más grande (el contorno y no una franja interna) */
-      const nota = peor + w * h / (W * H) * .15;
-      if (!mejor || nota > mejor.nota) mejor = { top, bot, izq, der, lados, peor, nota };
-    }
-  }
-  if (!mejor) return { ok: false, motivo };
-  const { top, bot, izq, der, lados } = mejor;
-  const w = der - izq, h = bot - top;
-  if (mejor.peor < .5) return { ok: false, motivo: 'No vemos los 4 bordes de la cédula: ponla sobre una mesa de otro color', lados };
-  /* Adentro tiene que haber algo impreso (foto, texto), no una superficie lisa */
-  let sum = 0, sum2 = 0, cnt = 0;
-  for (let y = top + Math.round(h * .12); y < bot - Math.round(h * .12); y += 2)
-    for (let x = izq + Math.round(w * .06); x < der - Math.round(w * .06); x += 2) { const v = g[y * W + x]; sum += v; sum2 += v * v; cnt++; }
-  const desv = cnt ? Math.sqrt(Math.max(0, sum2 / cnt - (sum / cnt) ** 2)) : 0;
-  if (desv < 14) return { ok: false, motivo: 'La imagen está muy lisa o borrosa: busca más luz', lados };
-  const k = z.w / W;
-  return { ok: true, lados, caja: { x: z.x + izq * k, y: z.y + top * k, w: w * k, h: h * k } };
-}
-
-/* Recorta la cédula detectada (con un pequeño margen) y la devuelve en JPEG */
-function recortarTarjeta(fuente, caja) {
-  const fw = fuente.videoWidth || fuente.naturalWidth || fuente.width;
-  const fh = fuente.videoHeight || fuente.naturalHeight || fuente.height;
-  const m = .05;
-  const x = Math.max(0, caja.x - caja.w * m), y = Math.max(0, caja.y - caja.h * m);
-  const w = Math.min(fw - x, caja.w * (1 + 2 * m)), h = Math.min(fh - y, caja.h * (1 + 2 * m));
-  const sal = Math.min(1280, Math.round(w));
-  const c = document.createElement('canvas');
-  c.width = sal; c.height = Math.round(sal * h / w);
-  c.getContext('2d').drawImage(fuente, x, y, w, h, 0, 0, c.width, c.height);
-  return new Promise(r => c.toBlob(r, 'image/jpeg', .9));
-}
-
-/* Zona del cuadro de video que corresponde al recuadro guía de la pantalla
-   (el video se muestra con object-fit: cover, así que hay que deshacer el
-   recorte). Se toma un 18 % más grande para no cortar los bordes. */
-function zonaGuia(v) {
-  const vw = v.videoWidth, vh = v.videoHeight;
-  const cw = v.clientWidth || 300, ch = v.clientHeight || 400;
-  const esc = Math.max(cw / vw, ch / vh);
-  const gw = cw * .88 * 1.18, gh = cw * .88 / 1.58 * 1.18;
-  const w = Math.min(vw, gw / esc), h = Math.min(vh, gh / esc);
-  return { x: (vw - w) / 2, y: (vh - h) / 2, w, h };
-}
-
-/* Abre la cámara en un modal.
-   tipo 'rostro': frontal. Pide mirar de frente y luego sonreír (prueba de
-   que es una persona real y no una foto), y dispara sola.
-   Devuelve { blob, descriptor }.
-   tipo 'cedula': trasera, con un marco. El botón se habilita solo cuando
-   se detecta una tarjeta rectangular dentro del marco; la foto se recorta
-   a la cédula. También se puede subir una foto, que pasa por la misma
-   revisión. Devuelve { blob }. */
-function capturar(tipo, titulo, ayuda) {
+/* Abre la cámara frontal en un modal. Pide mirar de frente y luego
+   sonreír (prueba de que es una persona real y no una foto), y dispara
+   sola cuando face-api reconoce el rostro. Devuelve { blob, descriptor }. */
+function capturar(titulo, ayuda) {
   return new Promise(async res => {
-    const rostro = tipo === 'rostro';
     modal(`<div class="grip"></div>
       <div class="head"><div class="grow"><h2>${esc(titulo)}</h2><div class="dim">${esc(ayuda)}</div></div>
         <button class="back" id="cam-x" aria-label="Cerrar">✕</button></div>
-      ${rostro ? `<div class="pasos-cam"><span id="pc-1" class="on">1. Mira de frente</span><span id="pc-2">2. Sonríe</span><span id="pc-3">3. Listo</span></div>` : ''}
+      <div class="pasos-cam"><span id="pc-1" class="on">1. Mira de frente</span><span id="pc-2">2. Sonríe</span><span id="pc-3">3. Listo</span></div>
       <div class="cam" id="cam-caja">
-        <video id="cam-v" playsinline autoplay muted class="${rostro ? 'espejo' : ''}"></video>
-        <div class="guia"><div class="${rostro ? 'ovalo' : 'rect'}" id="cam-guia"></div></div>
+        <video id="cam-v" playsinline autoplay muted class="espejo"></video>
+        <div class="guia"><div class="ovalo" id="cam-guia"></div></div>
         <div class="msg-cam" id="cam-msg">Abriendo la cámara...</div>
-      </div>
-      ${rostro ? '' : `<button class="btn primary full" id="cam-ok" disabled>${IC.escudo('sm')} Tomar foto</button>
-        <label class="btn ghost full" style="margin-top:6px">Subir una foto de la cédula
-          <input type="file" accept="image/*" id="cam-file" style="display:none"></label>`}`);
+      </div>`);
     let stream = null, parar = false, listo = false;
     const fin = v => {
       if (listo) return; listo = true; parar = true;
@@ -5591,67 +5592,18 @@ function capturar(tipo, titulo, ayuda) {
     const msg = t => { const m = $('#cam-msg'); if (m) m.textContent = t; };
     const guia = () => $('#cam-guia');
 
-    /* Foto subida desde el teléfono: misma revisión que la cámara */
-    const archivo = $('#cam-file');
-    if (archivo) archivo.onchange = async () => {
-      const f = archivo.files[0]; if (!f) return;
-      const img = new Image();
-      const url = URL.createObjectURL(f);
-      img.onload = async () => {
-        const r = detectarTarjeta(img, null, .35);
-        if (!r.ok) {
-          URL.revokeObjectURL(url);
-          archivo.value = '';
-          return toast('En esa foto no se ve una cédula completa y rectangular. ' + r.motivo, 'bad');
-        }
-        const blob = await recortarTarjeta(img, r.caja);
-        URL.revokeObjectURL(url);
-        fin({ blob });
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); toast('No se pudo abrir esa imagen', 'bad'); };
-      img.src = url;
-    };
-
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: rostro ? 'user' : { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false
       });
     } catch (e) {
-      msg(rostro ? 'No pudimos abrir la cámara. Da permiso de cámara a Ruta y vuelve a intentarlo.'
-                 : 'No pudimos abrir la cámara. Da permiso de cámara o sube una foto de tu cédula.');
+      msg('No pudimos abrir la cámara. Da permiso de cámara a Ruta y vuelve a intentarlo.');
       return;
     }
     if (parar) { stream.getTracks().forEach(t => t.stop()); return; }
     const v = $('#cam-v');
     v.srcObject = stream;
     await v.play().catch(() => {});
-
-    if (!rostro) {
-      /* Revisión en vivo: 2 lecturas buenas seguidas habilitan el botón */
-      const ok = $('#cam-ok');
-      let buenas = 0, ultima = null;
-      msg('Encuadra la parte frontal de tu cédula dentro del marco');
-      ok.onclick = async () => {
-        ok.disabled = true;
-        let r = detectarTarjeta(v, zonaGuia(v));
-        if (!r.ok && ultima) r = ultima;       // se movió justo al tocar
-        if (!r.ok) { ok.disabled = false; return toast('No se detectó la cédula, intenta de nuevo', 'bad'); }
-        fin({ blob: await recortarTarjeta(v, r.caja) });
-      };
-      while (!parar) {
-        let r = { ok: false };
-        try { if (v.videoWidth) r = detectarTarjeta(v, zonaGuia(v)); } catch (e) {}
-        if (parar) break;
-        buenas = r.ok ? buenas + 1 : 0;
-        if (r.ok) ultima = r;
-        const bien = buenas >= 2;
-        if (guia()) guia().classList.toggle('bien', bien);
-        ok.disabled = !bien;
-        msg(bien ? 'Cédula detectada ✓ Toca "Tomar foto"' : (r.motivo || 'Encuadra tu cédula dentro del marco'));
-        await sleep(bien ? 450 : 320);
-      }
-      return;
-    }
 
     msg('Preparando el verificador facial...');
     let f;
@@ -5701,42 +5653,43 @@ function capturar(tipo, titulo, ayuda) {
   });
 }
 
-/* Activa la cuenta: primero la cédula (debe detectarse una tarjeta
-   rectangular) y después una selfie sonriendo. Esa selfie queda guardada
-   como referencia: cada día se pide otra y se compara con ella.
+/* Registra el rostro: una selfie de frente y luego sonriendo. Queda
+   guardada como referencia (cada día se pide otra y se compara con ella)
+   y cuenta como la verificación de hoy. La cuenta no se activa sola: la
+   activa un administrador desde el panel.
    alRegistrarse: viene recién creada la cuenta y se ofrece "Hacerlo después". */
 function flujoIdentidad(alRegistrarse) {
   if (!S.user) return;
+  const actualizar = rostroRegistrado();
   modal(`<div class="grip"></div>
-    <h2>${alRegistrarse ? '¡Cuenta creada! Ahora actívala' : 'Activa tu cuenta'}</h2>
-    <p class="dim" style="margin:6px 0 12px">Para cuidar a pasajeros y conductores, cada cuenta se verifica con:</p>
+    <h2>${alRegistrarse ? '¡Cuenta creada! Ahora tu foto' : actualizar ? 'Actualizar la foto de tu rostro' : 'Registra tu rostro'}</h2>
+    <p class="dim" style="margin:6px 0 12px">Para cuidar a pasajeros y conductores, cada cuenta se verifica con su rostro:</p>
     <div class="card plano">
-      <div class="leg"><div class="n">1</div><div class="grow"><b>La parte frontal de tu cédula</b><div class="dim">Completa y horizontal: la app detecta la tarjeta y la recorta</div></div></div>
-      <div class="leg"><div class="n">2</div><div class="grow"><b>Una foto de tu rostro sonriendo</b><div class="dim">Primero de frente y luego sonriendo; la cámara dispara sola. Con esta foto te verificamos cada día</div></div></div>
+      <div class="leg"><div class="n">1</div><div class="grow"><b>Una foto de tu rostro sonriendo</b><div class="dim">Primero de frente y luego sonriendo; la cámara dispara sola cuando te reconoce</div></div></div>
+      <div class="leg"><div class="n">2</div><div class="grow"><b>Verificación de cada día</b><div class="dim">Antes de usar la app te pedimos otra foto, que se compara con esta</div></div></div>
+      <div class="leg"><div class="n">3</div><div class="grow"><b>Activación</b><div class="dim">Un administrador revisa tus datos y activa tu cuenta</div></div></div>
     </div>
     <label class="check"><input type="checkbox" id="id-ok"><span>Autorizo a Ruta a tratar mi imagen y mis datos biométricos para verificar mi identidad, según los <button type="button" id="id-ter" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y la Política de Privacidad</button>.</span></label>
-    <button class="btn primary full" id="id-go" disabled>Empezar</button>
-    <button class="btn ghost full" id="id-luego">${alRegistrarse ? 'Hacerlo después (mi cuenta quedará inactiva)' : 'Ahora no'}</button>`);
+    <button class="btn primary full" id="id-go" disabled>Tomar mi foto</button>
+    <button class="btn ghost full" id="id-luego">${alRegistrarse ? 'Hacerlo después' : 'Ahora no'}</button>`);
   $('#id-ok').onchange = e => { $('#id-go').disabled = !e.target.checked; };
   $('#id-ter').onclick = async () => { await modalTerminos(false); flujoIdentidad(alRegistrarse); };
   $('#id-luego').onclick = () => {
     cerrarModal();
-    if (alRegistrarse) toast('Tu cuenta quedó inactiva. Actívala cuando quieras desde Inicio', 'bad');
+    if (alRegistrarse) toast('Sin la foto de tu rostro no podrás usar la app. Tómala cuando quieras desde Inicio', 'bad');
   };
   $('#id-go').onclick = async () => {
     cerrarModal();
-    const ced = await capturar('cedula', 'Tu cédula (parte frontal)', 'Sobre una mesa, con buena luz y sin reflejos');
-    if (!ced) return toast('Falta la foto de tu cédula: tu cuenta sigue inactiva', 'bad');
-    const cara = await capturar('rostro', 'Ahora tu rostro', 'Mira de frente y luego sonríe');
-    if (!cara) return toast('Falta la foto de tu rostro: tu cuenta sigue inactiva', 'bad');
-    modal(`<div class="grip"></div><div class="wait"><div class="spin"></div><div class="grow"><h3>Activando tu cuenta...</h3><div class="dim">Subiendo tus fotos de forma segura</div></div></div>`);
+    const cara = await capturar('Tu rostro', 'Mira de frente y luego sonríe');
+    if (!cara) return toast('Falta la foto de tu rostro', 'bad');
+    modal(`<div class="grip"></div><div class="wait"><div class="spin"></div><div class="grow"><h3>Guardando tu foto...</h3><div class="dim">Se sube de forma segura</div></div></div>`);
     try {
-      const uid = S.user.id;
-      const f2 = await S.api.subirFoto(`${uid}/cedula.jpg`, ced.blob);
-      const f1 = await S.api.subirFoto(`${uid}/rostro.jpg`, cara.blob);
-      S.perfil = { ...S.perfil, ...await S.api.registrarIdentidad(f1, f2, cara.descriptor) };
+      const f1 = await S.api.subirFoto(`${S.user.id}/rostro.jpg`, cara.blob);
+      S.perfil = { ...S.perfil, ...await S.api.registrarIdentidad(f1, cara.descriptor) };
       cerrarModal();
-      avisar('Cuenta activada', S.modo === 'conductor' ? 'Ya verificamos tu identidad. Si aún no estás habilitado, un administrador lo revisará.' : 'Ya puedes pedir viajes y envíos', 'mensaje');
+      avisar('Rostro registrado', cuentaActiva()
+        ? 'Listo, ya quedó tu foto de referencia'
+        : 'Un administrador revisará tus datos y activará tu cuenta', 'mensaje');
       pintarTop(); render();
     } catch (e) {
       cerrarModal();
@@ -5748,7 +5701,7 @@ function flujoIdentidad(alRegistrarse) {
 /* Verificación del día: selfie con sonrisa, comparada en la base. */
 async function flujoVerificacion() {
   if (!S.user) return;
-  const cara = await capturar('rostro', 'Verificación de hoy', 'Mira de frente y luego sonríe');
+  const cara = await capturar('Verificación de hoy', 'Mira de frente y luego sonríe');
   if (!cara) return;
   modal(`<div class="grip"></div><div class="wait"><div class="spin"></div><div class="grow"><h3>Comparando con tu registro...</h3></div></div>`);
   try {
@@ -5822,7 +5775,7 @@ function informarNativo(sesion) {
       tipo: 'sesion', url: CFG.SUPABASE_URL, key: CFG.SUPABASE_ANON_KEY,
       token: ses.access_token, refresh: ses.refresh_token, expira: ses.expires_at,
       sesion: JSON.stringify(ses), uid: S.user.id, modo: S.modo, enLinea: !!S.enLinea,
-      nombre: (S.perfil && S.perfil.nombre) || ''
+      nombre: (S.perfil && S.perfil.nombre) || '', vehiculo: miVehiculo()
     });
   };
   if (sesion) return mandar(sesion);
@@ -5908,13 +5861,15 @@ function pintarPerfil(sh) {
 
     <div class="sec"><h3>Identidad</h3></div>
     <div class="card">
+      <div class="kv"><span class="k">Foto de tu rostro</span><span class="v">${rostroRegistrado()
+        ? '<span class="badge ok">Registrada</span>' : '<span class="badge warn">Falta</span>'}</span></div>
       <div class="kv"><span class="k">Cuenta</span><span class="v">${p.cuenta_activa
-        ? '<span class="badge ok">Activa</span>' : '<span class="badge warn">Inactiva</span>'}</span></div>
+        ? '<span class="badge ok">Activa</span>' : '<span class="badge warn">En revisión</span>'}</span></div>
       <div class="kv"><span class="k">Verificación de hoy</span><span class="v">${verificadoHoy()
         ? '<span class="badge ok">Hecha</span>' : '<span class="badge warn">Pendiente</span>'}</span></div>
-      ${!p.cuenta_activa ? `<button class="btn primary full sm" id="pf-ident" style="margin-top:8px">Enviar mi foto y mi cédula</button>`
-        : !verificadoHoy() ? `<button class="btn primary full sm" id="pf-verif" style="margin-top:8px">Verificarme ahora</button>`
-        : `<button class="btn ghost full sm" id="pf-ident" style="margin-top:6px">Actualizar mi foto y mi cédula</button>`}
+      ${!rostroRegistrado() ? `<button class="btn primary full sm" id="pf-ident" style="margin-top:8px">Tomar la foto de mi rostro</button>`
+        : p.cuenta_activa && !verificadoHoy() ? `<button class="btn primary full sm" id="pf-verif" style="margin-top:8px">Verificarme ahora</button>`
+        : `<button class="btn ghost full sm" id="pf-ident" style="margin-top:6px">Actualizar la foto de mi rostro</button>`}
     </div>
 
     <div class="sec"><h3>Mi cuenta</h3></div>
@@ -5958,6 +5913,7 @@ function pintarPerfil(sh) {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <h3 class="grow" style="flex:1">Vehículo</h3>
         <button class="btn sm suave" id="pf-veh-ed">Editar</button></div>
+      <div class="kv"><span class="k">Tipo</span><span class="v">${v.tipo === 'moto' ? 'Moto · solo envíos' : 'Carro'}</span></div>
       <div class="kv"><span class="k">Placa</span><span class="v">${esc(v.placa)}</span></div>
       <div class="kv"><span class="k">Vehículo</span><span class="v">${esc([v.marca, v.modelo, v.color].filter(Boolean).join(' ') || '—')}</span></div>
       <div class="kv"><span class="k">Año</span><span class="v">${esc(v.anio || '—')}</span></div>
@@ -6010,7 +5966,8 @@ async function cerrarSesion() {
   detenerTodo(); limpiarSupSubs();
   if (S.subSop) { try { S.subSop(); } catch (e) {} S.subSop = null; }
   S.user = null; S.perfil = null; S.vehiculo = null; S.solicitud = null; S.arrancadoPara = null;
-  S.origen = null; S.destino = null; S.enLinea = false; S.cercanas = []; S.todasCercanas = [];
+  S.origen = null; S.destino = null; S.paradas = []; S.ultimoPunto = null; S.tipo = 'paquete'; S.vehEnvio = 'carro';
+  S.enLinea = false; S.cercanas = []; S.todasCercanas = [];
   S.lugares = []; S.recientes = []; S.tickets = null; S.sinLeerSop = 0; S.esSoporte = false;
   pintarBadgeSoporte();
   if (mapa.m) mapa.limpiar();
@@ -6106,17 +6063,31 @@ function modalCambiarPin() {
   };
 }
 
-/* Placa ecuatoriana: tres letras y tres o cuatro números */
-function normalizarPlaca(p) {
+/* Placa ecuatoriana. Carro: tres letras y tres o cuatro números (PBA-1234).
+   Moto: dos letras, tres números y una letra (IB-123A); también se acepta
+   el formato de carro, que llevan algunas motos. */
+function normalizarPlaca(p, tipo) {
   const s = p.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const m = s.match(/^([A-Z]{3})(\d{3,4})$/);
-  return m ? m[1] + '-' + m[2] : null;
+  if (m) return m[1] + '-' + m[2];
+  const mo = tipo === 'moto' && s.match(/^([A-Z]{2})(\d{3})([A-Z])$/);
+  return mo ? mo[1] + '-' + mo[2] + mo[3] : null;
 }
+const AYUDA_PLACA = { carro: 'La placa va con tres letras y tres o cuatro números, como PBA-1234',
+                      moto: 'La placa de la moto va como IB-123A (dos letras, tres números y una letra)' };
+const NOTA_TIPO = { carro: 'Con carro haces viajes y envíos.', moto: 'Con moto solo haces envíos (los que el cliente pide en moto).' };
 
 function modalVehiculo(existente) {
   const v = existente || {};
+  let tipo = v.tipo === 'moto' ? 'moto' : 'carro';
   modal(`<div class="grip"></div><h2>${existente ? 'Editar vehículo' : 'Tu vehículo'}</h2>
     <p class="dim" style="margin:6px 0 14px">Un administrador revisa estos datos antes de habilitarte para recibir solicitudes.</p>
+    <div class="field"><label>Tipo de vehículo</label>
+      <div class="segmented" id="v-tipo">
+        <button type="button" data-vt="carro" class="${tipo === 'carro' ? 'on' : ''}">${IC.carro('sm')}Carro</button>
+        <button type="button" data-vt="moto" class="${tipo === 'moto' ? 'on' : ''}">${IC.moto('sm')}Moto</button>
+      </div>
+      <p class="fine" id="v-tipo-nota" style="margin:6px 0 0">${NOTA_TIPO[tipo]}</p></div>
     <div class="row">
       <div class="field"><label for="v-placa">Placa</label>
         <input id="v-placa" class="input" maxlength="8" placeholder="PBA-1234" value="${esc(v.placa || '')}"></div>
@@ -6131,17 +6102,23 @@ function modalVehiculo(existente) {
     </div>
     <div class="field"><label for="v-color">Color</label>
       <input id="v-color" class="input" placeholder="Gris" value="${esc(v.color || '')}"></div>
-    ${existente && existente.aprobado ? `<div class="aviso" style="margin-bottom:10px">Si cambias la placa, un administrador tendrá que aprobar el vehículo otra vez.</div>` : ''}
+    ${existente && existente.aprobado ? `<div class="aviso" style="margin-bottom:10px">Si cambias la placa o el tipo, un administrador tendrá que aprobar el vehículo otra vez.</div>` : ''}
     <button class="btn primary full" id="v-ok" style="margin-top:6px">Guardar vehículo</button>
     <button class="btn ghost full" id="v-x">Cancelar</button>`);
+  $$('#v-tipo button').forEach(b => b.onclick = () => {
+    tipo = b.dataset.vt;
+    $$('#v-tipo button').forEach(x => x.classList.toggle('on', x === b));
+    $('#v-tipo-nota').textContent = NOTA_TIPO[tipo];
+    $('#v-placa').placeholder = tipo === 'moto' ? 'IB-123A' : 'PBA-1234';
+  });
   $('#v-x').onclick = cerrarModal;
   $('#v-ok').onclick = async () => {
-    const placa = normalizarPlaca($('#v-placa').value.trim());
-    if (!placa) return toast('La placa va con tres letras y tres o cuatro números, como PBA-1234', 'bad');
+    const placa = normalizarPlaca($('#v-placa').value.trim(), tipo);
+    if (!placa) return toast(AYUDA_PLACA[tipo], 'bad');
     const anio = +$('#v-anio').value || null;
     if (anio && (anio < 1980 || anio > new Date().getFullYear() + 1)) return toast('Revisa el año del vehículo', 'bad');
     const datos = {
-      placa, anio,
+      placa, anio, tipo,
       marca:  $('#v-marca').value.trim() || null,
       modelo: $('#v-modelo').value.trim() || null,
       color:  $('#v-color').value.trim() || null
@@ -6149,6 +6126,10 @@ function modalVehiculo(existente) {
     const btn = $('#v-ok'); btn.disabled = true; btn.textContent = 'Guardando...';
     try {
       S.vehiculo = await S.api.guardarVehiculo(datos, v.id);
+      /* Con otro tipo de vehículo cambian las solicitudes que le sirven */
+      if (S.enLinea) escucharCercanas();
+      mapa.limpiarConductor(); mapa.firma = null;
+      informarNativo();
       cerrarModal(); toast('Vehículo guardado'); render();
     } catch (e) {
       btn.disabled = false; btn.textContent = 'Guardar vehículo';
@@ -6194,6 +6175,14 @@ $$('#authtabs button').forEach(b => b.onclick = () => {
 $$('#rolsel button').forEach(b => b.onclick = () => {
   $$('#rolsel button').forEach(x => x.classList.toggle('on', x === b));
   $('#veh').classList.toggle('hidden', b.dataset.rol !== 'conductor');
+});
+$$('#rg-tipo button').forEach(b => b.onclick = () => {
+  $$('#rg-tipo button').forEach(x => x.classList.toggle('on', x === b));
+  $('#rg-tipo-nota').textContent = NOTA_TIPO[b.dataset.vt];
+  $('#rg-placa').placeholder = b.dataset.vt === 'moto' ? 'IB-123A' : 'PBA-1234';
+});
+[['#rg-tipo [data-vt="carro"]', 'carro'], ['#rg-tipo [data-vt="moto"]', 'moto']].forEach(([sel, ic]) => {
+  const el = $(sel); if (el) el.insertAdjacentHTML('afterbegin', IC[ic]('sm'));
 });
 $('#btn-login').onclick = ingresar;
 $('#btn-olvide').onclick = olvidePin;

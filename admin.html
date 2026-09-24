@@ -165,6 +165,7 @@ main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;
         <button data-t="curso">En curso<span class="c" id="c-curso">0</span></button>
         <button data-t="hoy">Hoy<span class="c" id="c-hoy">0</span></button>
         <button data-t="conectados">Conectados<span class="c" id="c-conectados">0</span></button>
+        <button data-t="activar">Por activar<span class="c" id="c-activar">0</span></button>
         <button data-t="nuevos">Nuevos<span class="c" id="c-nuevos">0</span></button>
         <button data-t="usuarios">Usuarios<span class="c" id="c-usuarios">0</span></button>
         <button data-t="conductores">Conductores<span class="c" id="c-conductores">0</span></button>
@@ -358,11 +359,18 @@ function waLink(p, texto) {
 }
 function mensajeBienvenida(p) {
   const nombre = (p.nombre || '').split(' ')[0] || '';
+  const falta = 'Para activar tu cuenta solo falta que te tomes la foto del rostro desde la app (Perfil → Identidad).';
   if (p.rol === 'conductor') return `Hola ${nombre}, te saludamos de Ruta. Vimos que te registraste como conductor. ` +
-    (p.cuenta_activa ? 'Ya recibimos tu foto y tu cédula; estamos revisando tu vehículo para habilitarte.' : 'Para habilitarte necesitamos que envíes desde la app la foto de tu cédula y tu selfie (Perfil → Identidad).');
+    (!p.rostro_registrado ? falta : p.cuenta_activa ? 'Tu cuenta ya está activa; estamos revisando tu vehículo para habilitarte.' : 'Ya tenemos la foto de tu rostro; estamos revisando tus datos y tu vehículo para activarte.');
   return `Hola ${nombre}, te saludamos de Ruta. Gracias por registrarte. ` +
-    (p.cuenta_activa ? 'Tu cuenta ya está activa, ya puedes pedir viajes y envíos.' : 'Para activar tu cuenta solo falta enviar desde la app la foto de tu cédula y tu selfie (Perfil → Identidad).');
+    (!p.rostro_registrado ? falta : p.cuenta_activa ? 'Tu cuenta ya está activa, ya puedes pedir viajes y envíos.' : 'Ya tenemos la foto de tu rostro; en breve activamos tu cuenta.');
 }
+/* Cuentas que esperan que el admin las active: primero las que ya tienen
+   su foto del rostro (listas para revisar), después las que aún no. */
+const porActivar = () => Object.values(A.perfiles).filter(p => !p.cuenta_activa)
+  .sort((a, b) => (b.rostro_registrado - a.rostro_registrado) || (new Date(b.creado_en) - new Date(a.creado_en)));
+const vehTxt = v => `${v.tipo === 'moto' ? 'Moto' : 'Carro'} ${v.placa || ''} ${[v.marca, v.modelo, v.color].filter(Boolean).join(' ')}`.trim();
+const paradasDe = s => (Array.isArray(s.paradas) ? s.paradas : []).filter(q => q && q.lat != null);
 function listaTab(t) {
   const hoy = new Date().toDateString();
   if (t === 'pendientes') return A.sol.filter(s => s.estado === 'buscando');
@@ -370,6 +378,7 @@ function listaTab(t) {
   if (t === 'hoy') return A.sol.filter(s => ['finalizado', 'cancelado'].includes(s.estado) && new Date(s.creado_en).toDateString() === hoy);
   if (t === 'usuarios') return Object.values(A.perfiles);
   if (t === 'nuevos') return Object.values(A.perfiles).filter(esNuevo);
+  if (t === 'activar') return porActivar();
   if (t === 'conectados') {
     /* conductores en línea primero, después quien tiene la app abierta y al final el resto conectado */
     const ids = new Set([...A.conductores.filter(enLinea).map(c => c.conductor_id), ...A.presencia.filter(conectado).map(x => x.usuario_id)]);
@@ -395,6 +404,7 @@ function pintar() {
     ['Conductores en línea', A.conductores.filter(enLinea).length, 'vivo-k', 'conectados'],
     ['Pasajeros conectados', conPas.length, 'vivo-k', 'conectados'],
     ['En uso de la app ahora', A.presencia.filter(enUso).length, 'vivo-k', 'conectados'],
+    ['Cuentas por activar', porActivar().filter(p => p.rostro_registrado).length, porActivar().some(p => p.rostro_registrado) ? 'alerta' : '', 'activar'],
     ['Usuarios nuevos (7 días)', listaTab('nuevos').length, listaTab('nuevos').length ? 'alerta' : '', 'nuevos'],
     ['Pendientes', listaTab('pendientes').length, listaTab('pendientes').length > 0 ? 'alerta' : '', 'pendientes'],
     ['En curso', listaTab('curso').length, '', 'curso'],
@@ -404,7 +414,7 @@ function pintar() {
     ['Usuarios registrados', Object.keys(A.perfiles).length, '', 'usuarios']
   ];
   $('#kpis').innerHTML = kpis.map(([l, n, cls, t]) => `<div class="kpi clic ${cls}" data-ir="${t}"><div class="n num">${n}</div><div class="l">${l}</div></div>`).join('');
-  ['pendientes', 'curso', 'hoy', 'conectados', 'nuevos', 'usuarios', 'conductores'].forEach(t => { $('#c-' + t).textContent = listaTab(t).length; });
+  ['pendientes', 'curso', 'hoy', 'conectados', 'activar', 'nuevos', 'usuarios', 'conductores'].forEach(t => { $('#c-' + t).textContent = listaTab(t).length; });
   pintarLista();
   pintarMapa();
 }
@@ -416,8 +426,9 @@ function filaSolicitud(s) {
   return `<div class="fila ${A.sel === s.id ? 'sel' : ''}" data-s="${esc(s.id)}">
     <div class="ico ${esc(s.tipo)}">${env ? 'ENV' : 'VIA'}</div>
     <div style="min-width:0">
-      <div class="t">${env ? 'Envío' : 'Viaje'} · ${esc(s.pasajero_nombre || '—')} <span class="dim">${esc(p.celular || '')}</span></div>
+      <div class="t">${env ? (s.vehiculo === 'moto' ? 'Envío en moto' : 'Envío') : 'Viaje'} · ${esc(s.pasajero_nombre || '—')} <span class="dim">${esc(p.celular || '')}</span></div>
       <div class="ruta-txt"><b>Desde:</b> <a href="${gmaps(s.origen_lat, s.origen_lng)}" target="_blank" rel="noopener">${esc(s.origen_texto || 'Ver en mapa')}</a></div>
+      ${paradasDe(s).map((q, i) => `<div class="ruta-txt"><b>Parada ${i + 1}:</b> <a href="${gmaps(q.lat, q.lng)}" target="_blank" rel="noopener">${esc(q.texto || 'Ver en mapa')}</a></div>`).join('')}
       <div class="ruta-txt"><b>Hasta:</b> <a href="${gmaps(s.destino_lat, s.destino_lng)}" target="_blank" rel="noopener">${esc(s.destino_texto || 'Ver en mapa')}</a>
         ${env && s.destinatario ? ` · recibe ${esc(s.destinatario)} ${esc(s.destinatario_tel || '')}` : ''}</div>
       <div class="meta">
@@ -449,7 +460,8 @@ function filaUsuario(p) {
       <div class="t">${esc(p.nombre)} <span class="dim">${p.rol === 'conductor' ? 'Conductor' : 'Pasajero'}${p.es_admin ? ' · Admin' : ''}</span></div>
       <div class="ruta-txt">${esc(p.correo || '')} · ${esc(p.celular || 'sin celular')} · CI ${esc(p.cedula || '—')}</div>
       <div class="meta">
-        <span class="badge ${p.cuenta_activa ? 'ok' : 'warn'}">${p.cuenta_activa ? 'Cuenta activa' : 'Cuenta inactiva'}</span>
+        <span class="badge ${p.rostro_registrado ? 'ok' : 'warn'}">${p.rostro_registrado ? 'Rostro registrado' : 'Sin foto del rostro'}</span>
+        <span class="badge ${p.cuenta_activa ? 'ok' : 'warn'}">${p.cuenta_activa ? 'Cuenta activa' : 'Cuenta por activar'}</span>
         <span class="badge ${verHoy ? 'ok' : ''}">${verHoy ? 'Verificado hoy' : 'Sin verificar hoy'}</span>
         <span class="badge">${p.viajes_totales || 0} servicios · ${p.calificacion || '5.0'}★</span>
         ${cond ? `<span class="badge ${enLinea(cond) ? 'ok' : ''}">${enLinea(cond) ? 'En línea' : 'Fuera de línea'} · ${hace(cond.actualizado_en)}</span>` : ''}
@@ -460,7 +472,7 @@ function filaUsuario(p) {
       <div class="meta" style="margin-top:8px;gap:14px">
         <label class="swrow"><button class="sw ${p.cuenta_activa ? 'on' : ''}" data-activa="${esc(p.id)}" aria-label="Cuenta activa"><i></i></button>Cuenta activa</label>
         ${p.rol === 'conductor' || vs.length ? `<label class="swrow"><button class="sw ${p.conductor_habilitado ? 'on' : ''}" data-hab="${esc(p.id)}" aria-label="Conductor habilitado"><i></i></button>Conductor habilitado</label>` : ''}
-        ${vs.map(v => `<label class="swrow"><button class="sw ${v.aprobado ? 'on' : ''}" data-veh="${esc(v.id)}" aria-label="Vehículo aprobado"><i></i></button>${esc(v.placa)} ${esc([v.marca, v.modelo, v.color].filter(Boolean).join(' '))}</label>`).join('')}
+        ${vs.map(v => `<label class="swrow"><button class="sw ${v.aprobado ? 'on' : ''}" data-veh="${esc(v.id)}" aria-label="Vehículo aprobado"><i></i></button>${esc(vehTxt(v))}</label>`).join('')}
       </div>
     </div>
     <div class="acc" style="flex-direction:column;align-items:flex-end">
