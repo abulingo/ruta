@@ -262,6 +262,9 @@ textarea.input{resize:none;min-height:60px}
 .locfila .locbtn{border-bottom:0;flex:1;min-width:0}
 .locfila .locbtn .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .locfila .quitar{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:var(--muted);background:var(--panel2);border:1.5px solid var(--line);flex:none}
+.locbtn .rot{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--azul-2);margin-bottom:2px;display:flex;align-items:center}
+.num-mini.ini{background:var(--azul);width:10px;height:10px}
+.num-mini.fin{background:var(--text);border-radius:3px;width:10px;height:10px}
 .num-mini{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#E0912A;color:#fff;font-size:11px;font-weight:700;margin-right:6px;vertical-align:1px}
 .segmented button .ic{display:inline-block;vertical-align:-3px;margin-right:5px}
 
@@ -468,6 +471,24 @@ textarea.input{resize:none;min-height:60px}
 .modal{position:fixed;inset:0;background:rgba(13,27,46,.45);z-index:1500;display:grid;place-items:end center;backdrop-filter:blur(3px)}
 .modal .box{background:var(--bg);border-radius:24px 24px 0 0;padding:16px 14px calc(20px + var(--sab));width:min(520px,100%);max-height:90dvh;overflow-y:auto}
 @media(min-width:560px){.modal{place-items:center}.modal .box{border-radius:24px}}
+/* ---------- PIN de viaje ---------- */
+.pin-viaje{display:flex;align-items:center;gap:12px;border:1.5px solid var(--azul-borde);background:var(--azul-suave)}
+.pin-viaje .t{font-weight:700}
+.pin-num{display:flex;gap:6px;flex:none}
+.pin-num span{width:34px;height:42px;border-radius:10px;background:var(--panel);border:1.5px solid var(--azul-borde);display:grid;place-items:center;
+  font-family:"Space Grotesk";font-weight:700;font-size:22px;color:var(--azul-2)}
+.aviso-pin{font-size:12.5px;color:var(--muted);margin:0 0 8px;display:flex;gap:6px;align-items:center}
+/* ---------- anuncios y actualización: ventana centrada ---------- */
+.aviso-cap{position:fixed;inset:0;z-index:1700;background:rgba(13,27,46,.55);display:grid;place-items:center;padding:20px 16px;backdrop-filter:blur(3px)}
+.aviso-cap .caja{background:var(--bg);border-radius:22px;width:min(420px,100%);max-height:86dvh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:drop .2s ease}
+.aviso-cap .caja>img{display:block;width:100%;max-height:260px;object-fit:cover;border-radius:22px 22px 0 0;background:var(--panel2)}
+.aviso-cap .cuerpo{padding:18px 18px 14px}
+.aviso-cap .etq{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--azul-2);background:var(--azul-suave);border-radius:99px;padding:4px 10px;margin-bottom:10px}
+.aviso-cap h2{margin:0 0 8px}
+.aviso-cap .txt{white-space:pre-line;color:var(--muted);font-size:14.5px;line-height:1.5;margin-bottom:14px;overflow-wrap:anywhere}
+.aviso-cap .btn{margin-top:6px;text-decoration:none}
+.barra-prog{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0 6px}
+.barra-prog i{display:block;height:100%;width:0;background:var(--azul);transition:width .25s}
 .loading{position:fixed;inset:0;background:linear-gradient(150deg,#0A5AFF,#0842C4);display:grid;place-items:center;z-index:3000}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
@@ -818,7 +839,6 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
           <div class="pinbox" data-pin="registro">
             <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
           </div>
-          <p class="fine" style="margin:8px 0 0">Tu clave se guarda como el PIN seguido de <b>99</b>. Con 1234 la clave real es 123499.</p>
         </div>
         <div class="field"><label>Voy a usar Ruta como</label>
           <div class="segmented" id="rolsel">
@@ -908,6 +928,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
 </div>
 <div id="toasts"></div>
 <div id="modal" class="modal hidden"></div>
+<div id="aviso-cap" class="aviso-cap hidden"></div>
 
 <!-- Version exacta + hash de integridad: si el CDN sirviera un archivo
      distinto al que se reviso, el navegador lo rechaza en vez de
@@ -1417,7 +1438,7 @@ const S = {
   activos: [], subActivos: null, subCercanas: null, subsOferta: [],
   msgs: {}, leidosPor: {}, subMsgs: {}, chatId: null,
   posCond: {}, subPosCond: {}, porCalificar: [], propios: new Set(),
-  avisosPlazo: {}, avisoLlegadaPor: {}, paradaSel: null,
+  avisosPlazo: {}, avisoLlegadaPor: {}, paradaSel: null, pines: {},
   /* varios */
   tema: leerLocal('tema', 'auto'), idsVistos: new Set()
 };
@@ -1636,7 +1657,7 @@ const mapa = {
     this.quitarParadas();
     (lista || []).forEach((p, i) => {
       const mk = L.marker([p.lat, p.lng], { icon: this.icono(`<div class="num-parada parada chica">${i + 1}</div>`, 22), zIndexOffset: 200 }).addTo(this.m);
-      mk.bindTooltip(`Parada ${i + 1}${p.texto ? ': ' + esc(p.texto) : ''}`, { direction: 'top', offset: [0, -10], className: 'didi-tooltip' });
+      mk.bindTooltip(`Destino ${i + 1}${p.texto ? ': ' + esc(p.texto) : ''}`, { direction: 'top', offset: [0, -10], className: 'didi-tooltip' });
       this.mkParadas.push(mk);
     });
   },
@@ -1902,7 +1923,7 @@ const mapa = {
     const intermedias = paradasDe(s);
     intermedias.forEach((p, i) => {
       const mk = L.marker([p.lat, p.lng], { icon: this.icono(`<div class="num-parada parada chica">${i + 1}</div>`, 22), zIndexOffset: 200 }).addTo(this.m);
-      mk.bindTooltip(`Parada ${i + 1}${p.texto ? ': ' + esc(p.texto) : ''}`, { direction: 'top', offset: [0, -10], className: 'didi-tooltip' });
+      mk.bindTooltip(`Destino ${i + 1}${p.texto ? ': ' + esc(p.texto) : ''}`, { direction: 'top', offset: [0, -10], className: 'didi-tooltip' });
       this.capasDidi.push(mk);
     });
 
@@ -2120,6 +2141,18 @@ function crearAPI(url, key) {
       const { data } = await sb.from('solicitudes_detalle').select('id,estado,pasajero_id,precio_ofrecido,tipo')
         .eq('id', id).maybeSingle();
       return data;
+    },
+    /* PIN de viaje: solo el pasajero puede leerlo (RLS de pines_viaje) */
+    async pinViaje(id) {
+      const { data, error } = await sb.from('pines_viaje').select('pin').eq('solicitud_id', id).maybeSingle();
+      if (error) throw error;
+      return data ? data.pin : null;
+    },
+    /* El conductor inicia el viaje con el PIN que le dicta el pasajero */
+    async iniciarConPin(id, pin) {
+      const { data, error } = await sb.rpc('iniciar_viaje_con_pin', { p_solicitud: id, p_pin: pin });
+      if (error) throw error;
+      return data || { ok: false, motivo: 'No se pudo validar el PIN' };
     },
     async cambiarEstado(id, estado) {
       const campos = { estado };
@@ -2458,7 +2491,7 @@ const TEXTO_TERMINOS = `
 
   <h4>3. Precios y pago</h4>
   <ul>
-    <li>Viajes: el pasajero propone el precio (mínimo $1.50 USD) y el conductor lo acepta o contraoferta. Envíos: tarifa fija calculada por distancia, tiempo, tamaño, vehículo (carro o moto) y urgencia. Viajes y envíos pueden tener hasta 3 paradas en el camino.</li>
+    <li>Viajes: el pasajero propone el precio (mínimo $1.50 USD) y el conductor lo acepta o contraoferta. Envíos: tarifa fija calculada por distancia, tiempo, tamaño, vehículo (carro o moto) y urgencia. Viajes y envíos pueden tener hasta 4 destinos (3 en el camino y el destino final).</li>
     <li>El pago es en efectivo, directo al conductor, al terminar el servicio. Ruta no cobra por adelantado ni solicita datos de tarjetas.</li>
   </ul>
 
@@ -2755,7 +2788,7 @@ async function errorRegistro(e, correo) {
     }
     return;
   }
-  if (/password/i.test(msg) && /short|6/i.test(msg)) return toast('Supabase pide mínimo 6 caracteres; el PIN se guarda como PIN+99, revisa que hayas puesto los 4 dígitos', 'bad');
+  if (/password/i.test(msg) && /short|6/i.test(msg)) return toast('Revisa que hayas puesto los 4 dígitos del PIN', 'bad');
   if (errorDeBase(e)) {
     return modalDiagnostico('El servidor de Supabase devolvió error 500 al guardar el usuario. Casi siempre es una de estas dos cosas: la confirmación por correo está encendida sin SMTP, o quedó un trigger sobre auth.users que falla. Esto es lo que encontré:');
   }
@@ -2949,6 +2982,9 @@ async function arrancarApp() {
   await restaurarServicios();
   informarNativo();
   iniciarLatido();
+  revisarActualizacion();
+  revisarAnuncios();
+  escucharAnuncios();
   if (S.perfil && !S.perfil.desdeCache && S.perfil.terminos_version !== TERMINOS_VERSION) {
     if (await modalTerminos(true)) {
       try { await S.api.aceptarTerminos(); toast('Gracias, términos aceptados'); }
@@ -3591,7 +3627,7 @@ function abrirSelector(cual, idx) {
   S.eligiendo = cual;
   S.paradaIdx = cual === 'parada' && idx != null ? idx : null;
   const actual = cual === 'origen' ? S.origen : cual === 'parada' ? S.paradas[S.paradaIdx] : S.destino;
-  const ref = actual || (cual === 'parada' ? S.paradas[S.paradas.length - 1] || S.origen : null) || S.origen || S.pos;
+  const ref = actual || (cual === 'nuevo' ? S.destino : null) || S.origen || S.pos;
   mapa.m.setView([ref.lat, ref.lng], 16);
   $('#cross').classList.remove('hidden');
   render();
@@ -3623,7 +3659,8 @@ function etiquetaPunto() {
 const TITULOS_SEL = {
   origen:  ['¿Dónde te recogemos?', 'Mueve el mapa o busca una dirección'],
   destino: ['¿A dónde vamos?', 'Mueve el mapa o busca una dirección'],
-  parada:  ['¿Dónde paramos?', 'Un punto en el camino, antes del destino'],
+  parada:  ['Cambiar este destino', 'Un punto en el camino, antes del destino final'],
+  nuevo:   ['¿A dónde más vamos?', 'Este punto será tu nuevo destino final'],
   lugar:   ['¿Qué lugar quieres guardar?', 'Ubícalo en el mapa y luego ponle un nombre']
 };
 function pintarSelector(sh) {
@@ -3739,7 +3776,12 @@ async function fijarPunto(cual, ll, texto) {
   if (cual === 'origen') S.origen = p;
   else if (cual === 'parada') {
     if (S.paradaIdx != null && S.paradas[S.paradaIdx]) S.paradas[S.paradaIdx] = p;
-    else if (S.paradas.length < MAX_PARADAS) S.paradas.push(p);
+  }
+  /* Otro destino: el que era el destino final pasa a ser un destino
+     intermedio y el punto nuevo queda como destino final. */
+  else if (cual === 'nuevo') {
+    if (S.destino && S.paradas.length < MAX_PARADAS) S.paradas.push(S.destino);
+    S.destino = p;
   }
   else S.destino = p;
   S.ultimoPunto = p;
@@ -3990,6 +4032,8 @@ const FAQ = [
    'A los conductores y a sus vehículos los habilita un administrador antes de poder recibir solicitudes. Si ya pasaron varias horas, ábrenos un caso con tu placa y lo revisamos.'],
   ['Olvidé mi PIN',
    'En la pantalla de ingreso toca "Olvidé mi PIN". Te llega un correo para poner uno nuevo.'],
+  ['¿Qué es el PIN de viaje?',
+   'Cuando un conductor acepta tu viaje, en tu pantalla aparece un PIN de 4 dígitos. Díselo al conductor al subir: él lo escribe en su app para iniciar el viaje. Así confirmas que te subes al carro correcto y el conductor que lleva a la persona correcta. No lo compartas antes de subir.'],
   ['¿Cómo se paga?',
    'Todo es en efectivo, directo al conductor al terminar el servicio. Ruta nunca te cobra por adelantado ni pide datos de tarjeta.'],
   ['Dejé algo olvidado en el carro',
@@ -4255,7 +4299,8 @@ function pintarEta() {
     if (cerca && s.estado !== 'a_bordo' && !S.avisoLlegadaPor[s.id]) {
       S.avisoLlegadaPor[s.id] = true;
       avisar(s.tipo === 'paquete' ? 'El conductor llegó por tu paquete' : 'Tu conductor ya llegó',
-        s.tipo === 'paquete' ? 'Entrégale el paquete' : 'Sal a su encuentro', 'llegada', `llegada:${s.id}`);
+        s.tipo === 'paquete' ? 'Entrégale el paquete' : 'Sal a su encuentro' + (S.pines[s.id] ? ` · Tu PIN es ${S.pines[s.id]}` : ''),
+        'llegada', `llegada:${s.id}`);
     }
     const txt = cerca
       ? (s.estado === 'a_bordo' ? 'Llegando al destino' : (s.tipo === 'paquete' ? 'El conductor está en la recogida' : 'Tu conductor ya está afuera'))
@@ -4403,21 +4448,24 @@ function pasoForm(sh) {
     <div class="card" style="padding:4px 14px;display:flex;align-items:center;gap:8px">
       <div class="grow" style="flex:1;min-width:0">
         <button class="locbtn" data-cual="origen">
+          <div class="rot"><span class="num-mini ini"></span>Recogida</div>
           <div class="t">${o ? esc(o.texto) : 'Punto de recogida'}</div>
           <div class="s">${o ? 'Toca para cambiar' : 'Elige en el mapa o busca la dirección'}</div></button>
         ${S.paradas.map((x, i) => `<div class="locfila">
           <button class="locbtn" data-cual="parada" data-i="${i}">
-            <div class="t"><span class="num-mini">${i + 1}</span>${esc(x.texto || 'Parada')}</div>
-            <div class="s">Parada ${i + 1} · toca para cambiar</div></button>
-          <button class="quitar" data-quitar="${i}" aria-label="Quitar la parada ${i + 1}">${IC.cerrar('sm')}</button></div>`).join('')}
+            <div class="rot"><span class="num-mini">${i + 1}</span>Destino ${i + 1}</div>
+            <div class="t">${esc(x.texto || 'Destino ' + (i + 1))}</div>
+            <div class="s">Toca para cambiar</div></button>
+          <button class="quitar" data-quitar="${i}" aria-label="Quitar el destino ${i + 1}">${IC.cerrar('sm')}</button></div>`).join('')}
         <button class="locbtn" data-cual="destino">
-          <div class="t">${d ? esc(d.texto) : (S.tipo === 'viaje' ? 'Destino' : 'Dirección de entrega')}</div>
+          <div class="rot"><span class="num-mini fin"></span>${S.paradas.length ? 'Destino final' : (S.tipo === 'viaje' ? 'Destino' : 'Entrega')}</div>
+          <div class="t">${d ? esc(d.texto) : (S.tipo === 'viaje' ? 'Elige tu destino' : 'Dirección de entrega')}</div>
           <div class="s">${d ? 'Toca para cambiar' : 'Elige en el mapa o busca la dirección'}</div></button>
       </div>
       ${o && d ? `<button class="iconbtn" id="p-swap" aria-label="Intercambiar recogida y destino" title="Intercambiar">
         <svg viewBox="0 0 24 24"><path d="M7 20V5M7 5 4 8M7 5l3 3M17 4v15M17 19l3-3M17 19l-3-3"/></svg></button>` : ''}
     </div>
-    ${o && d && S.paradas.length < MAX_PARADAS ? `<button class="btn suave full sm" id="p-parada" style="margin-top:8px">+ Agregar parada${S.paradas.length ? '' : ' en el camino'}</button>` : ''}
+    ${o && d && S.paradas.length < MAX_PARADAS ? `<button class="btn suave full sm" id="p-parada" style="margin-top:8px">+ Agregar otro destino</button>` : ''}
     <button class="btn primary full" id="p-seguir" style="margin-top:12px" ${o && d && !lleno && !candado ? '' : 'disabled'}>Continuar</button>`;
   armarCandado();
   const ba = $('#p-activos');
@@ -4431,7 +4479,7 @@ function pasoForm(sh) {
     recalcular();
   });
   const bp = $('#p-parada');
-  if (bp) bp.onclick = () => abrirSelector('parada', null);
+  if (bp) bp.onclick = () => abrirSelector('nuevo', null);
   chipsLugares('#chips-inicio', l => fijarPunto('destino', { lat: l.lat, lng: l.lng }, l.etiqueta));
   const sw = $('#p-swap');
   if (sw) sw.onclick = () => {
@@ -4475,7 +4523,7 @@ function pasoDetalles(sh) {
 const tarifaPedido = (cambios = {}) => tarifa(S.km, S.tipo,
   { tamano: S.tamano, urgencia: S.urgencia, vehiculo: S.vehEnvio, ...cambios });
 const pct = d => Math.round(d * 100);
-const textoParadas = n => n ? ` · ${n} parada${n > 1 ? 's' : ''}` : '';
+const textoParadas = n => n ? ` · ${n + 1} destinos` : '';
 
 /* El envío se arma en tres pantallas cortas, igual que el viaje, en vez
    de un formulario largo: tamaño, cuándo sale y a quién se entrega.
@@ -4756,14 +4804,40 @@ function compartirViaje(s) {
     `Voy en Ruta con ${s.conductor_nombre || 'un conductor'}` +
     (s.placa ? ` (placa ${s.placa}${s.vehiculo_texto ? ', ' + s.vehiculo_texto : ''})` : '') + '.\n' +
     `Salgo de: ${s.origen_texto}\n` +
-    paradasDe(s).map((q, i) => `Parada ${i + 1}: ${q.texto || `${q.lat},${q.lng}`}\n`).join('') +
-    `Voy a: ${s.destino_texto}\n` +
+    paradasDe(s).map((q, i) => `Destino ${i + 1}: ${q.texto || `${q.lat},${q.lng}`}\n`).join('') +
+    `${paradasDe(s).length ? 'Destino final' : 'Voy a'}: ${s.destino_texto}\n` +
     `Punto de recogida: https://www.google.com/maps?q=${s.origen_lat},${s.origen_lng}\n` +
     `Destino: https://www.google.com/maps?q=${s.destino_lat},${s.destino_lng}`;
   if (navigator.share) { navigator.share({ title: 'Mi viaje en Ruta', text: txt }).catch(() => {}); return; }
   try { navigator.clipboard.writeText(txt); toast('Datos del viaje copiados, pégalos en tu chat'); }
   catch (e) { toast('Tu navegador no permite compartir desde aquí', 'bad'); }
 }
+
+/* PIN de viaje (como Uber): el pasajero se lo dice al conductor al
+   subir y el conductor lo escribe para iniciar el viaje. Así ninguno se
+   sube al carro equivocado. */
+const pinVisible = s => s.tipo === 'viaje' && (s.estado === 'aceptado' || s.estado === 'en_camino');
+function tarjetaPin(s) {
+  if (!pinVisible(s)) return '';
+  const pin = S.pines[s.id];
+  if (pin === undefined) cargarPin(s);
+  if (pin === null) return '';
+  return `<div class="card pin-viaje">
+    <div class="grow"><div class="t">Tu PIN de viaje</div>
+      <div class="dim">Díselo al conductor cuando subas. No lo compartas antes.</div></div>
+    <div class="pin-num" data-pinviaje="${s.id}">${(pin || '····').split('').map(d => `<span>${esc(d)}</span>`).join('')}</div>
+  </div>`;
+}
+async function cargarPin(s) {
+  if (!S.api || cargarPin.pend[s.id]) return;
+  cargarPin.pend[s.id] = true;
+  try {
+    S.pines[s.id] = await S.api.pinViaje(s.id);
+    if (S.vista === 'inicio' && S.solicitud && S.solicitud.id === s.id) render();
+  } catch (e) { /* sin la migración v5 no hay PIN: se reintenta al reabrir */ }
+  cargarPin.pend[s.id] = false;
+}
+cargarPin.pend = {};
 
 function pasoViaje(sh) {
   const s = S.solicitud;
@@ -4784,11 +4858,12 @@ function pasoViaje(sh) {
       <div class="dim" data-eta="${s.id}" style="margin-top:10px;text-align:center">Ubicando el vehículo...</div>
       ${envio && s.aceptado_en ? `<div style="text-align:center;margin-top:6px">${chipPlazo(s)}</div>` : ''}
     </div>
+    ${tarjetaPin(s)}
     <div class="card"><div class="route">
       <div class="rail"><div class="l1"></div><div class="line"></div><div class="l2"></div></div>
       <div><div class="dim">Recogida</div><div style="font-weight:500">${esc(s.origen_texto)}</div></div>
-      ${paradasDe(s).map((q, i) => `<div style="margin-top:8px"><div class="dim">Parada ${i + 1}</div><div style="font-weight:500">${esc(q.texto || '')}</div></div>`).join('')}
-      <div style="margin-top:10px"><div class="dim">${envio ? 'Entrega a ' + esc(s.destinatario || '') : 'Destino'}</div><div style="font-weight:500">${esc(s.destino_texto)}</div></div>
+      ${paradasDe(s).map((q, i) => `<div style="margin-top:8px"><div class="dim">Destino ${i + 1}</div><div style="font-weight:500">${esc(q.texto || '')}</div></div>`).join('')}
+      <div style="margin-top:10px"><div class="dim">${paradasDe(s).length ? 'Destino final' : 'Destino'}${envio ? ' · entrega a ' + esc(s.destinatario || '') : ''}</div><div style="font-weight:500">${esc(s.destino_texto)}</div></div>
     </div></div>
     ${tarjetaMensajes(s)}
     <div class="row" style="margin-top:10px">
@@ -4912,7 +4987,7 @@ function planificarParadas() {
 }
 function rotuloParada(p) {
   const s = p.s, envio = s.tipo === 'paquete';
-  if (p.tipo === 'parada') return `Parada ${p.i + 1} · ${envio ? 'envío a ' + (s.destinatario || 'destinatario') : nombreCorto(s.pasajero_nombre)}`;
+  if (p.tipo === 'parada') return `Destino ${p.i + 1} · ${envio ? 'envío a ' + (s.destinatario || 'destinatario') : nombreCorto(s.pasajero_nombre)}`;
   if (p.tipo === 'recoger') return envio ? 'Recoger paquete de ' + nombreCorto(s.pasajero_nombre) : 'Recoger a ' + nombreCorto(s.pasajero_nombre);
   return envio ? 'Entregar a ' + (s.destinatario || 'destinatario') : 'Dejar a ' + nombreCorto(s.pasajero_nombre);
 }
@@ -4922,13 +4997,62 @@ function rotuloParada(p) {
 const dirParada = p => p.tipo === 'recoger' ? p.s.origen_texto : p.tipo === 'parada' ? p.p.texto : p.s.destino_texto;
 function accionParada(p) {
   const s = p.s, envio = s.tipo === 'paquete';
-  if (p.tipo === 'parada') return s.estado === 'a_bordo' ? { t: 'Pasé por esta parada', local: true } : null;
+  if (p.tipo === 'parada') return s.estado === 'a_bordo' ? { t: 'Pasé por este destino', local: true } : null;
   if (p.tipo === 'recoger') {
     if (!envio && s.estado === 'aceptado') return { t: 'Voy en camino', next: 'en_camino' };
     return { t: envio ? 'Recogí el paquete' : 'Recogí al pasajero', next: 'a_bordo' };
   }
   if (s.estado !== 'a_bordo') return null;
   return { t: envio ? 'Entregué el paquete' : 'Finalizar viaje', next: 'finalizado' };
+}
+
+/* El conductor escribe el PIN que le dicta el pasajero. La base lo
+   compara (el conductor nunca lo ve) y recién ahí inicia el viaje. */
+function pedirPinViaje(s, alIniciar) {
+  const nombre = nombreCorto(s.pasajero_nombre) || 'el pasajero';
+  modal(`<div class="grip"></div>
+    <h2>PIN del pasajero</h2>
+    <p class="dim" style="margin:6px 0 16px">Pídele a ${esc(nombre)} su PIN de 4 dígitos. Lo ve en su app. Así confirmas que es la persona correcta antes de iniciar el viaje.</p>
+    <div class="pinbox" data-pin="viaje" style="margin:0 auto 6px">
+      <input inputmode="numeric" maxlength="1" autocomplete="off"><input inputmode="numeric" maxlength="1" autocomplete="off"><input inputmode="numeric" maxlength="1" autocomplete="off"><input inputmode="numeric" maxlength="1" autocomplete="off">
+    </div>
+    <p class="fine" id="pv-err" style="text-align:center;color:var(--bad);min-height:18px;margin:8px 0 0"></p>
+    <button class="btn primary full" id="pv-ok" style="margin-top:8px">Iniciar viaje</button>
+    <button class="btn ghost full" id="pv-x">Cancelar</button>`);
+  const ins = $$('[data-pin="viaje"] input');
+  const enviar = async () => {
+    const pin = leerPin('viaje');
+    if (pin.length !== 4) { $('#pv-err').textContent = 'Escribe los 4 dígitos'; return; }
+    const b = $('#pv-ok'); b.disabled = true; b.textContent = 'Revisando...';
+    try {
+      S.propios.add(s.id + ':a_bordo');
+      const r = await S.api.iniciarConPin(s.id, pin);
+      if (r.ok) { cerrarModal(); toast('PIN correcto. ¡Buen viaje!'); sonido('enviado'); alIniciar(); return; }
+      $('#pv-err').textContent = r.motivo || 'PIN incorrecto';
+      vibrar([60, 40, 60]);
+      limpiarPin('viaje'); ins[0].focus();
+    } catch (e) {
+      $('#pv-err').textContent = /iniciar_viaje_con_pin|function|schema cache/i.test(e.message || '')
+        ? 'Falta actualizar el servidor (migración v5). Avisa al administrador.'
+        : explicarError(e, 'iniciarConPin');
+    }
+    b.disabled = false; b.textContent = 'Iniciar viaje';
+  };
+  ins.forEach((inp, i) => {
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+      $('#pv-err').textContent = '';
+      if (inp.value && ins[i + 1]) ins[i + 1].focus();
+      if (leerPin('viaje').length === 4) enviar();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !inp.value && ins[i - 1]) ins[i - 1].focus();
+      if (e.key === 'Enter') enviar();
+    });
+  });
+  $('#pv-ok').onclick = enviar;
+  $('#pv-x').onclick = cerrarModal;
+  setTimeout(() => ins[0].focus(), 80);
 }
 
 function panelRuta(sh) {
@@ -4947,7 +5071,7 @@ function panelRuta(sh) {
     envio ? `<span class="chipdato">${IC.caja('sm')}${(TAMANOS[s.tamano] || {}).t || 'Envío'} · ${urgDe(s.urgencia).t}</span>`
           : `<span class="chipdato">${IC.personas('sm')}${s.pasajeros || 1} pasajero${(s.pasajeros || 1) > 1 ? 's' : ''}</span>`,
     envio && s.descripcion ? `<span class="chipdato">${IC.sobre('sm')}${esc(s.descripcion)}</span>` : '',
-    paradasDe(s).length ? `<span class="chipdato">${IC.ruta('sm')}${paradasDe(s).length} parada${paradasDe(s).length > 1 ? 's' : ''} en el camino</span>` : '',
+    paradasDe(s).length ? `<span class="chipdato">${IC.ruta('sm')}${paradasDe(s).length + 1} destinos</span>` : '',
     s.notas ? `<span class="chipdato">${IC.nota('sm')}${esc(s.notas)}</span>` : ''
   ].filter(Boolean).join('');
 
@@ -4965,9 +5089,10 @@ function panelRuta(sh) {
         </div>
         ${envio ? chipPlazo(s) : ''}
       </div>
-      <div class="dir"><b>${sel.tipo === 'recoger' ? 'Recogida' : sel.tipo === 'parada' ? 'Parada' : 'Entrega'}:</b> ${esc(dir || '')}</div>
+      <div class="dir"><b>${sel.tipo === 'recoger' ? 'Recogida' : sel.tipo === 'parada' ? 'Destino ' + (sel.i + 1) : (paradasDe(s).length ? 'Destino final' : 'Destino')}:</b> ${esc(dir || '')}</div>
       <div class="chipset" style="margin:0 0 10px">${chips}</div>
-      ${botonWaze(sel.p, sel.tipo === 'recoger' ? 'Navegar a la recogida' : sel.tipo === 'parada' ? 'Navegar a la parada' : 'Navegar a la entrega')}
+      ${sel.tipo === 'recoger' && !envio ? `<div class="aviso-pin">${IC.candado('sm')}Al recoger, pídele al pasajero su PIN de 4 dígitos para iniciar el viaje.</div>` : ''}
+      ${botonWaze(sel.p, sel.tipo === 'recoger' ? 'Navegar a la recogida' : sel.tipo === 'parada' ? 'Navegar a este destino' : 'Navegar a la entrega')}
       ${a ? `<button class="btn primary full" id="c-next" style="margin-top:8px">${a.t}</button>` : ''}
       <div class="acciones">
         <button class="btn suave" id="abrir-chat" style="justify-content:flex-start;overflow:hidden">
@@ -5011,25 +5136,30 @@ function panelRuta(sh) {
       S.paradaSel = null; mapa.firma = null; render();
       return;
     }
+    if (a.next === 'a_bordo' && s.tipo === 'viaje') return pedirPinViaje(s, () => avanzado(a.next));
     const btn = $('#c-next'); btn.disabled = true;
     try {
       S.propios.add(s.id + ':' + a.next);
       await S.api.cambiarEstado(s.id, a.next);
-      if (a.next === 'finalizado') {
-        s.precio_final = s.precio_final || s.precio_ofrecido;
-        S.activos = S.activos.filter(x => x.id !== s.id);
-        if (s.tipo === 'viaje') S.porCalificar.push({ ...s, estado: 'finalizado' });
-        toast(envio ? `Envío entregado · ganaste ${money(s.precio_final)}` : `Viaje finalizado · ganaste ${money(s.precio_final)}`);
-        sonido('enviado');
-      } else {
-        S.activos = S.activos.map(x => x.id === s.id ? { ...x, estado: a.next } : x);
-      }
-      S.paradaSel = null;
-      sincronizarSeguimiento();
-      mapa.firma = null;
-      render();
+      avanzado(a.next);
     } catch (e) { toast(explicarError(e, 'cambiarEstado'), 'bad'); btn.disabled = false; }
   };
+  /* Lo que se hace después de avanzar el estado, con o sin PIN */
+  function avanzado(next) {
+    if (next === 'finalizado') {
+      s.precio_final = s.precio_final || s.precio_ofrecido;
+      S.activos = S.activos.filter(x => x.id !== s.id);
+      if (s.tipo === 'viaje') S.porCalificar.push({ ...s, estado: 'finalizado' });
+      toast(envio ? `Envío entregado · ganaste ${money(s.precio_final)}` : `Viaje finalizado · ganaste ${money(s.precio_final)}`);
+      sonido('enviado');
+    } else {
+      S.activos = S.activos.map(x => x.id === s.id ? { ...x, estado: next } : x);
+    }
+    S.paradaSel = null;
+    sincronizarSeguimiento();
+    mapa.firma = null;
+    render();
+  }
   $('#c-cancel').onclick = async () => {
     if (!await cancelarCon(s)) return;
     S.paradaSel = null; mapa.firma = null; render();
@@ -5069,14 +5199,14 @@ function tarjetaSolicitudDidi(s, idx, total) {
       ? (s.tamano ? `<span class="chipdato">${IC.caja('sm')}${(TAMANOS[s.tamano] || {}).t || ''}</span>` : '')
       : (s.pasajeros ? `<span class="chipdato">${IC.personas('sm')}${s.pasajeros} pasajero${s.pasajeros > 1 ? 's' : ''}</span>` : ''),
     urg ? `<span class="chipdato ${s.urgencia === 'urgente' ? 'urge' : ''}">${IC.reloj('sm')}${urg.t}</span>` : '',
-    paradasDe(s).length ? `<span class="chipdato">${IC.ruta('sm')}${paradasDe(s).length} parada${paradasDe(s).length > 1 ? 's' : ''}</span>` : ''
+    paradasDe(s).length ? `<span class="chipdato">${IC.ruta('sm')}${paradasDe(s).length + 1} destinos</span>` : ''
   ].filter(Boolean).join('');
 
   /* Lo que no cabe arriba. Solo se ve con el panel a media altura. */
   const extras = [
     esEnvio && s.descripcion ? `<span class="chipdato">${IC.sobre('sm')}${esc(s.descripcion)}</span>` : '',
     esEnvio && s.destinatario ? `<span class="chipdato">${IC.pin('sm')}Entregar a ${esc(s.destinatario)}</span>` : '',
-    ...paradasDe(s).map((q, i) => `<span class="chipdato"><span class="num-mini">${i + 1}</span>${esc(q.texto || 'Parada')}</span>`),
+    ...paradasDe(s).map((q, i) => `<span class="chipdato"><span class="num-mini">${i + 1}</span>${esc(q.texto || 'Destino ' + (i + 1))}</span>`),
     s.notas ? `<span class="chipdato">${IC.nota('sm')}${esc(s.notas)}</span>` : '',
     porKm ? `<span class="chipdato">${IC.ruta('sm')}${money(porKm)} por km · ${totalKm} km en total</span>` : ''
   ].filter(Boolean).join('');
@@ -5364,7 +5494,7 @@ function modalRecorrido(s, conAcciones = false) {
         <div class="v" id="leg1">${tramo(k1, m1)}</div></div>` : ''}
       <div class="leg"><div class="n">${soyConductor ? '2' : '1'}</div>
         <div class="grow"><div style="font-weight:600">${fijo ? 'Llevar el paquete' : 'Llevar al pasajero'}</div>
-          ${paradasDe(s).map((q, i) => `<div class="dim"><span class="num-mini">${i + 1}</span>${esc(q.texto || 'Parada')}</div>`).join('')}
+          ${paradasDe(s).map((q, i) => `<div class="dim"><span class="num-mini">${i + 1}</span>${esc(q.texto || 'Destino ' + (i + 1))}</div>`).join('')}
           <div class="dim">${esc(s.destino_texto)}</div>
           ${soyConductor ? botonesNav(A, B) : ''}</div>
         <div class="v" id="leg2">${tramo(k2, m2)}</div></div>
@@ -5410,9 +5540,9 @@ function modalRecorrido(s, conAcciones = false) {
     }
 
     capas.push(L.marker([A.lat, A.lng], { icon: ico('<div class="pt"></div>') }).addTo(mapaSec).bindTooltip('Recogida'));
-    capas.push(L.marker([B.lat, B.lng], { icon: ico('<div class="pt hollow"></div>') }).addTo(mapaSec).bindTooltip('Entrega'));
+    capas.push(L.marker([B.lat, B.lng], { icon: ico('<div class="pt hollow"></div>') }).addTo(mapaSec).bindTooltip(paradasDe(s).length ? 'Destino final' : 'Entrega'));
     paradasDe(s).forEach((q, i) => capas.push(L.marker([q.lat, q.lng], { icon: ico(`<div class="num-parada parada chica">${i + 1}</div>`) })
-      .addTo(mapaSec).bindTooltip(`Parada ${i + 1}${q.texto ? ': ' + esc(q.texto) : ''}`)));
+      .addTo(mapaSec).bindTooltip(`Destino ${i + 1}${q.texto ? ': ' + esc(q.texto) : ''}`)));
     const grupo = L.featureGroup(capas);
     mapaSec.fitBounds(grupo.getBounds(), { padding: [40, 40] });
     setTimeout(() => { if (mapaSec) mapaSec.invalidateSize(); }, 140);
@@ -5479,8 +5609,8 @@ function modalServicio(x) {
     <div class="card"><div class="route">
       <div class="rail"><div class="l1"></div><div class="line"></div><div class="l2"></div></div>
       <div><div class="dim">Salida</div><div style="font-weight:500">${esc(x.origen_texto || '—')}</div></div>
-      ${paradasDe(x).map((q, i) => `<div style="margin-top:8px"><div class="dim">Parada ${i + 1}</div><div style="font-weight:500">${esc(q.texto || '')}</div></div>`).join('')}
-      <div style="margin-top:10px"><div class="dim">Llegada</div><div style="font-weight:500">${esc(x.destino_texto || '—')}</div></div>
+      ${paradasDe(x).map((q, i) => `<div style="margin-top:8px"><div class="dim">Destino ${i + 1}</div><div style="font-weight:500">${esc(q.texto || '')}</div></div>`).join('')}
+      <div style="margin-top:10px"><div class="dim">${paradasDe(x).length ? 'Destino final' : 'Llegada'}</div><div style="font-weight:500">${esc(x.destino_texto || '—')}</div></div>
     </div></div>
     <div class="card">
       <div class="kv"><span class="k">${S.modo === 'conductor' ? 'Ganaste' : 'Pagaste'}</span>
@@ -5826,7 +5956,9 @@ window.rutaNativo = {
     arrancarApp();
   },
   /* se tocó una notificación: vuelve a leer todo */
-  refrescar() { alVolver(); }
+  refrescar() { alVolver(); },
+  /* avance de la descarga de una versión nueva del APK */
+  actualizacion(estado, pct, msg) { progresoActualizacion(estado, pct, msg); }
 };
 
 /* En el APK los enlaces externos (Waze, llamadas, WhatsApp, correo) se
@@ -5886,12 +6018,16 @@ function pintarPerfil(sh) {
         ${S.sinLeerSop ? `<span class="badge solid">${S.sinLeerSop}</span>` : '<div class="fin">›</div>'}</button>
       <button class="rowbtn" id="pf-pin">
         <div class="ico">${IC.candado()}</div>
-        <div class="grow"><div class="t">Cambiar mi PIN</div><div class="s">La clave real es tu PIN seguido de 99</div></div>
+        <div class="grow"><div class="t">Cambiar mi PIN</div><div class="s">Cambia tu PIN de 4 dígitos</div></div>
         <div class="fin">›</div></button>
       <button class="rowbtn" id="pf-sonido">
         <div class="ico">${IC.chat()}</div>
         <div class="grow"><div class="t">Sonidos de aviso</div><div class="s">${leerLocal('sonido', '1') === '0' ? 'Apagados' : 'Encendidos · toca para probar o apagar'}</div></div>
         <div class="fin">›</div></button>
+      ${enApp() ? `<button class="rowbtn" id="pf-version">
+        <div class="ico">${IC.arriba()}</div>
+        <div class="grow"><div class="t">Versión ${esc(VERSION_APP.nombre)}</div><div class="s">Toca para buscar actualizaciones</div></div>
+        <div class="fin">›</div></button>` : ''}
       <button class="rowbtn" id="pf-terminos">
         <div class="ico">${IC.escudo()}</div>
         <div class="grow"><div class="t">Términos y privacidad</div><div class="s">Aceptados${p.terminos_aceptados_en ? ' el ' + new Date(p.terminos_aceptados_en).toLocaleDateString('es-EC') : ''}</div></div>
@@ -5933,6 +6069,7 @@ function pintarPerfil(sh) {
   const bi = $('#pf-ident'); if (bi) bi.onclick = () => flujoIdentidad(false);
   const bvf = $('#pf-verif'); if (bvf) bvf.onclick = flujoVerificacion;
   $('#pf-terminos').onclick = () => modalTerminos(false);
+  const bver = $('#pf-version'); if (bver) bver.onclick = () => revisarActualizacion(true);
   $('#pf-sonido').onclick = async () => {
     const on = leerLocal('sonido', '1') !== '0';
     if (on && await confirmar('Sonidos de aviso', 'Suenan cuando te asignan un servicio, cuando llega tu conductor y con mensajes nuevos. ¿Apagarlos?', 'Apagar sonidos')) {
@@ -5965,6 +6102,7 @@ async function cerrarSesion() {
   try { await S.api.salir(); } catch (e) {}
   detenerTodo(); limpiarSupSubs();
   if (S.subSop) { try { S.subSop(); } catch (e) {} S.subSop = null; }
+  if (S.subAnuncios) { try { S.api.sb.removeChannel(S.subAnuncios); } catch (e) {} S.subAnuncios = null; }
   S.user = null; S.perfil = null; S.vehiculo = null; S.solicitud = null; S.arrancadoPara = null;
   S.origen = null; S.destino = null; S.paradas = []; S.ultimoPunto = null; S.tipo = 'paquete'; S.vehEnvio = 'carro';
   S.enLinea = false; S.cercanas = []; S.todasCercanas = [];
@@ -6046,7 +6184,7 @@ function modalDatos() {
 function modalCambiarPin() {
   modal(`<div class="grip"></div>
     <h2>Cambiar mi PIN</h2>
-    <p class="dim" style="margin:6px 0 16px">Escribe el PIN nuevo de 4 dígitos. La clave real seguirá siendo tu PIN seguido de 99.</p>
+    <p class="dim" style="margin:6px 0 16px">Escribe el PIN nuevo de 4 dígitos.</p>
     <div class="pinbox" data-pin="nuevo" style="margin:0 auto 6px">
       <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
     </div>
@@ -6197,6 +6335,152 @@ $('#btn-power').onclick = alternarLinea;
 $('#avatar').onclick = () => setVista('perfil');
 $('#fab-yo').onclick = centrarEnMi;
 $$('#nav button').forEach(b => b.onclick = () => setVista(b.dataset.vista));
+
+/* ============================================================
+   Actualizaciones del APK y anuncios
+   ============================================================ */
+/* Versión de esta página dentro del APK. Súbela junto con la de
+   ruta_app/pubspec.yaml en cada APK nuevo: la app compara este build con
+   el de la tabla app_version (lo pone el admin) para saber si hay una
+   versión más nueva que instalar. */
+const VERSION_APP = { nombre: '1.3.0', build: 5 };
+
+/* Una sola ventana centrada con cola: si hay una actualización y dos
+   anuncios se muestran uno tras otro, nunca encimados. */
+const colaAvisos = [];
+let avisoAbierto = false;
+function encolarAviso(pintar) { colaAvisos.push(pintar); siguienteAviso(); }
+function siguienteAviso() {
+  if (avisoAbierto || !colaAvisos.length) return;
+  avisoAbierto = true;
+  const cap = $('#aviso-cap');
+  cap.classList.remove('hidden');
+  colaAvisos.shift()(cap, () => {
+    cap.classList.add('hidden'); cap.innerHTML = '';
+    avisoAbierto = false;
+    setTimeout(siguienteAviso, 350);
+  });
+}
+
+/* ---- Actualización ----
+   Solo dentro del APK: la web siempre se carga fresca. Se revisa al abrir
+   y al volver a la app (cada 3 horas como mucho). "Más tarde" la pospone
+   hasta el día siguiente, salvo que el admin la marque obligatoria. */
+let versionRevisada = 0, versionEnCurso = false;
+async function revisarActualizacion(manual) {
+  if (!enApp() || !S.api) return;
+  if (!manual && Date.now() - versionRevisada < 3 * 3600e3) return;
+  versionRevisada = Date.now();
+  const { data, error } = await S.api.sb.from('app_version').select('*').eq('id', 1).maybeSingle();
+  if (error || !data) { if (manual) toast('No se pudo revisar, intenta de nuevo', 'bad'); return; }
+  if (!data.apk_url || +data.build <= VERSION_APP.build) { if (manual) toast(`Ya tienes la última versión (${VERSION_APP.nombre})`); return; }
+  const pospuesta = leerLocal('version_pospuesta') === data.build + ':' + diaQuito(Date.now());
+  if (!manual && !data.obligatoria && pospuesta) return;
+  if (versionEnCurso) return;
+  versionEnCurso = true;
+  encolarAviso((cap, cerrar) => ventanaActualizacion(cap, () => { versionEnCurso = false; cerrar(); }, data));
+}
+function ventanaActualizacion(cap, cerrar, v) {
+  cap.innerHTML = `<div class="caja" role="dialog" aria-modal="true" aria-labelledby="act-t"><div class="cuerpo">
+    <div class="etq">${IC.arriba('sm')}Nueva versión</div>
+    <h2 id="act-t">Actualiza Ruta a la versión ${esc(v.version)}</h2>
+    <div class="txt">${esc(v.notas || 'Trae mejoras y correcciones. Instálala para seguir usando Ruta sin problemas.')}</div>
+    <div class="dim" style="margin-bottom:10px">Tienes la versión ${esc(VERSION_APP.nombre)}. Tus datos y tu sesión se mantienen.</div>
+    <div id="act-prog" class="hidden"><div class="barra-prog"><i id="act-barra"></i></div>
+      <div class="dim" id="act-txt">Descargando...</div></div>
+    <button class="btn primary full" id="act-ok">Actualizar ahora</button>
+    <button class="btn ghost full hidden" id="act-web">Descargar desde el navegador</button>
+    ${v.obligatoria ? '' : '<button class="btn ghost full" id="act-luego">Más tarde</button>'}
+  </div></div>`;
+  const ok = $('#act-ok');
+  ok.onclick = () => {
+    ok.disabled = true; ok.textContent = 'Descargando...';
+    $('#act-prog').classList.remove('hidden');
+    nativo({ tipo: 'actualizar', url: v.apk_url, version: v.version, build: +v.build });
+  };
+  $('#act-web').onclick = () => nativo({ tipo: 'abrir', url: v.apk_url });
+  const luego = $('#act-luego');
+  if (luego) luego.onclick = () => { guardarLocal('version_pospuesta', v.build + ':' + diaQuito(Date.now())); cerrar(); };
+}
+/* Flutter informa cómo va: 'progreso' (0-100), 'instalar' (se abrió el
+   instalador de Android) o 'error'. */
+function progresoActualizacion(estado, pct, msg) {
+  const ok = $('#act-ok'), barra = $('#act-barra'), txt = $('#act-txt');
+  if (!ok) return;
+  if (estado === 'progreso') {
+    if (barra) barra.style.width = Math.max(3, Math.min(100, +pct || 0)) + '%';
+    if (txt) txt.textContent = pct >= 0 ? `Descargando... ${Math.round(pct)}%` : 'Descargando...';
+  } else if (estado === 'instalar') {
+    if (barra) barra.style.width = '100%';
+    if (txt) txt.textContent = 'Toca "Instalar" o "Actualizar" en la ventana de Android. Si te pide permiso para instalar apps, actívalo para Ruta y vuelve.';
+    ok.disabled = false; ok.textContent = 'Instalar de nuevo';
+  } else {
+    if (txt) txt.textContent = msg || 'No se pudo descargar la actualización.';
+    ok.disabled = false; ok.textContent = 'Reintentar';
+    $('#act-web').classList.remove('hidden');
+  }
+}
+
+/* ---- Anuncios ----
+   El admin los publica en admin.html. "una_vez": se muestra una sola vez
+   en este teléfono; "cada_dia": una vez al día mientras esté vigente. */
+const anunciosEnCola = new Set();
+let anunciosRevisados = 0;
+function anunciosVistos() {
+  try { return JSON.parse(leerLocal('anuncios_vistos', '{}')) || {}; } catch (e) { return {}; }
+}
+async function revisarAnuncios() {
+  if (!S.api || !S.user || !S.perfil || S.perfil.desdeCache) return;
+  anunciosRevisados = Date.now();
+  const { data, error } = await S.api.sb.from('anuncios').select('*').eq('activo', true)
+    .order('creado_en', { ascending: false }).limit(10);
+  if (error || !data) return;
+  const ahora = Date.now(), hoy = diaQuito(ahora), vistos = anunciosVistos();
+  data.filter(a => (a.audiencia === 'todos' || a.audiencia === S.modo) &&
+                   new Date(a.desde) <= ahora && (!a.hasta || new Date(a.hasta) > ahora) &&
+                   (a.frecuencia === 'cada_dia' ? vistos[a.id] !== hoy : !vistos[a.id]) &&
+                   !anunciosEnCola.has(a.id))
+    .reverse()
+    .forEach(a => {
+      anunciosEnCola.add(a.id);
+      encolarAviso((cap, cerrar) => ventanaAnuncio(cap, () => {
+        const v = anunciosVistos();
+        v[a.id] = hoy;
+        /* solo se guardan los de los últimos avisos, para no crecer sin fin */
+        guardarLocal('anuncios_vistos', JSON.stringify(Object.fromEntries(Object.entries(v).slice(-60))));
+        anunciosEnCola.delete(a.id);
+        cerrar();
+      }, a));
+    });
+}
+function ventanaAnuncio(cap, cerrar, a) {
+  const img = /^https:\/\//i.test(a.imagen_url || '') ? a.imagen_url : '';
+  const url = /^(https?:|tel:|mailto:)/i.test(a.boton_url || '') ? a.boton_url : '';
+  cap.innerHTML = `<div class="caja" role="dialog" aria-modal="true" aria-labelledby="an-t">
+    ${img ? `<img src="${esc(img)}" alt="" onerror="this.remove()">` : ''}
+    <div class="cuerpo">
+      <div class="etq">${IC.nota('sm')}Anuncio</div>
+      <h2 id="an-t">${esc(a.titulo)}</h2>
+      ${a.texto ? `<div class="txt">${esc(a.texto)}</div>` : ''}
+      ${url ? `<a class="btn primary full" id="an-ir" href="${esc(url)}" target="_blank" rel="noopener">${esc(a.boton_texto || 'Ver más')}</a>` : ''}
+      <button class="btn ${url ? 'ghost' : 'primary'} full" id="an-ok">Entendido</button>
+    </div></div>`;
+  $('#an-ok').onclick = cerrar;
+  const ir = $('#an-ir');
+  if (ir) ir.addEventListener('click', () => setTimeout(cerrar, 100));
+}
+/* Un anuncio nuevo aparece al momento, sin esperar a reabrir la app. */
+function escucharAnuncios() {
+  if (S.subAnuncios) { try { S.api.sb.removeChannel(S.subAnuncios); } catch (e) {} }
+  S.subAnuncios = S.api.sb.channel('anuncios')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'anuncios' }, () => setTimeout(revisarAnuncios, 800))
+    .subscribe();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !S.user) return;
+  revisarActualizacion();
+  if (Date.now() - anunciosRevisados > 10 * 60000) revisarAnuncios();
+});
 
 (async function arranque() {
   /* El enlace de "olvidé mi PIN" vuelve con type=recovery en el hash */
