@@ -33,7 +33,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font:14px/1.45 Inter,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-button,input,select{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 .hidden{display:none!important}
 h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;margin:0;letter-spacing:-.02em}
@@ -50,6 +50,7 @@ a{color:var(--azul)}
 .input{width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel2);outline:none}
 .input:focus{border-color:var(--azul)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:11px;border:1.5px solid var(--line);background:var(--panel2);font-weight:600;font-size:13px}
+a.btn{text-decoration:none}
 .btn.primary{background:var(--azul);border-color:var(--azul);color:#fff}
 .btn.danger{color:var(--bad);border-color:#F6D8D7}
 .btn.sm{padding:5px 9px;font-size:12px;border-radius:9px}
@@ -130,6 +131,25 @@ main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;
 .fotos figure{margin:0}
 .fotos img{width:100%;border-radius:12px;border:1px solid var(--line);background:#000;aspect-ratio:3/4;object-fit:contain}
 .fotos figcaption{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* soporte: chat de cada caso */
+.ico.sop{background:#E0912A;font-size:10.5px}
+.sin{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--bad);color:#fff;font-size:11.5px;font-weight:700}
+.chat{display:flex;flex-direction:column;gap:7px;height:min(46dvh,420px);overflow-y:auto;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;margin-top:12px}
+.msg{max-width:82%;padding:8px 11px;border-radius:14px;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.usuario{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.soporte{align-self:flex-end;background:var(--azul);color:#fff;border-bottom-right-radius:4px}
+.msg.sistema{align-self:center;max-width:92%;background:none;color:var(--dim);font-size:12px;text-align:center;padding:2px 8px}
+.msg .h{font-size:10.5px;opacity:.72;margin-top:3px}
+.resp{display:flex;gap:8px;margin-top:10px;align-items:flex-end}
+textarea.input{resize:vertical;min-height:46px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media(max-width:560px){.form2{grid-template-columns:1fr}.resp{flex-direction:column;align-items:stretch}}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0}
+.cab-lista{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.an-img{width:54px;height:54px;border-radius:10px;object-fit:cover;background:var(--panel2);border:1px solid var(--line)}
+.prev-img{max-width:100%;max-height:180px;border-radius:12px;border:1px solid var(--line);display:block;margin-top:8px}
 </style>
 </head>
 <body>
@@ -169,6 +189,9 @@ main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;
         <button data-t="nuevos">Nuevos<span class="c" id="c-nuevos">0</span></button>
         <button data-t="usuarios">Usuarios<span class="c" id="c-usuarios">0</span></button>
         <button data-t="conductores">Conductores<span class="c" id="c-conductores">0</span></button>
+        <button data-t="soporte">Soporte<span class="c" id="c-soporte">0</span></button>
+        <button data-t="anuncios">Anuncios<span class="c" id="c-anuncios">0</span></button>
+        <button data-t="app">Versión app</button>
       </div>
       <div class="buscar"><input class="input" id="q" placeholder="Buscar por nombre, correo, celular, placa o dirección" autocomplete="off"></div>
       <div class="lista" id="lista"></div>
@@ -238,7 +261,9 @@ function beep() {
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ruta-admin-sesion' }
 });
-const A = { sol: [], perfiles: {}, vehiculos: {}, conductores: [], presencia: [], bio: {}, tab: 'pendientes', q: '', sel: null, vistos: null, usuariosVistos: null, subs: [] };
+const A = { sol: [], perfiles: {}, vehiculos: {}, conductores: [], presencia: [], bio: {}, tab: 'pendientes', q: '', sel: null, vistos: null, usuariosVistos: null, subs: [],
+  yo: null, tickets: [], soporteOk: true, porResponder: null, caso: null, cerrarCaso: null,
+  anuncios: [], anunciosOk: true, version: null, versionOk: true };
 /* Ventanas de tiempo para decir "conectado": la app manda un latido cada
    45 s (web) o cada 15-60 s (servicio del APK). */
 const CONECTADO_MS = 3 * 60000, EN_LINEA_MS = 10 * 60000, NUEVOS_DIAS = 7;
@@ -312,7 +337,42 @@ async function cargarTodo() {
     beep();
     nuevas.forEach(s => toast(`Nueva solicitud: ${s.tipo === 'paquete' ? 'envío' : 'viaje'} de ${s.pasajero_nombre || '—'} · ${money(s.precio_ofrecido)}`));
   }
+  await Promise.all([cargarSoporte(), cargarAnuncios(), cargarVersion(), cargarPines()]);
   pintar();
+}
+
+/* Soporte, anuncios y versión son aparte: si una tabla aún no existe
+   (migración sin correr) el resto del panel sigue funcionando. */
+async function cargarSoporte() {
+  const { data, error } = await sb.from('soporte_bandeja').select('*').order('actualizado_en', { ascending: false }).limit(300);
+  A.soporteOk = !error;
+  if (error) return;
+  A.tickets = data;
+  /* Aviso con sonido cuando un usuario escribe algo nuevo */
+  const pend = data.filter(t => +t.sin_leer_agente > 0 && t.id !== A.caso);
+  const claves = new Set(pend.map(t => t.id + ':' + t.sin_leer_agente));
+  if (A.porResponder) {
+    const nuevos = pend.filter(t => !A.porResponder.has(t.id + ':' + t.sin_leer_agente));
+    if (nuevos.length) { beep(); nuevos.forEach(t => toast(`Soporte · ${t.usuario_nombre || 'Usuario'}: ${t.ultimo_texto || t.asunto}`)); }
+  }
+  A.porResponder = claves;
+}
+/* PIN de los viajes en curso: si el pasajero no lo encuentra, soporte se lo da */
+async function cargarPines() {
+  const ids = A.sol.filter(s => s.tipo === 'viaje' && ['buscando', 'aceptado', 'en_camino'].includes(s.estado)).map(s => s.id);
+  if (!ids.length) { A.pines = {}; return; }
+  const { data, error } = await sb.from('pines_viaje').select('solicitud_id,pin').in('solicitud_id', ids);
+  A.pines = error ? {} : Object.fromEntries(data.map(x => [x.solicitud_id, x.pin]));
+}
+async function cargarAnuncios() {
+  const { data, error } = await sb.from('anuncios').select('*').order('creado_en', { ascending: false }).limit(100);
+  A.anunciosOk = !error;
+  A.anuncios = error ? [] : data;
+}
+async function cargarVersion() {
+  const { data, error } = await sb.from('app_version').select('*').eq('id', 1).maybeSingle();
+  A.versionOk = !error;
+  A.version = error ? null : data;
 }
 let tCarga = null;
 const recargar = () => { clearTimeout(tCarga); tCarga = setTimeout(() => cargarTodo().catch(e => toast(e.message, 'bad')), 400); };
@@ -321,6 +381,7 @@ function entrar(user) {
   $('#login').classList.add('hidden');
   $('#panel').classList.remove('hidden');
   $('#quien').textContent = user.email;
+  A.yo = user.id;
   $('#b-sonido').textContent = 'Sonido: ' + (localStorage.getItem('admin:sonido') === '0' ? 'no' : 'sí');
   iniciarMapa();
   cargarTodo().catch(e => toast(e.message, 'bad'));
@@ -329,6 +390,9 @@ function entrar(user) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'conductores_estado' }, recargar)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'presencia' }, recargar)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'perfiles' }, recargar)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'soporte_tickets' }, recargar)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'soporte_mensajes' }, recargar)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'anuncios' }, recargar)
     .subscribe(st => { $('#vivo').style.opacity = st === 'SUBSCRIBED' ? 1 : .4; });
   const t = setInterval(recargar, 20000);
   const t2 = setInterval(pintarLista, 30000);   // refresca los "hace X min" y los plazos
@@ -371,8 +435,15 @@ const porActivar = () => Object.values(A.perfiles).filter(p => !p.cuenta_activa)
   .sort((a, b) => (b.rostro_registrado - a.rostro_registrado) || (new Date(b.creado_en) - new Date(a.creado_en)));
 const vehTxt = v => `${v.tipo === 'moto' ? 'Moto' : 'Carro'} ${v.placa || ''} ${[v.marca, v.modelo, v.color].filter(Boolean).join(' ')}`.trim();
 const paradasDe = s => (Array.isArray(s.paradas) ? s.paradas : []).filter(q => q && q.lat != null);
+const tkAbierto = t => t.estado === 'abierto' || t.estado === 'en_proceso';
+const porAtender = () => A.tickets.filter(t => +t.sin_leer_agente > 0 || t.estado === 'abierto');
+const vigente = a => a.activo && new Date(a.desde) <= Date.now() && (!a.hasta || new Date(a.hasta) > Date.now());
 function listaTab(t) {
   const hoy = new Date().toDateString();
+  if (t === 'soporte') return [...A.tickets].sort((a, b) =>
+    ((+b.sin_leer_agente > 0) - (+a.sin_leer_agente > 0)) || (tkAbierto(b) - tkAbierto(a)) || (new Date(b.actualizado_en) - new Date(a.actualizado_en)));
+  if (t === 'anuncios') return A.anuncios;
+  if (t === 'app') return [];
   if (t === 'pendientes') return A.sol.filter(s => s.estado === 'buscando');
   if (t === 'curso') return A.sol.filter(s => ['aceptado', 'en_camino', 'a_bordo'].includes(s.estado));
   if (t === 'hoy') return A.sol.filter(s => ['finalizado', 'cancelado'].includes(s.estado) && new Date(s.creado_en).toDateString() === hoy);
@@ -391,6 +462,9 @@ function coincide(x) {
   const q = A.q.trim().toLowerCase();
   if (!q) return true;
   const p = A.perfiles;
+  if (x.asunto !== undefined) return [x.asunto, x.usuario_nombre, x.usuario_correo, x.usuario_tel, x.ultimo_texto]
+    .some(c => String(c || '').toLowerCase().includes(q));
+  if (x.titulo !== undefined) return [x.titulo, x.texto].some(c => String(c || '').toLowerCase().includes(q));
   const campos = x.tipo
     ? [x.pasajero_nombre, x.conductor_nombre, x.placa, x.origen_texto, x.destino_texto, x.destinatario, (p[x.pasajero_id] || {}).celular, (p[x.conductor_id] || {}).celular]
     : [x.nombre, x.correo, x.celular, x.cedula, ...(A.vehiculos[x.id] || []).map(v => v.placa)];
@@ -404,6 +478,7 @@ function pintar() {
     ['Conductores en línea', A.conductores.filter(enLinea).length, 'vivo-k', 'conectados'],
     ['Pasajeros conectados', conPas.length, 'vivo-k', 'conectados'],
     ['En uso de la app ahora', A.presencia.filter(enUso).length, 'vivo-k', 'conectados'],
+    ['Casos de soporte por atender', porAtender().length, porAtender().length ? 'alerta' : '', 'soporte'],
     ['Cuentas por activar', porActivar().filter(p => p.rostro_registrado).length, porActivar().some(p => p.rostro_registrado) ? 'alerta' : '', 'activar'],
     ['Usuarios nuevos (7 días)', listaTab('nuevos').length, listaTab('nuevos').length ? 'alerta' : '', 'nuevos'],
     ['Pendientes', listaTab('pendientes').length, listaTab('pendientes').length > 0 ? 'alerta' : '', 'pendientes'],
@@ -415,6 +490,8 @@ function pintar() {
   ];
   $('#kpis').innerHTML = kpis.map(([l, n, cls, t]) => `<div class="kpi clic ${cls}" data-ir="${t}"><div class="n num">${n}</div><div class="l">${l}</div></div>`).join('');
   ['pendientes', 'curso', 'hoy', 'conectados', 'activar', 'nuevos', 'usuarios', 'conductores'].forEach(t => { $('#c-' + t).textContent = listaTab(t).length; });
+  $('#c-soporte').textContent = porAtender().length;
+  $('#c-anuncios').textContent = A.anuncios.filter(vigente).length;
   pintarLista();
   pintarMapa();
 }
@@ -428,14 +505,15 @@ function filaSolicitud(s) {
     <div style="min-width:0">
       <div class="t">${env ? (s.vehiculo === 'moto' ? 'Envío en moto' : 'Envío') : 'Viaje'} · ${esc(s.pasajero_nombre || '—')} <span class="dim">${esc(p.celular || '')}</span></div>
       <div class="ruta-txt"><b>Desde:</b> <a href="${gmaps(s.origen_lat, s.origen_lng)}" target="_blank" rel="noopener">${esc(s.origen_texto || 'Ver en mapa')}</a></div>
-      ${paradasDe(s).map((q, i) => `<div class="ruta-txt"><b>Parada ${i + 1}:</b> <a href="${gmaps(q.lat, q.lng)}" target="_blank" rel="noopener">${esc(q.texto || 'Ver en mapa')}</a></div>`).join('')}
-      <div class="ruta-txt"><b>Hasta:</b> <a href="${gmaps(s.destino_lat, s.destino_lng)}" target="_blank" rel="noopener">${esc(s.destino_texto || 'Ver en mapa')}</a>
+      ${paradasDe(s).map((q, i) => `<div class="ruta-txt"><b>Destino ${i + 1}:</b> <a href="${gmaps(q.lat, q.lng)}" target="_blank" rel="noopener">${esc(q.texto || 'Ver en mapa')}</a></div>`).join('')}
+      <div class="ruta-txt"><b>${paradasDe(s).length ? 'Destino final' : 'Hasta'}:</b> <a href="${gmaps(s.destino_lat, s.destino_lng)}" target="_blank" rel="noopener">${esc(s.destino_texto || 'Ver en mapa')}</a>
         ${env && s.destinatario ? ` · recibe ${esc(s.destinatario)} ${esc(s.destinatario_tel || '')}` : ''}</div>
       <div class="meta">
         <span class="badge ${est[0]}">${est[1]}</span>
         ${env ? `<span class="badge">${esc(URG[s.urgencia] || 'Urgente')}</span>` : `<span class="badge">${s.pasajeros || 1} pasajero(s)</span>`}
         ${s.conductor_id ? `<span class="badge azul">${esc(s.conductor_nombre || '')} ${esc(c.celular || '')} ${s.placa ? '· ' + esc(s.placa) : ''}</span>` : ''}
         ${plazo(s)}
+        ${A.pines && A.pines[s.id] ? `<span class="badge" title="PIN que el pasajero le da al conductor">PIN ${esc(A.pines[s.id])}</span>` : ''}
         <span class="badge">${hace(s.creado_en)}</span>
         ${env && s.descripcion ? `<span class="badge">${esc(s.descripcion)}</span>` : ''}
         ${s.motivo_cancelacion ? `<span class="badge bad">${esc(s.motivo_cancelacion)}</span>` : ''}
@@ -484,6 +562,9 @@ function filaUsuario(p) {
   </div>`;
 }
 function pintarLista() {
+  if (A.tab === 'soporte') return pintarSoporte();
+  if (A.tab === 'anuncios') return pintarAnuncios();
+  if (A.tab === 'app') return pintarVersion();
   const l = listaTab(A.tab).filter(coincide);
   const esSol = ['pendientes', 'curso', 'hoy'].includes(A.tab);
   if (!l.length) { $('#lista').innerHTML = `<div class="vacio">${A.q ? 'Nada coincide con la búsqueda.' : 'No hay nada aquí por ahora.'}</div>`; return; }
@@ -524,7 +605,7 @@ $('#lista').onclick = async e => {
     toast('Solicitud cancelada'); return recargar();
   }
   const sw = t.closest('.sw');
-  if (sw) {
+  if (sw && !sw.dataset.anActivo) {
     const on = !sw.classList.contains('on');
     let r;
     if (sw.dataset.activa) r = await sb.from('perfiles').update({ cuenta_activa: on }).eq('id', sw.dataset.activa).select('cuenta_activa').single();
@@ -535,6 +616,27 @@ $('#lista').onclick = async e => {
     if (guardado !== on) return toast('La base no aceptó el cambio (¿aplicaste migracion_v2.sql?)', 'bad');
     toast('Guardado'); return recargar();
   }
+  const tk = t.closest('[data-tk]');
+  if (tk && !t.closest('a')) return abrirCaso(tk.dataset.tk);
+  if (t.closest('#an-nuevo')) return editarAnuncio(null);
+  const ae = t.closest('[data-an-editar]');
+  if (ae) return editarAnuncio(A.anuncios.find(a => a.id === ae.dataset.anEditar));
+  const ab = t.closest('[data-an-borrar]');
+  if (ab) {
+    const a = A.anuncios.find(x => x.id === ab.dataset.anBorrar);
+    if (!a || !confirm(`¿Borrar el anuncio "${a.titulo}"? Ya no se mostrará a nadie.`)) return;
+    const { error } = await sb.from('anuncios').delete().eq('id', a.id);
+    if (error) return toast(error.message, 'bad');
+    toast('Anuncio borrado'); return recargar();
+  }
+  const aa = t.closest('[data-an-activo]');
+  if (aa) {
+    const a = A.anuncios.find(x => x.id === aa.dataset.anActivo);
+    const { error } = await sb.from('anuncios').update({ activo: !a.activo }).eq('id', a.id);
+    if (error) return toast(error.message, 'bad');
+    toast(a.activo ? 'Anuncio pausado' : 'Anuncio activado'); return recargar();
+  }
+  if (t.closest('#ver-editar')) return editarVersion();
   const f = t.closest('[data-fotos]');
   if (f) return verFotos(f.dataset.fotos);
   const u = t.closest('[data-ubicar]');
@@ -559,8 +661,306 @@ async function verFotos(uid) {
     <div class="dim">CI ${esc(p.cedula || '—')} · ${esc(p.correo || '')} · última comparación: ${b.ultima_distancia != null ? (+b.ultima_distancia).toFixed(3) + ' (0 = idéntico, más de 0.55 = no coincide)' : '—'}</div>
     <div class="fotos">${data.map((d, i) => `<figure><img src="${esc(d.signedUrl)}" alt="${esc(rutas[i][1])}"><figcaption>${esc(rutas[i][1])}</figcaption></figure>`).join('')}</div>
   </div>`;
+  abrirModal();
+}
+
+/* ---------- ventana (modal) ---------- */
+function abrirModal() {
+  const m = $('#modal');
   m.classList.remove('hidden');
-  m.onclick = e => { if (e.target === m || e.target.id === 'm-x') { m.classList.add('hidden'); m.innerHTML = ''; } };
+  m.onclick = e => { if (e.target === m || e.target.id === 'm-x') cerrarModal(); };
+}
+function cerrarModal() {
+  if (A.cerrarCaso) { A.cerrarCaso(); A.cerrarCaso = null; }
+  const m = $('#modal');
+  m.classList.add('hidden'); m.innerHTML = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').classList.contains('hidden')) cerrarModal(); });
+
+/* ============================================================
+   Soporte: casos que abren pasajeros y conductores desde la app
+   ("Ayuda y soporte"). El admin responde aquí y el usuario lo ve en
+   el chat del caso, con aviso en el teléfono.
+   ============================================================ */
+const CATS = { viaje: 'Viaje o envío', pago: 'Cobros y precios', cuenta: 'Cuenta', vehiculo: 'Vehículo', seguridad: 'Seguridad', otro: 'Otro' };
+const ESTADOS_TK = { abierto: ['warn', 'Abierto'], en_proceso: ['azul', 'En proceso'], resuelto: ['ok', 'Resuelto'], cerrado: ['', 'Cerrado'] };
+const RAPIDAS = [
+  'Hola, ya estoy revisando tu caso. Te escribo en unos minutos.',
+  '¿Me confirmas la fecha, la hora y el destino del servicio?',
+  '¿Me confirmas la placa del vehículo?',
+  'Tu cuenta ya quedó activa. ¡Gracias por tu paciencia!',
+  'Listo, quedó resuelto. ¡Gracias por avisarnos!'
+];
+const horaDe = iso => new Date(iso).toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+function filaTicket(t) {
+  const est = ESTADOS_TK[t.estado] || ESTADOS_TK.abierto;
+  const sin = +t.sin_leer_agente || 0;
+  return `<div class="fila" data-tk="${esc(t.id)}" style="cursor:pointer">
+    <div class="ico sop">${esc((CATS[t.categoria] || 'Otro').slice(0, 3).toUpperCase())}</div>
+    <div style="min-width:0">
+      <div class="t">${esc(t.asunto)}</div>
+      <div class="ruta-txt"><b>${esc(t.usuario_nombre || '—')}</b> · ${t.rol === 'conductor' ? 'Conductor' : 'Pasajero'}${t.usuario_tel ? ' · ' + esc(t.usuario_tel) : ''}${t.usuario_correo ? ' · ' + esc(t.usuario_correo) : ''}</div>
+      <div class="ruta-txt" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.ultimo_texto || 'Sin mensajes')}</div>
+      <div class="meta"><span class="badge ${est[0]}">${est[1]}</span><span class="badge">${esc(CATS[t.categoria] || 'Otro')}</span><span class="badge">${hace(t.actualizado_en)}</span></div>
+    </div>
+    <div style="text-align:right">${sin ? `<span class="sin" title="Mensajes sin leer">${sin}</span>` : ''}
+      <div class="acc"><button class="btn sm ${sin || t.estado === 'abierto' ? 'primary' : ''}">Responder</button></div></div>
+  </div>`;
+}
+function pintarSoporte() {
+  if (!A.soporteOk) { $('#lista').innerHTML = '<div class="vacio">No se pudo leer la bandeja de soporte. Revisa que la cuenta admin tenga es_soporte = true.</div>'; return; }
+  const l = listaTab('soporte').filter(coincide);
+  if (!l.length) { $('#lista').innerHTML = `<div class="vacio">${A.q ? 'Nada coincide con la búsqueda.' : 'No hay casos de soporte todavía.'}</div>`; return; }
+  const pend = l.filter(t => +t.sin_leer_agente > 0);
+  const abiertos = l.filter(t => !pend.includes(t) && tkAbierto(t));
+  const resto = l.filter(t => !pend.includes(t) && !abiertos.includes(t));
+  $('#lista').innerHTML =
+    (pend.length ? `<div class="sec-t">Por responder (${pend.length})</div>` + pend.map(filaTicket).join('') : '') +
+    (abiertos.length ? `<div class="sec-t">Abiertos y en proceso (${abiertos.length})</div>` + abiertos.map(filaTicket).join('') : '') +
+    (resto.length ? `<div class="sec-t">Resueltos y cerrados (${resto.length})</div>` + resto.map(filaTicket).join('') : '');
+}
+
+async function abrirCaso(id) {
+  const t = A.tickets.find(x => x.id === id);
+  if (!t) return;
+  if (A.cerrarCaso) { A.cerrarCaso(); A.cerrarCaso = null; }
+  A.caso = id;
+  const nombre = (t.usuario_nombre || '').split(' ')[0];
+  const wa = t.usuario_tel ? waLink({ celular: t.usuario_tel, nombre: t.usuario_nombre }, `Hola ${nombre}, te escribimos de Ruta por tu caso "${t.asunto}". `) : '';
+  const m = $('#modal');
+  m.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="cs-t">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div class="grow"><h2 id="cs-t">${esc(t.asunto)}</h2>
+        <div class="dim">${esc(CATS[t.categoria] || 'Otro')} · abierto ${horaDe(t.creado_en)} · <span id="cs-estado"></span></div></div>
+      <button class="btn sm" id="m-x">Cerrar</button></div>
+    <div class="meta" style="margin-top:10px;align-items:center">
+      <span class="badge azul">${esc(t.usuario_nombre || '—')} · ${t.rol === 'conductor' ? 'Conductor' : 'Pasajero'}</span>
+      ${wa ? `<a class="btn sm wa" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn sm" href="tel:${esc(t.usuario_tel)}">Llamar ${esc(t.usuario_tel)}</a>` : ''}
+      ${t.usuario_correo ? `<a class="btn sm" href="mailto:${esc(t.usuario_correo)}?subject=${encodeURIComponent('Tu caso en Ruta: ' + t.asunto)}">Correo</a>` : ''}
+    </div>
+    <div id="cs-sol"></div>
+    <div class="chat" id="cs-chat"><div class="dim">Cargando la conversación...</div></div>
+    <div class="chips">${RAPIDAS.map(x => `<button class="btn sm" data-rap="${esc(x)}">${esc(x.length > 42 ? x.slice(0, 40) + '…' : x)}</button>`).join('')}</div>
+    <div class="resp"><textarea class="input grow" id="cs-txt" rows="2" maxlength="2000" placeholder="Escribe tu respuesta. Enter envía, Shift+Enter hace una línea nueva"></textarea>
+      <button class="btn primary" id="cs-ok">Enviar</button></div>
+    <div class="acc" style="justify-content:flex-start;margin-top:12px">
+      <button class="btn sm" data-est="en_proceso">En proceso</button>
+      <button class="btn sm" data-est="resuelto">Marcar resuelto</button>
+      <button class="btn sm" data-est="cerrado">Cerrar caso</button>
+      <button class="btn sm" data-est="abierto">Reabrir</button>
+    </div>
+  </div>`;
+  abrirModal();
+  const pintarEstado = () => {
+    const x = A.tickets.find(y => y.id === id) || t;
+    const e = ESTADOS_TK[x.estado] || ESTADOS_TK.abierto;
+    const el = $('#cs-estado'); if (el) el.innerHTML = `<span class="badge ${e[0]}">${e[1]}</span>`;
+  };
+  pintarEstado();
+
+  /* Servicio relacionado, si el caso se abrió desde un viaje o envío */
+  if (t.solicitud_id) {
+    let s = A.sol.find(x => x.id === t.solicitud_id);
+    if (!s) { const r = await sb.from('solicitudes_detalle').select('*').eq('id', t.solicitud_id).maybeSingle(); s = r.data; }
+    const el = $('#cs-sol');
+    if (el && s) el.innerHTML = `<div class="ruta-txt" style="margin-top:10px"><b>Servicio relacionado:</b> ${s.tipo === 'paquete' ? 'envío' : 'viaje'} del ${horaDe(s.creado_en)} ·
+      ${esc(s.origen_texto || '')} → ${esc(s.destino_texto || '')} · ${money(s.precio_final || s.precio_ofrecido)} · ${esc((ESTADO[s.estado] || [])[1] || s.estado)}
+      ${s.conductor_nombre ? ' · conductor ' + esc(s.conductor_nombre) + (s.placa ? ' (' + esc(s.placa) + ')' : '') : ''}</div>`;
+  }
+
+  let primera = true;
+  const cargar = async () => {
+    const { data, error } = await sb.from('soporte_mensajes').select('*').eq('ticket_id', id).order('creado_en');
+    if (error || A.caso !== id) return;
+    const c = $('#cs-chat'); if (!c) return;
+    const abajo = primera || c.scrollHeight - c.scrollTop - c.clientHeight < 80;
+    c.innerHTML = data.length ? data.map(x => `<div class="msg ${esc(x.autor)}">${esc(x.texto)}<div class="h">${
+      x.autor === 'sistema' ? 'Mensaje automático · ' : ''}${horaDe(x.creado_en)}${x.autor === 'soporte' ? (x.leido ? ' · leído' : ' · enviado') : ''}</div></div>`).join('')
+      : '<div class="dim">Sin mensajes</div>';
+    if (abajo) c.scrollTop = c.scrollHeight;
+    primera = false;
+    /* Lo que escribió el usuario queda leído al abrir el caso */
+    if (data.some(x => x.autor === 'usuario' && !x.leido)) {
+      await sb.from('soporte_mensajes').update({ leido: true }).eq('ticket_id', id).eq('autor', 'usuario').eq('leido', false);
+      recargar();
+    }
+  };
+  const ch = sb.channel('caso-' + id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'soporte_mensajes', filter: 'ticket_id=eq.' + id }, cargar)
+    .subscribe();
+  const tt = setInterval(() => { cargar(); pintarEstado(); }, 8000);
+  A.cerrarCaso = () => { sb.removeChannel(ch); clearInterval(tt); A.caso = null; };
+  cargar();
+
+  const enviar = async texto => {
+    texto = (texto || '').trim();
+    if (!texto) return;
+    const b = $('#cs-ok'); if (b) b.disabled = true;
+    const { error } = await sb.from('soporte_mensajes').insert({ ticket_id: id, emisor_id: A.yo, texto: texto.slice(0, 2000) });
+    if (b) b.disabled = false;
+    if (error) { toast(error.message, 'bad'); return false; }
+    cargar(); recargar();
+    return true;
+  };
+  const caja = $('#cs-txt');
+  $('#cs-ok').onclick = async () => { if (await enviar(caja.value)) caja.value = ''; caja.focus(); };
+  caja.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#cs-ok').click(); } };
+  $$('#modal [data-rap]').forEach(b => b.onclick = () => { caja.value = b.dataset.rap; caja.focus(); });
+  $$('#modal [data-est]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.from('soporte_tickets').update({ estado: b.dataset.est }).eq('id', id);
+    if (error) return toast(error.message, 'bad');
+    const x = A.tickets.find(y => y.id === id); if (x) x.estado = b.dataset.est;
+    pintarEstado(); toast('Caso: ' + ESTADOS_TK[b.dataset.est][1]); recargar();
+  });
+  setTimeout(() => caja.focus(), 50);
+}
+
+/* ============================================================
+   Anuncios: ventana que la app le muestra al usuario al abrirla
+   ============================================================ */
+const AUDIENCIA = { todos: 'Todos', pasajero: 'Pasajeros', conductor: 'Conductores' };
+const FRECUENCIA = { una_vez: 'Una sola vez', cada_dia: 'Una vez al día' };
+const FALTA_V5 = '<div class="vacio">Falta aplicar <b>migracion_v5.sql</b> en Supabase (SQL Editor) para usar esta sección.</div>';
+function filaAnuncio(a) {
+  const est = !a.activo ? ['', 'Pausado'] : vigente(a) ? ['ok', 'Publicado'] : new Date(a.desde) > Date.now() ? ['azul', 'Programado'] : ['warn', 'Vencido'];
+  return `<div class="fila">
+    ${a.imagen_url ? `<img class="an-img" src="${esc(a.imagen_url)}" alt="">` : '<div class="ico" style="background:#7A4DFF">ANU</div>'}
+    <div style="min-width:0">
+      <div class="t">${esc(a.titulo)}</div>
+      <div class="ruta-txt" style="white-space:pre-line;max-height:3.2em;overflow:hidden">${esc(a.texto || '')}</div>
+      <div class="meta">
+        <span class="badge ${est[0]}">${est[1]}</span>
+        <span class="badge">${AUDIENCIA[a.audiencia] || a.audiencia}</span>
+        <span class="badge">${FRECUENCIA[a.frecuencia] || a.frecuencia}</span>
+        <span class="badge">Desde ${horaDe(a.desde)}${a.hasta ? ' hasta ' + horaDe(a.hasta) : ''}</span>
+        ${a.boton_url ? `<span class="badge">Botón: ${esc(a.boton_texto || 'Ver más')}</span>` : ''}
+      </div>
+    </div>
+    <div class="acc" style="flex-direction:column;align-items:flex-end">
+      <label class="swrow"><button class="sw ${a.activo ? 'on' : ''}" data-an-activo="${esc(a.id)}" aria-label="Activo"><i></i></button>Activo</label>
+      <button class="btn sm" data-an-editar="${esc(a.id)}">Editar</button>
+      <button class="btn sm danger" data-an-borrar="${esc(a.id)}">Borrar</button>
+    </div>
+  </div>`;
+}
+function pintarAnuncios() {
+  if (!A.anunciosOk) { $('#lista').innerHTML = FALTA_V5; return; }
+  const l = A.anuncios.filter(coincide);
+  $('#lista').innerHTML = `<div class="cab-lista"><div class="grow dim">La app muestra cada anuncio en una ventana al abrirla, según a quién va dirigido.</div>
+      <button class="btn primary sm" id="an-nuevo">Nuevo anuncio</button></div>` +
+    (l.length ? l.map(filaAnuncio).join('') : `<div class="vacio">${A.q ? 'Nada coincide con la búsqueda.' : 'Aún no hay anuncios.'}</div>`);
+}
+/* datetime-local trabaja en hora local, sin zona */
+const aLocal = iso => iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+function editarAnuncio(a) {
+  const nuevo = !a;
+  a = a || { titulo: '', texto: '', audiencia: 'todos', frecuencia: 'una_vez', activo: true, desde: new Date().toISOString() };
+  let imagen = a.imagen_url || '';
+  const m = $('#modal');
+  m.innerHTML = `<div class="box" role="dialog" aria-modal="true">
+    <div style="display:flex;align-items:center;gap:10px"><h2 class="grow">${nuevo ? 'Nuevo anuncio' : 'Editar anuncio'}</h2><button class="btn sm" id="m-x">Cerrar</button></div>
+    <div class="field"><label for="an-t">Título</label><input id="an-t" class="input" maxlength="80" value="${esc(a.titulo)}" placeholder="Ej: Nuevas tarifas desde el lunes"></div>
+    <div class="field"><label for="an-x">Mensaje</label><textarea id="an-x" class="input" rows="4" maxlength="1500" placeholder="Lo que quieres contarles">${esc(a.texto || '')}</textarea></div>
+    <div class="field"><label for="an-f">Imagen (opcional, máx. 3 MB)</label><input id="an-f" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+      <div id="an-prev"></div></div>
+    <div class="form2">
+      <div class="field"><label for="an-bt">Texto del botón (opcional)</label><input id="an-bt" class="input" maxlength="40" value="${esc(a.boton_texto || '')}" placeholder="Ver más"></div>
+      <div class="field"><label for="an-bu">Enlace del botón (opcional)</label><input id="an-bu" class="input" value="${esc(a.boton_url || '')}" placeholder="https://… · tel:… · mailto:…"></div>
+      <div class="field"><label for="an-au">Para quién</label><select id="an-au" class="input">${Object.entries(AUDIENCIA).map(([k, v]) => `<option value="${k}" ${a.audiencia === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="field"><label for="an-fr">Cuántas veces</label><select id="an-fr" class="input">${Object.entries(FRECUENCIA).map(([k, v]) => `<option value="${k}" ${a.frecuencia === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="field"><label for="an-de">Mostrar desde</label><input id="an-de" class="input" type="datetime-local" value="${aLocal(a.desde)}"></div>
+      <div class="field"><label for="an-ha">Hasta (vacío = sin fin)</label><input id="an-ha" class="input" type="datetime-local" value="${aLocal(a.hasta)}"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="an-ac" ${a.activo ? 'checked' : ''}> Activo (publicado)</label>
+    <button class="btn primary full" id="an-ok">${nuevo ? 'Publicar anuncio' : 'Guardar cambios'}</button>
+  </div>`;
+  abrirModal();
+  const prev = () => {
+    $('#an-prev').innerHTML = imagen ? `<img class="prev-img" src="${esc(imagen)}" alt=""><button class="btn sm danger" id="an-quitar" style="margin-top:6px">Quitar imagen</button>` : '';
+    const q = $('#an-quitar'); if (q) q.onclick = () => { imagen = ''; $('#an-f').value = ''; prev(); };
+  };
+  prev();
+  $('#an-f').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 3 * 1024 * 1024) { e.target.value = ''; return toast('La imagen pesa más de 3 MB', 'bad'); }
+    $('#an-prev').innerHTML = '<div class="dim">Subiendo imagen...</div>';
+    const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const ruta = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await sb.storage.from('anuncios').upload(ruta, f, { contentType: f.type, upsert: false });
+    if (error) { prev(); return toast('No se pudo subir la imagen: ' + error.message, 'bad'); }
+    imagen = sb.storage.from('anuncios').getPublicUrl(ruta).data.publicUrl;
+    prev();
+  };
+  $('#an-ok').onclick = async () => {
+    const titulo = $('#an-t').value.trim(), url = $('#an-bu').value.trim();
+    if (titulo.length < 2) return toast('Escribe un título', 'bad');
+    if (url && !/^(https?:\/\/|tel:|mailto:)/i.test(url)) return toast('El enlace debe empezar con https://, tel: o mailto:', 'bad');
+    const de = $('#an-de').value, ha = $('#an-ha').value;
+    if (de && ha && new Date(ha) <= new Date(de)) return toast('La fecha "hasta" debe ser después de "desde"', 'bad');
+    const datos = {
+      titulo, texto: $('#an-x').value.trim(), imagen_url: imagen || null,
+      boton_texto: $('#an-bt').value.trim() || null, boton_url: url || null,
+      audiencia: $('#an-au').value, frecuencia: $('#an-fr').value, activo: $('#an-ac').checked,
+      desde: de ? new Date(de).toISOString() : new Date().toISOString(), hasta: ha ? new Date(ha).toISOString() : null
+    };
+    const b = $('#an-ok'); b.disabled = true;
+    const { error } = nuevo ? await sb.from('anuncios').insert(datos) : await sb.from('anuncios').update(datos).eq('id', a.id);
+    b.disabled = false;
+    if (error) return toast(error.message, 'bad');
+    toast(nuevo ? 'Anuncio publicado' : 'Anuncio guardado');
+    cerrarModal(); recargar();
+  };
+}
+
+/* ============================================================
+   Versión del APK: la app instalada compara su build con este y, si
+   hay uno mayor, le pide al usuario descargar e instalar la nueva.
+   ============================================================ */
+function pintarVersion() {
+  if (!A.versionOk || !A.version) { $('#lista').innerHTML = FALTA_V5; return; }
+  const v = A.version;
+  $('#lista').innerHTML = `<div style="padding:16px">
+    <div class="kpi" style="box-shadow:none"><div class="n num">${esc(v.version)} <span class="dim">(build ${v.build})</span></div>
+      <div class="l">Última versión publicada · actualizada ${hace(v.actualizado_en)}</div></div>
+    <div class="meta" style="margin-top:10px">
+      <span class="badge ${v.obligatoria ? 'bad' : ''}">${v.obligatoria ? 'Obligatoria: la app no deja posponerla' : 'Opcional: el usuario puede posponerla hasta el día siguiente'}</span>
+      ${v.apk_url ? `<a class="badge azul" href="${esc(v.apk_url)}" target="_blank" rel="noopener">Descargar APK</a>` : '<span class="badge warn">Sin enlace del APK: la app no avisará</span>'}
+    </div>
+    ${v.notas ? `<p style="white-space:pre-line;margin:12px 0 0">${esc(v.notas)}</p>` : ''}
+    <button class="btn primary" id="ver-editar" style="margin-top:14px">Publicar una versión nueva</button>
+    <p class="dim" style="margin-top:14px">Cómo funciona: cada APK lleva su número de build (el que va después del + en <code>pubspec.yaml</code>, por ejemplo 1.3.0+5 → 5).
+      Al abrir la app, si el build de aquí es mayor que el suyo, muestra una ventana para descargar e instalar la versión nueva.</p>
+  </div>`;
+}
+function editarVersion() {
+  const v = A.version || { version: '', build: 1, apk_url: '', notas: '', obligatoria: false };
+  const m = $('#modal');
+  m.innerHTML = `<div class="box" role="dialog" aria-modal="true">
+    <div style="display:flex;align-items:center;gap:10px"><h2 class="grow">Publicar versión nueva</h2><button class="btn sm" id="m-x">Cerrar</button></div>
+    <div class="form2">
+      <div class="field"><label for="vr-v">Versión</label><input id="vr-v" class="input" value="${esc(v.version)}" placeholder="1.3.0"></div>
+      <div class="field"><label for="vr-b">Build (número entero)</label><input id="vr-b" class="input" type="number" min="1" step="1" value="${+v.build || 1}"></div>
+    </div>
+    <div class="field"><label for="vr-u">Enlace de descarga del APK (https)</label><input id="vr-u" class="input" value="${esc(v.apk_url || '')}" placeholder="https://github.com/…/Ruta-1.3.0.apk"></div>
+    <div class="field"><label for="vr-n">Novedades (se muestran en la ventana)</label><textarea id="vr-n" class="input" rows="4" maxlength="1000">${esc(v.notas || '')}</textarea></div>
+    <label class="check"><input type="checkbox" id="vr-o" ${v.obligatoria ? 'checked' : ''}> Obligatoria (no se puede dejar para después)</label>
+    <button class="btn primary full" id="vr-ok">Guardar</button>
+  </div>`;
+  abrirModal();
+  $('#vr-ok').onclick = async () => {
+    const datos = { version: $('#vr-v').value.trim(), build: parseInt($('#vr-b').value, 10), apk_url: $('#vr-u').value.trim() || null,
+                    notas: $('#vr-n').value.trim() || null, obligatoria: $('#vr-o').checked };
+    if (!/^\d+\.\d+\.\d+$/.test(datos.version)) return toast('La versión va como 1.3.0', 'bad');
+    if (!(datos.build >= 1)) return toast('El build debe ser un número entero', 'bad');
+    if (datos.apk_url && !/^https:\/\//i.test(datos.apk_url)) return toast('El enlace debe empezar con https://', 'bad');
+    if (A.version && datos.build < A.version.build && !confirm('El build es menor que el publicado. ¿Guardar igual?')) return;
+    const { data, error } = await sb.from('app_version').update(datos).eq('id', 1).select().maybeSingle();
+    if (error) return toast(error.message, 'bad');
+    if (!data) return toast('La base no aceptó el cambio (¿la cuenta es admin?)', 'bad');
+    toast('Versión publicada: las apps con un build menor pedirán actualizar');
+    cerrarModal(); recargar();
+  };
 }
 
 /* ---------- mapa ---------- */
