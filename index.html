@@ -1352,6 +1352,11 @@ const MAX_ENVIOS_2H = 3, MAX_ENVIOS_PASAJERO = 10;
 /* Botones + y − del precio (pasajero y contraoferta del conductor) */
 const PASO_PRECIO = 0.05;
 const ACTIVOS = ['buscando', 'aceptado', 'en_camino', 'a_bordo'];
+/* Una solicitud busca conductor como máximo 7 minutos. La base aplica el
+   mismo límite (migracion_v6.sql): después nadie puede tomarla. */
+const BUSQUEDA_MAX_MS = 7 * 60000;
+const MOTIVO_SIN_CONDUCTOR = 'Sin conductor disponible';
+const busquedaVencida = s => s.estado === 'buscando' && s.creado_en && Date.now() - new Date(s.creado_en) >= BUSQUEDA_MAX_MS;
 const EN_CURSO = ['aceptado', 'en_camino', 'a_bordo'];
 function fechaQuito(f = new Date()) {
   try {
@@ -2091,6 +2096,15 @@ function crearAPI(url, key) {
         Promise.resolve(p).catch(() => {}).finally(() => sb.removeChannel(ch));
       } catch (e) {}
     },
+    /* Cierra la búsqueda solo si nadie la tomó entretanto: devuelve false
+       si un conductor la aceptó en el último segundo. */
+    async expirarSolicitud(id) {
+      const { data, error } = await sb.from('solicitudes')
+        .update({ estado: 'cancelado', motivo_cancelacion: MOTIVO_SIN_CONDUCTOR, cancelado_por: yo() })
+        .eq('id', id).eq('estado', 'buscando').select('id');
+      if (error) throw error;
+      return !!(data && data.length);
+    },
     async cancelarSolicitud(id, motivo) {
       const { error } = await sb.from('solicitudes')
         .update({ estado: 'cancelado', motivo_cancelacion: motivo || null, cancelado_por: yo() })
@@ -2168,7 +2182,7 @@ function crearAPI(url, key) {
          3. consulta completa cada 6 s, que además limpia las ya tomadas */
     cercanas(cb) {
       let lista = [], vivo = true, tPronto = null;
-      const sirve = s => s.estado === 'buscando' && puedoLlevar(s) &&
+      const sirve = s => s.estado === 'buscando' && !busquedaVencida(s) && puedoLlevar(s) &&
         (s.tipo === 'paquete' || haversine(S.pos, { lat: +s.origen_lat, lng: +s.origen_lng }) <= RADIO_VIAJES_KM);
       const emitir = () => { if (vivo) cb(lista.filter(sirve)); };
       const cargar = async () => {
@@ -2979,6 +2993,7 @@ async function arrancarApp() {
   pedirAvisos();
   registrarSW();
   vigilarPlazos();
+  vigilarBusquedas();
   await restaurarServicios();
   informarNativo();
   iniciarLatido();
@@ -3020,6 +3035,7 @@ async function restaurarServicios() {
   sincronizarSeguimiento();
   mapa.firma = null;
   render();
+  if (S.modo === 'pasajero') revisarBusquedaAnterior();
   if (S.activos.length) {
     const n = S.activos.length;
     toast(S.modo === 'conductor'
@@ -3094,6 +3110,8 @@ async function alSalir(a) {
         fin.tipo === 'paquete' ? `Tu paquete llegó a ${fin.destinatario || 'su destino'}` : 'Gracias por viajar con Ruta', 'mensaje', `estado:${fin.id}:finalizado`);
     }
     if (S.modo === 'pasajero' || fin.tipo === 'viaje') S.porCalificar.push(fin);
+  } else if (fin.estado === 'cancelado' && S.modo === 'pasajero' && fin.motivo_cancelacion === MOTIVO_SIN_CONDUCTOR) {
+    if (!propio(fin, 'cancelado')) sinConductor(fin);
   } else if (fin.estado === 'cancelado' && !propio(fin, 'cancelado')) {
     avisar(`${fin.tipo === 'paquete' ? 'Envío' : 'Viaje'} cancelado`,
       fin.motivo_cancelacion || 'La otra parte canceló el servicio', 'mensaje', `estado:${fin.id}:cancelado`);
@@ -4514,7 +4532,8 @@ function pasoDetalles(sh) {
   $('#p-seguir').onclick = () => {
     S.notas = $('#notas').value.trim();
     const t = tarifa(S.km, S.tipo, {});
-    S.sugerido = t.final; S.precio = t.final;
+    const previo = S.precioPrevio && Math.abs(S.precioPrevio.km - S.km) < 0.05 ? S.precioPrevio.precio : null;
+    S.sugerido = t.final; S.precio = previo || t.final;
     S.paso = 'precio'; render();
   };
 }
@@ -4676,6 +4695,109 @@ function pasoPrecioFijo(sh, t) {
   $('#p-publicar').onclick = publicar;
 }
 
+/* ============================================================
+   Límite de búsqueda (7 min) y datos del pedido que se conservan
+   ============================================================ */
+function textoCuenta(s) {
+  const ms = BUSQUEDA_MAX_MS - (Date.now() - new Date(s.creado_en || Date.now()));
+  if (ms <= 0) return 'Cerrando la búsqueda...';
+  const m = Math.floor(ms / 60000), sg = Math.floor(ms % 60000 / 1000);
+  return `Buscamos hasta 7 min · quedan ${m}:${String(sg).padStart(2, '0')}`;
+}
+/* Vuelve a poner en el formulario los puntos y datos de una solicitud
+   (cancelada o sin conductor) para pedirla de nuevo o cambiar algo. */
+function restaurarPedido(s) {
+  const pt = (lat, lng, texto) => ({ lat: +lat, lng: +lng, texto: texto || '' });
+  S.tipo = s.tipo === 'paquete' ? 'paquete' : 'viaje';
+  S.origen = pt(s.origen_lat, s.origen_lng, s.origen_texto);
+  S.destino = pt(s.destino_lat, s.destino_lng, s.destino_texto);
+  S.paradas = paradasDe(s).map(q => pt(q.lat, q.lng, q.texto));
+  S.ultimoPunto = S.destino;
+  S.notas = s.notas || '';
+  if (S.tipo === 'viaje') {
+    S.pasajeros = +s.pasajeros || 1;
+    S.auto = !!s.auto_asignar;
+    S.precioPrevio = { precio: +s.precio_ofrecido, km: +s.distancia_km || kmTramos(puntosPedido()) };
+  } else {
+    S.descripcion = s.descripcion || '';
+    S.destinatario = s.destinatario || '';
+    S.destTel = s.destinatario_tel || '';
+    if (s.tamano) S.tamano = s.tamano;
+    if (s.urgencia) S.urgencia = s.urgencia;
+    S.vehEnvio = s.vehiculo === 'moto' ? 'moto' : 'carro';
+  }
+  S.km = kmTramos(puntosPedido()); S.dur = minRuta(S.km);
+}
+function volverConDatos(s, msg) {
+  resetViaje();
+  restaurarPedido(s);
+  S.paso = 'form';
+  mapa.firma = null;
+  if (msg) toast(msg);
+  setVista('inicio');
+}
+/* Ventana "Ningún conductor disponible", con los datos ya puestos */
+function sinConductor(s) {
+  if (sinConductor.visto[s.id]) return;
+  sinConductor.visto[s.id] = true;
+  if (leerLocal('ultima_busqueda') === s.id) guardarLocal('ultima_busqueda', '');
+  volverConDatos(s);
+  avisar('Ningún conductor disponible', 'Nadie tomó tu solicitud en 7 minutos. Intenta de nuevo', 'mensaje', `sinconductor:${s.id}`);
+  encolarAviso((cap, cerrar) => {
+    const envio = s.tipo === 'paquete';
+    cap.innerHTML = `<div class="caja" role="dialog" aria-modal="true" aria-labelledby="sc-t"><div class="cuerpo">
+      <div class="etq">${IC.reloj('sm')}Pasaron 7 minutos</div>
+      <h2 id="sc-t">Ningún conductor disponible</h2>
+      <div class="txt">Nadie tomó tu ${envio ? 'envío' : 'viaje'} a ${esc(s.destino_texto || 'tu destino')}. Dejamos tus puntos y datos listos: puedes intentarlo de nuevo${envio ? '' : ' o subir un poco el precio'}.</div>
+      <button class="btn primary full" id="sc-ok">Intentar de nuevo</button>
+      <button class="btn ghost full" id="sc-x">Cerrar</button>
+    </div></div>`;
+    $('#sc-ok').onclick = () => { cerrar(); volverConDatos(s); };
+    $('#sc-x').onclick = cerrar;
+  });
+}
+sinConductor.visto = {};
+async function expirarBusqueda(s) {
+  if (expirarBusqueda.en[s.id]) return;
+  expirarBusqueda.en[s.id] = true;
+  S.propios.add(s.id + ':cancelado');
+  try {
+    const cerrada = await S.api.expirarSolicitud(s.id);
+    if (!cerrada) {
+      /* un conductor la tomó justo a tiempo: el monitor trae el cambio */
+      if (S.subActivos && S.subActivos.refrescar) S.subActivos.refrescar();
+      return;
+    }
+  } catch (e) { expirarBusqueda.en[s.id] = false; return; }
+  S.activos = S.activos.filter(x => x.id !== s.id);
+  sincronizarSeguimiento();
+  sinConductor({ ...s, estado: 'cancelado', motivo_cancelacion: MOTIVO_SIN_CONDUCTOR });
+}
+expirarBusqueda.en = {};
+/* Cada segundo: cuenta regresiva en pantalla y cierre al llegar a 7 min */
+function vigilarBusquedas() {
+  clearInterval(vigilarBusquedas.t);
+  vigilarBusquedas.t = setInterval(() => {
+    if (!S.user || S.modo !== 'pasajero') return;
+    S.activos.forEach(s => {
+      if (s.estado !== 'buscando') return;
+      $$(`[data-cuenta="${s.id}"]`).forEach(el => { el.textContent = textoCuenta(s); });
+      if (busquedaVencida(s)) expirarBusqueda(s);
+    });
+  }, 1000);
+}
+/* La última búsqueda pudo vencer mientras la app estaba cerrada */
+async function revisarBusquedaAnterior() {
+  const id = leerLocal('ultima_busqueda');
+  if (!id || S.activos.some(x => x.id === id)) return;
+  guardarLocal('ultima_busqueda', '');
+  try {
+    const s = await S.api.unaSolicitud(id);
+    if (s && s.estado === 'cancelado' && s.motivo_cancelacion === MOTIVO_SIN_CONDUCTOR &&
+        Date.now() - new Date(s.creado_en) < 3 * 3600e3) sinConductor(s);
+  } catch (e) {}
+}
+
 async function publicar() {
   const t = tarifaPedido();
   const d = {
@@ -4702,6 +4824,8 @@ async function publicar() {
   try {
     const nueva = await S.api.crearSolicitud(d);
     S.activos = [...S.activos, nueva];
+    S.precioPrevio = null;
+    guardarLocal('ultima_busqueda', nueva.id);
     /* Listo para armar el siguiente: el destino se borra, la recogida se
        queda (lo normal es mandar varios envíos desde el mismo sitio). */
     S.destino = null; S.paradas = []; S.ultimoPunto = S.origen;
@@ -4756,7 +4880,8 @@ function pasoEsperando(sh) {
       <div class="grow"><h3>${fijo ? 'Buscando quién lleve tu envío' : 'Buscando conductor por ' + money(s.precio_ofrecido)}</h3>
       <div class="dim">${fijo || s.auto_asignar
         ? 'Se asigna al primer conductor que acepte' + (fijo ? ' el precio fijo de ' + money(s.precio_ofrecido) : '')
-        : (S.ofertas.length ? S.ofertas.length + ' oferta(s) recibida(s)' : 'Avisando a los conductores cercanos')}</div></div>
+        : (S.ofertas.length ? S.ofertas.length + ' oferta(s) recibida(s)' : 'Avisando a los conductores cercanos')}</div>
+      <div class="dim" data-cuenta="${s.id}" style="margin-top:4px;font-weight:600">${textoCuenta(s)}</div></div>
     </div>
     <div class="bar"><i></i></div>
     <div style="margin-top:14px">${ofs || `<div class="empty"><div class="big">${IC.reloj()}</div>${fijo ? 'Aún nadie lo toma. Si demora, prueba con una franja de entrega más amplia.' : 'Aún nadie responde. Si demora, sube un poco tu precio.'}</div>`}</div>
@@ -4786,7 +4911,7 @@ function pasoEsperando(sh) {
   $('#p-cancelar').onclick = async () => {
     /* Todavía no hay conductor asignado: no vale la pena pedir motivo */
     if (!await cancelarCon(s, 'Cancelada durante la búsqueda')) return;
-    desenfocar();
+    volverConDatos(s, 'Solicitud cancelada. Tus puntos y datos quedan listos por si quieres pedir de nuevo');
   };
 }
 
@@ -4883,7 +5008,7 @@ function pasoViaje(sh) {
   $('#p-cancelar').onclick = async () => {
     if (s.estado === 'a_bordo') return toast(envio ? 'El paquete ya va en camino. Si hay un problema, repórtalo a soporte' : 'Ya vas en camino. Si hay un problema, repórtalo a soporte', 'bad');
     if (!await cancelarCon(s)) return;
-    desenfocar();
+    volverConDatos(s, `${envio ? 'Envío' : 'Viaje'} cancelado. Tus puntos y datos quedan listos por si quieres pedir de nuevo`);
   };
 }
 
@@ -6343,7 +6468,7 @@ $$('#nav button').forEach(b => b.onclick = () => setVista(b.dataset.vista));
    ruta_app/pubspec.yaml en cada APK nuevo: la app compara este build con
    el de la tabla app_version (lo pone el admin) para saber si hay una
    versión más nueva que instalar. */
-const VERSION_APP = { nombre: '1.3.0', build: 5 };
+const VERSION_APP = { nombre: '1.3.1', build: 6 };
 
 /* Una sola ventana centrada con cola: si hay una actualización y dos
    anuncios se muestran uno tras otro, nunca encimados. */
