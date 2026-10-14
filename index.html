@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<title>Ruta — viajes y envíos</title>
+<title>Llevu — viajes y envíos</title>
 <meta name="description" content="Pide un carro o manda un paquete con precio claro desde el primer momento.">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Politica de seguridad de contenido. Deja pasar solo los origenes que la
@@ -789,7 +789,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
   <!-- ============ ACCESO ============ -->
   <section id="auth" class="auth hidden">
     <div class="hero">
-      <div class="brand big"><i></i>Ruta</div>
+      <div class="brand big"><i></i>Llevu</div>
       <h1>Viajes y envíos<br>en tu ciudad</h1>
       <p>Pide un carro o manda un paquete. Precio claro desde el primer momento.</p>
       <div class="hero-cards">
@@ -840,7 +840,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
             <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
           </div>
         </div>
-        <div class="field"><label>Voy a usar Ruta como</label>
+        <div class="field"><label>Voy a usar Llevu como</label>
           <div class="segmented" id="rolsel">
             <button data-rol="pasajero" class="on">Pasajero</button>
             <button data-rol="conductor">Conductor</button>
@@ -866,7 +866,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
         </div>
         <label class="check" for="rg-terminos">
           <input type="checkbox" id="rg-terminos">
-          <span>Leí y acepto los <button type="button" id="rg-ver-terminos" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y Condiciones y la Política de Privacidad</button>, incluido el uso de la foto de mi rostro para verificar mi identidad, y que Ruta me contacte por correo o WhatsApp sobre mi cuenta.</span>
+          <span>Leí y acepto los <button type="button" id="rg-ver-terminos" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y Condiciones y la Política de Privacidad</button>, incluido el uso de la foto de mi rostro para verificar mi identidad, y que Llevu me contacte por correo o WhatsApp sobre mi cuenta.</span>
         </label>
         <p class="fine" style="margin:0 0 8px">Después de crear la cuenta te pediremos una foto de tu rostro. Un administrador revisa tus datos y activa tu cuenta; mientras tanto queda <b>en revisión</b>.</p>
         <button class="btn primary full" id="btn-registro" style="margin-top:6px">Crear cuenta</button>
@@ -885,7 +885,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
   <!-- ============ APP ============ -->
   <section id="app" class="app hidden">
     <header class="topbar">
-      <div class="brand clicable" id="brand-menu" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false"><i></i>Ruta<span class="caret" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span></div>
+      <div class="brand clicable" id="brand-menu" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false"><i></i>Llevu<span class="caret" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span></div>
       <div class="grow"></div>
       <button id="btn-linea" class="pill hidden"><span class="dot"></span><span id="linea-txt">Fuera de línea</span></button>
       <button id="btn-power" class="hidden" aria-label="Conectarme o desconectarme" title="Conectarme o desconectarme"></button>
@@ -924,7 +924,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
     </nav>
   </section>
 
-  <div id="loading" class="loading"><div class="brand big"><i></i>Ruta</div></div>
+  <div id="loading" class="loading"><div class="brand big"><i></i>Llevu</div></div>
 </div>
 <div id="toasts"></div>
 <div id="modal" class="modal hidden"></div>
@@ -942,7 +942,7 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
         crossorigin="anonymous"></script>
 <script>
 /* ============================================================
-   Ruta — viajes y envíos. Un solo archivo, backend en Supabase.
+   Llevu — viajes y envíos. Un solo archivo, backend en Supabase.
    ============================================================ */
 
 /* ---- 1. Configuración (o usa el botón "Configurar Supabase") ---- */
@@ -1843,7 +1843,7 @@ const mapa = {
        encuadrar. Este era el motivo de que el mapa saliera "vacío". */
     this.m.invalidateSize({ pan: false });
     const m = this.margen();
-    /* La barra de arriba ("Ruta", en línea, encendido) ahora flota sobre
+    /* La barra de arriba ("Llevu", en línea, encendido) ahora flota sobre
        el mapa en vez de empujarlo hacia abajo, así que hay que dejarle
        ese espacio libre a mano o los rótulos de recogida/destino se
        meten debajo de sus botones. */
@@ -2482,15 +2482,15 @@ function pintarEstadoCfg() {
 const TERMINOS_VERSION = '2026-09-c';
 const CORREO_SOPORTE = 'abulingo.help@gmail.com';
 const TEXTO_TERMINOS = `
-  <p><b>Versión ${TERMINOS_VERSION}.</b> Al crear una cuenta o usar Ruta aceptas estas condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
+  <p><b>Versión ${TERMINOS_VERSION}.</b> Al crear una cuenta o usar Llevu aceptas estas condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
 
   <h4>1. Quiénes somos y qué hacemos</h4>
-  <p>Ruta es una plataforma tecnológica administrada por <b>César Santana</b> (contacto: <a href="mailto:${CORREO_SOPORTE}" style="color:var(--azul)">${CORREO_SOPORTE}</a>) que <b>pone en contacto</b> a personas que necesitan un traslado o un envío con conductores independientes que lo realizan. Ruta no es una empresa de transporte ni de mensajería: no es dueña de los vehículos, no emplea a los conductores y no transporta personas ni bienes por sí misma. Cada servicio es un acuerdo directo entre el usuario y el conductor.</p>
+  <p>Llevu es una plataforma tecnológica administrada por <b>César Santana</b> (contacto: <a href="mailto:${CORREO_SOPORTE}" style="color:var(--azul)">${CORREO_SOPORTE}</a>) que <b>pone en contacto</b> a personas que necesitan un traslado o un envío con conductores independientes que lo realizan. Llevu no es una empresa de transporte ni de mensajería: no es dueña de los vehículos, no emplea a los conductores y no transporta personas ni bienes por sí misma. Cada servicio es un acuerdo directo entre el usuario y el conductor.</p>
 
   <h4>2. Requisitos y cuenta</h4>
   <ul>
     <li>Debes ser mayor de 18 años y dar datos reales: nombre, número de cédula, celular y correo.</li>
-    <li>Para usar Ruta debes registrar una foto de tu rostro. Un administrador revisa tus datos y activa tu cuenta; hasta entonces queda <b>en revisión</b> y no podrás pedir ni realizar servicios.</li>
+    <li>Para usar Llevu debes registrar una foto de tu rostro. Un administrador revisa tus datos y activa tu cuenta; hasta entonces queda <b>en revisión</b> y no podrás pedir ni realizar servicios.</li>
     <li>Cada día, antes de usar la app, debes verificar tu identidad con la cámara (una foto sonriendo que se compara con la de tu registro).</li>
     <li>Los conductores además deben ser habilitados manualmente por un administrador, con su vehículo (carro o moto) aprobado; con moto solo se hacen envíos, y son responsables de contar con licencia, matrícula, SOAT/seguros y demás permisos que exija la ley y la autoridad de tránsito competente.</li>
     <li>Tu PIN es personal. Eres responsable de lo que se haga con tu cuenta.</li>
@@ -2498,15 +2498,15 @@ const TEXTO_TERMINOS = `
 
   <h4>2.1 Comunicación contigo</h4>
   <ul>
-    <li>Al crear tu cuenta <b>autorizas a Ruta a comunicarse contigo por correo electrónico y por WhatsApp</b>, al correo y al celular que registraste, para informarte sobre tu cuenta (activación, verificación, habilitación, suspensión), tus servicios, cambios en estas condiciones u otros asuntos relacionados con Ruta.</li>
-    <li>Ruta nunca te pedirá tu PIN, contraseñas ni datos de tarjetas por correo ni por WhatsApp.</li>
+    <li>Al crear tu cuenta <b>autorizas a Llevu a comunicarse contigo por correo electrónico y por WhatsApp</b>, al correo y al celular que registraste, para informarte sobre tu cuenta (activación, verificación, habilitación, suspensión), tus servicios, cambios en estas condiciones u otros asuntos relacionados con Llevu.</li>
+    <li>Llevu nunca te pedirá tu PIN, contraseñas ni datos de tarjetas por correo ni por WhatsApp.</li>
     <li>Si prefieres no recibir mensajes que no sean indispensables para tu cuenta, escríbenos a <a href="mailto:${CORREO_SOPORTE}" style="color:var(--azul)">${CORREO_SOPORTE}</a>.</li>
   </ul>
 
   <h4>3. Precios y pago</h4>
   <ul>
     <li>Viajes: el pasajero propone el precio (mínimo $1.50 USD) y el conductor lo acepta o contraoferta. Envíos: tarifa fija calculada por distancia, tiempo, tamaño, vehículo (carro o moto) y urgencia. Viajes y envíos pueden tener hasta 4 destinos (3 en el camino y el destino final).</li>
-    <li>El pago es en efectivo, directo al conductor, al terminar el servicio. Ruta no cobra por adelantado ni solicita datos de tarjetas.</li>
+    <li>El pago es en efectivo, directo al conductor, al terminar el servicio. Llevu no cobra por adelantado ni solicita datos de tarjetas.</li>
   </ul>
 
   <h4>4. Envíos: lo que se puede y no se puede mandar</h4>
@@ -2518,8 +2518,8 @@ const TEXTO_TERMINOS = `
 
   <h4>5. Limitación de responsabilidad</h4>
   <ul>
-    <li><b>Ruta no se hace responsable por robos, hurtos, pérdidas, daños o retrasos</b> de los paquetes enviados, ni por su contenido.</li>
-    <li><b>Ruta no se hace responsable por accidentes, lesiones, daños, delitos, conflictos o cualquier hecho</b> que les ocurra a pasajeros, conductores, destinatarios o terceros durante o con ocasión de un servicio. Cada usuario y cada conductor responde por sus propios actos.</li>
+    <li><b>Llevu no se hace responsable por robos, hurtos, pérdidas, daños o retrasos</b> de los paquetes enviados, ni por su contenido.</li>
+    <li><b>Llevu no se hace responsable por accidentes, lesiones, daños, delitos, conflictos o cualquier hecho</b> que les ocurra a pasajeros, conductores, destinatarios o terceros durante o con ocasión de un servicio. Cada usuario y cada conductor responde por sus propios actos.</li>
     <li>Lo anterior aplica en la medida en que lo permita la ley ecuatoriana, incluida la Ley Orgánica de Defensa del Consumidor; no limita derechos que la ley declare irrenunciables.</li>
   </ul>
 
@@ -2552,10 +2552,10 @@ function modalTerminos(obligatorio) {
     modal(`
       <div class="grip"></div>
       <div class="head">
-        <div class="grow"><h2>Términos y Condiciones</h2><div class="dim">Y Política de Privacidad de Ruta</div></div>
+        <div class="grow"><h2>Términos y Condiciones</h2><div class="dim">Y Política de Privacidad de Llevu</div></div>
         ${obligatorio ? '' : '<button class="back" id="pol-x" aria-label="Cerrar">✕</button>'}
       </div>
-      ${obligatorio ? '<div class="aviso" style="margin-bottom:10px">Actualizamos nuestras condiciones. Para seguir usando Ruta necesitas aceptarlas.</div>' : ''}
+      ${obligatorio ? '<div class="aviso" style="margin-bottom:10px">Actualizamos nuestras condiciones. Para seguir usando Llevu necesitas aceptarlas.</div>' : ''}
       <div class="legal">${TEXTO_TERMINOS}</div>
       ${obligatorio ? `
         <label class="check"><input type="checkbox" id="pol-ok-chk"><span>Leí y acepto los Términos y Condiciones y la Política de Privacidad, incluido el tratamiento de mis datos biométricos.</span></label>
@@ -2705,7 +2705,7 @@ const RLS = e => e && (e.code === '42501' || e.status === 403 ||
   /row-level security|violates row level|permission denied/i.test(e.message || ''));
 
 function explicarError(e, quePasaba) {
-  console.warn('[Ruta] ' + (quePasaba || 'error'), e);
+  console.warn('[Llevu] ' + (quePasaba || 'error'), e);
   if (!e) return 'No se pudo completar la acción';
   if (e.code === '23505') return 'Eso ya estaba registrado';
   if (e.code === '23503') return 'Falta un dato relacionado, vuelve a intentarlo';
@@ -3005,7 +3005,7 @@ async function arrancarApp() {
       try { await S.api.aceptarTerminos(); toast('Gracias, términos aceptados'); }
       catch (e) { toast(explicarError(e, 'aceptarTerminos'), 'bad'); }
     } else {
-      toast('Para usar Ruta necesitas aceptar los términos', 'bad');
+      toast('Para usar Llevu necesitas aceptar los términos', 'bad');
       return cerrarSesion();
     }
   }
@@ -3107,7 +3107,7 @@ async function alSalir(a) {
   if (fin.estado === 'finalizado') {
     if (!propio(fin, 'finalizado')) {
       avisar(fin.tipo === 'paquete' ? 'Envío entregado' : 'Viaje finalizado',
-        fin.tipo === 'paquete' ? `Tu paquete llegó a ${fin.destinatario || 'su destino'}` : 'Gracias por viajar con Ruta', 'mensaje', `estado:${fin.id}:finalizado`);
+        fin.tipo === 'paquete' ? `Tu paquete llegó a ${fin.destinatario || 'su destino'}` : 'Gracias por viajar con Llevu', 'mensaje', `estado:${fin.id}:finalizado`);
     }
     if (S.modo === 'pasajero' || fin.tipo === 'viaje') S.porCalificar.push(fin);
   } else if (fin.estado === 'cancelado' && S.modo === 'pasajero' && fin.motivo_cancelacion === MOTIVO_SIN_CONDUCTOR) {
@@ -3781,10 +3781,10 @@ function pintarSelector(sh) {
 }
 
 async function fijarPunto(cual, ll, texto) {
-  /* Ruta solo opera en Ecuador; la zona con conductores es Quito y sus
+  /* Llevu solo opera en Ecuador; la zona con conductores es Quito y sus
      valles, así que fuera de la ciudad se avisa antes de continuar. */
   if (!EN_ECUADOR(ll.lat, ll.lng)) {
-    return toast('Ruta solo trabaja dentro de Ecuador. Elige un punto en el país.', 'bad');
+    return toast('Llevu solo trabaja dentro de Ecuador. Elige un punto en el país.', 'bad');
   }
   if (!EN_QUITO(ll.lat, ll.lng)) {
     toast('Ese punto está fuera de Quito y sus valles: puede que no haya conductores cerca.');
@@ -4053,7 +4053,7 @@ const FAQ = [
   ['¿Qué es el PIN de viaje?',
    'Cuando un conductor acepta tu viaje, en tu pantalla aparece un PIN de 4 dígitos. Díselo al conductor al subir: él lo escribe en su app para iniciar el viaje. Así confirmas que te subes al carro correcto y el conductor que lleva a la persona correcta. No lo compartas antes de subir.'],
   ['¿Cómo se paga?',
-   'Todo es en efectivo, directo al conductor al terminar el servicio. Ruta nunca te cobra por adelantado ni pide datos de tarjeta.'],
+   'Todo es en efectivo, directo al conductor al terminar el servicio. Llevu nunca te cobra por adelantado ni pide datos de tarjeta.'],
   ['Dejé algo olvidado en el carro',
    'Abre un caso en "Viaje o envío" con la fecha y el destino. Contactamos al conductor por ti.'],
   ['¿Puedo cancelar?',
@@ -4086,7 +4086,7 @@ function escucharSoporte() {
     pintarBadgeSoporte();
     if (S.sinLeerSop > antes && !S.ticket) {
       const t = lista.find(x => +(S.esSoporte ? x.sin_leer_agente : x.sin_leer_usuario) > 0);
-      if (t) avisar('Soporte de Ruta', t.ultimo_texto || 'Tienes una respuesta nueva', 'mensaje');
+      if (t) avisar('Soporte de Llevu', t.ultimo_texto || 'Tienes una respuesta nueva', 'mensaje');
     }
     if (S.vista === 'ayuda') render();
   });
@@ -4266,7 +4266,7 @@ function pintarSupChat() {
   c.innerHTML = S.supMsgs.map(m => {
     const mio = m.emisor_id && m.emisor_id === S.user.id;
     const clase = m.autor === 'sistema' ? 'sis' : (mio ? 'mine' : '');
-    const quien = m.autor === 'sistema' ? '' : (mio ? '' : (m.autor === 'soporte' ? 'Soporte Ruta' : 'Usuario'));
+    const quien = m.autor === 'sistema' ? '' : (mio ? '' : (m.autor === 'soporte' ? 'Soporte Llevu' : 'Usuario'));
     return `<div class="msg ${clase}">${quien ? `<span class="quien">${quien}</span>` : ''}${esc(m.texto)}<span class="hora">${horaCorta(m.creado_en)}</span></div>`;
   }).join('');
   c.scrollTop = c.scrollHeight;
@@ -4919,21 +4919,21 @@ const ETIQUETAS = {
   aceptado:   s => ['Conductor asignado', s.tipo === 'paquete' ? 'Va por tu paquete' : 'Se dirige a recogerte'],
   en_camino:  s => ['En camino', 'Puedes seguirlo en el mapa'],
   a_bordo:    s => [s.tipo === 'paquete' ? 'Paquete a bordo' : 'Viaje en curso', 'Rumbo al destino'],
-  finalizado: s => ['Finalizado', 'Gracias por viajar con Ruta']
+  finalizado: s => ['Finalizado', 'Gracias por viajar con Llevu']
 };
 
 /* Comparte los datos del viaje por WhatsApp o donde el teléfono ofrezca.
    Es lo que pide cualquiera antes de subirse a un carro de noche. */
 function compartirViaje(s) {
   const txt =
-    `Voy en Ruta con ${s.conductor_nombre || 'un conductor'}` +
+    `Voy en Llevu con ${s.conductor_nombre || 'un conductor'}` +
     (s.placa ? ` (placa ${s.placa}${s.vehiculo_texto ? ', ' + s.vehiculo_texto : ''})` : '') + '.\n' +
     `Salgo de: ${s.origen_texto}\n` +
     paradasDe(s).map((q, i) => `Destino ${i + 1}: ${q.texto || `${q.lat},${q.lng}`}\n`).join('') +
     `${paradasDe(s).length ? 'Destino final' : 'Voy a'}: ${s.destino_texto}\n` +
     `Punto de recogida: https://www.google.com/maps?q=${s.origen_lat},${s.origen_lng}\n` +
     `Destino: https://www.google.com/maps?q=${s.destino_lat},${s.destino_lng}`;
-  if (navigator.share) { navigator.share({ title: 'Mi viaje en Ruta', text: txt }).catch(() => {}); return; }
+  if (navigator.share) { navigator.share({ title: 'Mi viaje en Llevu', text: txt }).catch(() => {}); return; }
   try { navigator.clipboard.writeText(txt); toast('Datos del viaje copiados, pégalos en tu chat'); }
   catch (e) { toast('Tu navegador no permite compartir desde aquí', 'bad'); }
 }
@@ -5852,7 +5852,7 @@ function capturar(titulo, ayuda) {
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false
       });
     } catch (e) {
-      msg('No pudimos abrir la cámara. Da permiso de cámara a Ruta y vuelve a intentarlo.');
+      msg('No pudimos abrir la cámara. Da permiso de cámara a Llevu y vuelve a intentarlo.');
       return;
     }
     if (parar) { stream.getTracks().forEach(t => t.stop()); return; }
@@ -5924,7 +5924,7 @@ function flujoIdentidad(alRegistrarse) {
       <div class="leg"><div class="n">2</div><div class="grow"><b>Verificación de cada día</b><div class="dim">Antes de usar la app te pedimos otra foto, que se compara con esta</div></div></div>
       <div class="leg"><div class="n">3</div><div class="grow"><b>Activación</b><div class="dim">Un administrador revisa tus datos y activa tu cuenta</div></div></div>
     </div>
-    <label class="check"><input type="checkbox" id="id-ok"><span>Autorizo a Ruta a tratar mi imagen y mis datos biométricos para verificar mi identidad, según los <button type="button" id="id-ter" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y la Política de Privacidad</button>.</span></label>
+    <label class="check"><input type="checkbox" id="id-ok"><span>Autorizo a Llevu a tratar mi imagen y mis datos biométricos para verificar mi identidad, según los <button type="button" id="id-ter" style="color:var(--azul);font-weight:600;text-decoration:underline;padding:0">Términos y la Política de Privacidad</button>.</span></label>
     <button class="btn primary full" id="id-go" disabled>Tomar mi foto</button>
     <button class="btn ghost full" id="id-luego">${alRegistrarse ? 'Hacerlo después' : 'Ahora no'}</button>`);
   $('#id-ok').onchange = e => { $('#id-go').disabled = !e.target.checked; };
@@ -6183,7 +6183,7 @@ function pintarPerfil(sh) {
       : `<button class="btn full" id="pf-veh" style="margin-top:10px">Registrar vehículo</button>`}
 
     <button class="btn danger full" id="pf-salir" style="margin-top:14px">Cerrar sesión</button>
-    <p class="fine" style="margin-top:14px">Ruta funciona con pago en efectivo. El precio de los viajes lo acuerdas con el conductor; el de los envíos es fijo.</p>`;
+    <p class="fine" style="margin-top:14px">Llevu funciona con pago en efectivo. El precio de los viajes lo acuerdas con el conductor; el de los envíos es fijo.</p>`;
   $('#sw-rol').onclick = () => setModo(S.modo === 'conductor' ? 'pasajero' : 'conductor');
   $('#pf-editar').onclick = modalSoporteEdicion;
   $('#pf-lugares').onclick = modalLugares;
@@ -6508,8 +6508,8 @@ async function revisarActualizacion(manual) {
 function ventanaActualizacion(cap, cerrar, v) {
   cap.innerHTML = `<div class="caja" role="dialog" aria-modal="true" aria-labelledby="act-t"><div class="cuerpo">
     <div class="etq">${IC.arriba('sm')}Nueva versión</div>
-    <h2 id="act-t">Actualiza Ruta a la versión ${esc(v.version)}</h2>
-    <div class="txt">${esc(v.notas || 'Trae mejoras y correcciones. Instálala para seguir usando Ruta sin problemas.')}</div>
+    <h2 id="act-t">Actualiza Llevu a la versión ${esc(v.version)}</h2>
+    <div class="txt">${esc(v.notas || 'Trae mejoras y correcciones. Instálala para seguir usando Llevu sin problemas.')}</div>
     <div class="dim" style="margin-bottom:10px">Tienes la versión ${esc(VERSION_APP.nombre)}. Tus datos y tu sesión se mantienen.</div>
     <div id="act-prog" class="hidden"><div class="barra-prog"><i id="act-barra"></i></div>
       <div class="dim" id="act-txt">Descargando...</div></div>
@@ -6537,7 +6537,7 @@ function progresoActualizacion(estado, pct, msg) {
     if (txt) txt.textContent = pct >= 0 ? `Descargando... ${Math.round(pct)}%` : 'Descargando...';
   } else if (estado === 'instalar') {
     if (barra) barra.style.width = '100%';
-    if (txt) txt.textContent = 'Toca "Instalar" o "Actualizar" en la ventana de Android. Si te pide permiso para instalar apps, actívalo para Ruta y vuelve.';
+    if (txt) txt.textContent = 'Toca "Instalar" o "Actualizar" en la ventana de Android. Si te pide permiso para instalar apps, actívalo para Llevu y vuelve.';
     ok.disabled = false; ok.textContent = 'Instalar de nuevo';
   } else {
     if (txt) txt.textContent = msg || 'No se pudo descargar la actualización.';
