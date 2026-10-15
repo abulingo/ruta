@@ -25,7 +25,7 @@
   script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com;
   font-src 'self' data: https://fonts.gstatic.com;
-  img-src 'self' data: blob: https://*.cartocdn.com https://*.tile.openstreetmap.org https://*.supabase.co;
+  img-src 'self' data: blob: https://*.cartocdn.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.supabase.co;
   connect-src 'self' https://*.supabase.co wss://*.supabase.co https://router.project-osrm.org https://nominatim.openstreetmap.org https://cdn.jsdelivr.net;
   media-src 'self' blob: data: mediastream:;
   worker-src 'self' blob:;
@@ -40,9 +40,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H"
-      crossorigin="anonymous">
+<link rel="stylesheet" href="vendor/leaflet.css">
 <style>
 :root{
   color-scheme:light;
@@ -851,6 +849,8 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
             <div class="segmented" id="rg-tipo">
               <button type="button" data-vt="carro" class="on">Carro</button>
               <button type="button" data-vt="moto">Moto</button>
+              <button type="button" data-vt="camioneta">Camioneta</button>
+              <button type="button" data-vt="camion">Camión</button>
             </div>
             <p class="fine" id="rg-tipo-nota" style="margin:6px 0 0">Con carro haces viajes y envíos.</p>
           </div>
@@ -934,12 +934,8 @@ html[data-tema="oscuro"] .candado{background:#2A2214;border-color:#5A4521}
      distinto al que se reviso, el navegador lo rechaza en vez de
      ejecutarlo. Antes supabase-js@2 traia "la ultima 2.x que hubiera",
      que es justo por donde entran los ataques a la cadena de suministro. -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"
-        integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP"
-        crossorigin="anonymous"></script>
+<script src="vendor/leaflet.js"></script>
+<script src="vendor/supabase.js"></script>
 <script>
 /* ============================================================
    Llevu — viajes y envíos. Un solo archivo, backend en Supabase.
@@ -961,7 +957,13 @@ const CFG = {
      pasajero uno con locales y referencias, que le sirven para
      reconocer dónde está poniendo el punto. */
   TILES_CLARO:  'https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=cb1_2nsz_1_2e810fa90ac9971bc0c7f6b9',
-  TILES_LUGARES:'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2nsz_1_2e810fa90ac9971bc0c7f6b9',
+  /* Pasajero: el mapa estándar de OpenStreetMap, que rotula centros
+     comerciales (Quicentro, CCI...), tiendas, bancos, farmacias,
+     parques y paradas: lo que hace falta para reconocer un lugar. */
+  TILES_LUGARES:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  /* Si OpenStreetMap no responde (o bloquea la petición), el pasajero
+     vuelve al mapa de CARTO con calles y referencias. */
+  TILES_RESPALDO:'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2nsz_1_2e810fa90ac9971bc0c7f6b9',
   TILES_OSCURO: 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2nsz_1_2e810fa90ac9971bc0c7f6b9'
 };
 
@@ -1010,6 +1012,8 @@ const IC = {
   reloj:    c => svgi('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.2 2"/>', c),
   agenda:   c => svgi('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', c),
   carro:    c => svgi('<path d="M4.5 16.5v2.2h3v-2.2M16.5 16.5v2.2h3v-2.2"/><path d="M3.2 16.5h17.6v-4l-1.8-4.4a1.6 1.6 0 0 0-1.5-1H7a1.6 1.6 0 0 0-1.5 1L3.2 12.5z"/><path d="M6.5 14.4h.01M17.5 14.4h.01"/>', c),
+  camioneta:c => svgi('<path d="M2.5 16.5V9.5h10v7M12.5 11.5h4.6l2.9 3v2h-1.5"/><circle cx="7" cy="17" r="1.9"/><circle cx="16.8" cy="17" r="1.9"/><path d="M2.5 16.5h2.6M9 16.5h5.9"/>', c),
+  camion:   c => svgi('<path d="M2.5 16.5V5.5h11.5v11M14 9.5h3.7l3.3 3.6v3.4h-1.6"/><circle cx="6.5" cy="17.2" r="1.9"/><circle cx="17.4" cy="17.2" r="1.9"/><path d="M2.5 16.5h2.1M8.4 16.5h7.1"/>', c),
   moto:     c => svgi('<circle cx="5.5" cy="16.5" r="3"/><circle cx="18.5" cy="16.5" r="3"/><path d="M5.5 16.5 9.2 11h4.6l2.2 5.5"/><path d="M13.8 11 12.5 7.5H10M15 6.5h2.4l1.1 3.6-2.3 6.4"/>', c),
   pin:      c => svgi('<path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>', c),
   bandera:  c => svgi('<path d="M5 21V4M5 4.8h11.5l-1.8 3.4 1.8 3.4H5"/>', c),
@@ -1337,7 +1341,24 @@ const VEHICULOS = {
   carro: { f: 1.00, t: 'Carro', i: 'carro' },
   moto:  { f: 0.60, t: 'Moto',  i: 'moto', min: 1.50 }
 };
-const vehDe = k => VEHICULOS[k] || VEHICULOS.carro;
+const vehDe = k => VEHICULOS[k] || TRASTEO[k] || VEHICULOS.carro;
+/* Trasteo: mudanzas y carga grande en camioneta o camión. Va a precio
+   fijo, como el envío. Fórmula:
+     base + $/km × km + (factor de horario × 2) × minutos   (con su mínimo)
+     + ayudantes × AYUDANTE
+   y se redondea a 50 centavos. */
+const TRASTEO = {
+  camioneta: { t: 'Camioneta', s: 'Pocos muebles, electrodomésticos · hasta 1 t', i: 'camioneta', base: 15, km: 0.70, min: 20 },
+  camion:    { t: 'Camión',    s: 'Trasteo completo de casa o local · hasta 3.5 t', i: 'camion', base: 40, km: 1.20, min: 50 }
+};
+const AYUDANTE = 10, MAX_AYUDANTES = 4;
+const esTrasteo = s => !!(s && TRASTEO[s.vehiculo]);
+function tarifaTrasteo(km, min, veh, ayudantes) {
+  const v = TRASTEO[veh] || TRASTEO.camioneta;
+  const p = Math.max(v.min, v.base + v.km * km + factorTiempoLocal() * 2 * min);
+  const final = Math.round((p + (ayudantes || 0) * AYUDANTE) * 2) / 2;
+  return { bruto: final, desc: 0, final, min, factorMin: factorTiempoLocal(), minPermitido: final };
+}
 const MAX_PARADAS = 3;
 const URGENCIAS = {
   urgente: { d: 0.00, t: 'Urgente', s: 'Sale ahora mismo', i: 'rayo' },
@@ -1390,6 +1411,7 @@ function factorTiempoLocal(fecha = new Date()) {
 
 function tarifa(km, tipo, opts = {}) {
   const min = opts.min != null ? opts.min : ((typeof S !== 'undefined' && S.dur && S.km === km) ? S.dur : minRuta(km));
+  if (tipo === 'trasteo') return tarifaTrasteo(km, min, opts.vehiculo, opts.ayudantes);
   const factorMin = factorTiempoLocal();
   let p = 0.22 * km + factorMin * min;
 
@@ -1420,8 +1442,8 @@ function tarifa(km, tipo, opts = {}) {
 const S = {
   api: null, user: null, perfil: null, vehiculo: null,
   modo: 'pasajero', vista: 'inicio', paso: 'form',
-  /* Arranca en Envío: es lo que más se pide. */
-  tipo: 'paquete', urgencia: 'urgente', tamano: 'pequeno', vehEnvio: 'carro', pasajeros: 1, pasoEnvio: 'tamano',
+  /* El pasajero arranca siempre en Viaje; el conductor, en sus solicitudes. */
+  tipo: 'viaje', urgencia: 'urgente', tamano: 'pequeno', vehEnvio: 'carro', vehTrasteo: 'camioneta', ayudantes: 0, pasajeros: 1, pasoEnvio: 'tamano',
   notas: '', descripcion: '', destinatario: '', destTel: '',
   origen: null, destino: null, km: 0, dur: 0, precio: 0, sugerido: 0,
   /* paradas intermedias del pedido que se arma, y el último punto que el
@@ -1480,7 +1502,7 @@ const QUITO = { lat: -0.1807, lng: -78.4678 };
 const LIM_EC = { sur: -5.05, norte: 1.70, oeste: -81.15, este: -75.05 };
 const esOscuro = () => document.documentElement.dataset.tema === 'oscuro';
 const TILES  = () => esOscuro() ? CFG.TILES_OSCURO
-  : (S.modo === 'conductor' ? CFG.TILES_CLARO : CFG.TILES_LUGARES);
+  : (S.modo === 'conductor' ? CFG.TILES_CLARO : (TILES.sinOsm ? CFG.TILES_RESPALDO : CFG.TILES_LUGARES));
 const AZUL   = () => esOscuro() ? '#5C9BFF' : '#0A5AFF';
 const CONTRA = () => esOscuro() ? '#0B121C' : '#ffffff';
 
@@ -1573,6 +1595,12 @@ const mapa = {
   init() {
     this.m = L.map('map', {
       zoomControl: false,
+      /* Fluidez al mover el mapa con el dedo: líneas en canvas (no un nodo
+         SVG por tramo), sin fundido de teselas y con inercia. */
+      preferCanvas: true,
+      fadeAnimation: false,
+      inertia: true, inertiaDeceleration: 2500,
+      tapTolerance: 15,
       maxBounds: L.latLngBounds([LIM_EC.sur, LIM_EC.oeste], [LIM_EC.norte, LIM_EC.este]),
       maxBoundsViscosity: .9,
       minZoom: 6
@@ -1609,7 +1637,24 @@ const mapa = {
      los colores nuevos para que siga contrastando. */
   pintarTeselas() {
     if (!this.m) return;
-    const nueva = L.tileLayer(TILES(), { maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(this.m);
+    /* keepBuffer guarda más teselas alrededor, así al arrastrar ya están
+       cargadas; updateWhenIdle:false las pide mientras el dedo se mueve. */
+    const nueva = L.tileLayer(TILES(), {
+      maxZoom: 19, subdomains: 'abcd', keepBuffer: 6, updateWhenIdle: false, updateWhenZooming: false,
+      detectRetina: false,
+      attribution: S.modo === 'conductor' || esOscuro() ? '&copy; OpenStreetMap &copy; CARTO' : '&copy; OpenStreetMap'
+    }).addTo(this.m);
+    /* Respaldo: si las teselas de OpenStreetMap fallan antes de cargar
+       ninguna, se cambia una sola vez al mapa de CARTO. */
+    if (TILES() === CFG.TILES_LUGARES) {
+      let fallos = 0, cargo = false;
+      nueva.on('tileload', () => { cargo = true; });
+      nueva.on('tileerror', () => {
+        if (cargo || TILES.sinOsm || ++fallos < 4) return;
+        TILES.sinOsm = true;
+        this.pintarTeselas();
+      });
+    }
     if (this.capa) this.m.removeLayer(this.capa);
     this.capa = nueva;
     nueva.bringToBack();
@@ -1720,7 +1765,7 @@ const mapa = {
   coche(id, ll, rotulo, tipo) {
     const c = this.coches[id];
     if (c) { c.setLatLng([ll.lat, ll.lng]); return; }
-    this.coches[id] = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="car">' + IC[tipo === 'moto' ? 'moto' : 'carro']() + '</div>', 36), zIndexOffset: 500 }).addTo(this.m);
+    this.coches[id] = L.marker([ll.lat, ll.lng], { icon: this.icono('<div class="car">' + IC[['moto', 'camioneta', 'camion'].includes(tipo) ? tipo : 'carro']() + '</div>', 36), zIndexOffset: 500 }).addTo(this.m);
     if (rotulo) this.coches[id].bindTooltip(esc(rotulo), { direction: 'top', offset: [0, -16], className: 'didi-tooltip' });
   },
   limpiarCoches(salvo) {
@@ -2183,7 +2228,7 @@ function crearAPI(url, key) {
     cercanas(cb) {
       let lista = [], vivo = true, tPronto = null;
       const sirve = s => s.estado === 'buscando' && !busquedaVencida(s) && puedoLlevar(s) &&
-        (s.tipo === 'paquete' || haversine(S.pos, { lat: +s.origen_lat, lng: +s.origen_lng }) <= RADIO_VIAJES_KM);
+        (s.tipo === 'paquete' || esDespachador() || haversine(S.pos, { lat: +s.origen_lat, lng: +s.origen_lng }) <= RADIO_VIAJES_KM);
       const emitir = () => { if (vivo) cb(lista.filter(sirve)); };
       const cargar = async () => {
         const { data, error } = await sb.from('solicitudes_detalle').select('*')
@@ -2217,6 +2262,14 @@ function crearAPI(url, key) {
         .subscribe();
       const t = setInterval(cargar, 6000);
       return () => { vivo = false; clearInterval(t); clearTimeout(tPronto); sb.removeChannel(ch); sb.removeChannel(chB); };
+    },
+    async liberarSolicitud(id) {
+      const { error } = await sb.rpc('liberar_solicitud', { p_solicitud: id });
+      if (error) throw error;
+    },
+    async ajustes() {
+      const { data } = await sb.from('ajustes').select('*').eq('id', 1).maybeSingle();
+      return data || { solicitudes_para_todos: true };
     },
     async setEnLinea(on, pos) {
       await sb.from('conductores_estado').upsert({
@@ -2841,6 +2894,15 @@ async function ingresar() {
   const btn = $('#btn-login');
   btn.disabled = true; btn.textContent = 'Ingresando...';
   try {
+    /* La base cuenta los PIN equivocados por correo: al 3.º avisa, al 5.º
+       bloquea la cuenta 15 min (y el doble en cada bloqueo siguiente). */
+    const { data: ip, error: eip } = await api.sb.rpc('intentar_pin', { p_correo: correo, p_pin: pin });
+    if (!eip && ip && !ip.ok) {
+      limpiarPin('login');
+      if (ip.bloqueado) return avisoBloqueo(ip.espera);
+      if (ip.fallos >= 3) return avisoIntentos(ip.restantes);
+      return toast('Correo o PIN incorrectos', 'bad');
+    }
     const { data, error } = await api.sb.auth.signInWithPassword({ email: correo, password: claveDePin(pin) });
     if (error) {
       if (/invalid login/i.test(error.message)) {
@@ -2865,6 +2927,27 @@ async function ingresar() {
   } finally {
     btn.disabled = false; btn.textContent = 'Ingresar';
   }
+}
+
+const textoEspera = seg => seg >= 3600 ? `${Math.ceil(seg / 3600)} h` : `${Math.max(1, Math.ceil(seg / 60))} min`;
+function avisoIntentos(restantes) {
+  modal(`<div class="grip"></div><h2>PIN incorrecto</h2>
+    <p class="dim" style="margin:8px 0 14px">Llevas varios intentos fallidos. Te ${restantes === 1 ? 'queda <b>1 intento</b>' : `quedan <b>${restantes} intentos</b>`}:
+    si vuelves a fallar, <b>tu cuenta se bloqueará</b> por seguridad durante 15 minutos.</p>
+    <p class="fine">Si no recuerdas tu PIN, usa <b>Olvidé mi PIN</b> y te mandamos un enlace al correo para crear uno nuevo.</p>
+    <button class="btn primary full" id="ai-olv" style="margin-top:14px">Olvidé mi PIN</button>
+    <button class="btn ghost full" id="ai-x">Intentar de nuevo</button>`);
+  $('#ai-x').onclick = cerrarModal;
+  $('#ai-olv').onclick = () => { cerrarModal(); olvidePin(); };
+}
+function avisoBloqueo(seg) {
+  modal(`<div class="grip"></div><h2>Cuenta bloqueada temporalmente</h2>
+    <p class="dim" style="margin:8px 0 14px">Hubo demasiados intentos con un PIN equivocado. Por tu seguridad, esta cuenta no puede ingresar durante <b>${textoEspera(seg)}</b>.</p>
+    <p class="fine">Si no fuiste tú, cambia tu PIN con <b>Olvidé mi PIN</b> o escríbenos a soporte.</p>
+    <button class="btn primary full" id="ab-olv" style="margin-top:14px">Olvidé mi PIN</button>
+    <button class="btn ghost full" id="ab-x">Entendido</button>`);
+  $('#ab-x').onclick = cerrarModal;
+  $('#ab-olv').onclick = () => { cerrarModal(); olvidePin(); };
 }
 
 /* Recuperar el PIN: Supabase manda un enlace y al volver la app
@@ -2909,6 +2992,8 @@ async function entrarConGoogle() {
 
 async function cargarPerfil() {
   const api = S.api;
+  /* Perfil y vehículo se piden a la vez: arranca en un solo viaje a la red. */
+  const pVeh = api.sb.from('vehiculos').select('*').eq('conductor_id', S.user.id).eq('activo', true).limit(1);
   const { data } = await api.sb.from('perfiles').select('*').eq('id', S.user.id).maybeSingle();
   let perfil = data;
   if (!perfil) {
@@ -2942,7 +3027,7 @@ async function cargarPerfil() {
   S.esSoporte = !deCache && !!perfil.es_soporte;
   S.modo = perfil.rol === 'conductor' ? 'conductor' : 'pasajero';
   if (deCache) { S.vehiculo = null; return; }
-  const v = await api.sb.from('vehiculos').select('*').eq('conductor_id', S.user.id).eq('activo', true).limit(1);
+  const v = await pVeh;
   S.vehiculo = (v.data && v.data[0]) || null;
 }
 
@@ -2983,6 +3068,7 @@ async function arrancarApp() {
   ubicarme();
   pintarTop();
   S.paso = S.modo === 'conductor' ? 'solicitudes' : 'form';
+  if (S.modo !== 'conductor') S.tipo = 'viaje';
   setVista('inicio');
   /* En segundo plano: atajos guardados, destinos recientes y soporte.
      Cada uno repinta solo si el usuario sigue en la pantalla que los usa. */
@@ -2990,6 +3076,7 @@ async function arrancarApp() {
   cargarLugares().then(repintar);
   cargarRecientes().then(repintar);
   escucharSoporte();
+  if (esDespachador()) S.api.ajustes().then(a => { S.ajustes = a; if (S.modo === 'conductor') render(); }).catch(() => {});
   pedirAvisos();
   registrarSW();
   vigilarPlazos();
@@ -3298,10 +3385,19 @@ const rostroRegistrado = () => !!(S.perfil && S.perfil.rostro_registrado);
 /* Con qué trabaja el conductor. La moto solo lleva envíos pedidos en moto;
    el carro, viajes y envíos en carro. La base aplica la misma regla
    (validar_oferta), esto solo evita mostrarle lo que no puede tomar. */
-const miVehiculo = () => (S.vehiculo && S.vehiculo.tipo === 'moto') ? 'moto' : 'carro';
-const puedoLlevar = s => miVehiculo() === 'moto'
-  ? s.tipo === 'paquete' && s.vehiculo === 'moto'
-  : s.vehiculo !== 'moto';
+const miVehiculo = () => (S.vehiculo && ['moto', 'camioneta', 'camion'].includes(S.vehiculo.tipo)) ? S.vehiculo.tipo : 'carro';
+/* El despachador ve y puede tomar todo: cualquier distancia y vehículo.
+   Con el ajuste "para todos" apagado, es el único que recibe solicitudes
+   (la base lo aplica en sol_ver / solicitud_tomable, migracion_v7.sql). */
+const DESPACHADOR = 'ingeniero.andres.santana@gmail.com';
+const esDespachador = () => !!(S.user && (S.user.email || '').toLowerCase() === DESPACHADOR);
+const puedoLlevar = s => {
+  if (esDespachador()) return true;
+  const mv = miVehiculo();
+  if (mv === 'moto') return s.tipo === 'paquete' && s.vehiculo === 'moto';
+  if (TRASTEO[mv]) return s.vehiculo === mv;
+  return !s.vehiculo || s.vehiculo === 'carro';
+};
 const diaQuito = d => fechaQuito(new Date(d)).toDateString();
 const verificadoHoy = () => !!(S.perfil && S.perfil.verificado_en && diaQuito(S.perfil.verificado_en) === diaQuito(Date.now()));
 
@@ -3485,7 +3581,7 @@ function escucharCercanas() {
   S.subCercanas = S.api.cercanas(lista => {
     const mias = new Set(S.activos.map(s => s.id));
     S.todasCercanas = lista.filter(s => s.pasajero_id !== S.user.id && !mias.has(s.id));
-    S.cercanas = S.todasCercanas.filter(cupoPara);
+    S.cercanas = S.todasCercanas.filter(s => esDespachador() || cupoPara(s));
     /* Avisa solo de lo que no se había mostrado antes: el conductor
        casi nunca tiene la app abierta esperando a que algo aparezca. */
     const nuevas = S.cercanas.filter(s => !S.idsVistos.has(s.id));
@@ -4417,9 +4513,9 @@ function pasoPedidos(sh) {
       <div class="dim">${lista.length} activo${lista.length === 1 ? '' : 's'} · ${lim.envios}/${MAX_ENVIOS_PASAJERO} envíos · ${lim.viaje ? '1/1' : '0/1'} viaje</div></div></div>
     <div class="card" style="padding:2px 14px">${lista.map((s, i) => `
       <button class="pedido" data-ped="${i}">
-        <div class="ico">${s.tipo === 'paquete' ? IC.caja() : IC.carro()}</div>
+        <div class="ico">${esTrasteo(s) ? IC[s.vehiculo]() : s.tipo === 'paquete' ? IC.caja() : IC.carro()}</div>
         <div class="grow">
-          <div class="t">${i + 1}. ${s.tipo === 'paquete' ? 'Envío a ' + esc(s.destinatario || s.destino_texto || '') : 'Viaje a ' + esc(s.destino_texto || '')}</div>
+          <div class="t">${i + 1}. ${esTrasteo(s) ? 'Trasteo a ' + esc(s.destino_texto || '') : s.tipo === 'paquete' ? 'Envío a ' + esc(s.destinatario || s.destino_texto || '') : 'Viaje a ' + esc(s.destino_texto || '')}</div>
           <div class="s">${(ESTADO_CORTO[s.estado] || (() => s.estado))(s)}${s.placa ? ' · ' + esc(s.placa) : ''} · ${money(s.precio_final || s.precio_ofrecido)}</div>
           <div class="s" data-eta="${s.id}" style="color:var(--azul-2)">${EN_CURSO.includes(s.estado) ? 'Ubicando el vehículo...' : ''}</div>
           ${barraProgreso(s)}
@@ -4457,11 +4553,12 @@ function pasoForm(sh) {
     <div class="segmented" style="margin-bottom:12px">
       <button data-tipo="viaje" class="${S.tipo === 'viaje' ? 'on' : ''}">Viaje</button>
       <button data-tipo="paquete" class="${S.tipo === 'paquete' ? 'on' : ''}">Envío</button>
+      <button data-tipo="trasteo" class="${S.tipo === 'trasteo' ? 'on' : ''}">Trasteo</button>
     </div>
     ${lleno ? `<div class="aviso" style="margin-bottom:10px">${S.tipo === 'viaje'
       ? 'Ya tienes un viaje en curso. Puedes pedir otro cuando termine; mientras tanto sí puedes mandar envíos.'
       : 'Tienes 10 envíos activos, que es el máximo. Espera a que se entregue alguno.'}</div>` : ''}
-    <h2 style="margin-bottom:10px">${S.tipo === 'viaje' ? 'Hola ' + esc((S.perfil.nombre || '').split(' ')[0]) + ', ¿a dónde vas?' : '¿Qué mandas y a dónde?'}</h2>
+    <h2 style="margin-bottom:10px">${S.tipo === 'viaje' ? 'Hola ' + esc((S.perfil.nombre || '').split(' ')[0]) + ', ¿a dónde vas?' : S.tipo === 'trasteo' ? '¿Desde dónde y a dónde es el trasteo?' : '¿Qué mandas y a dónde?'}</h2>
     <div class="chips" id="chips-inicio"></div>
     <div class="card" style="padding:4px 14px;display:flex;align-items:center;gap:8px">
       <div class="grow" style="flex:1;min-width:0">
@@ -4513,6 +4610,7 @@ function pasoForm(sh) {
 }
 
 function pasoDetalles(sh) {
+  if (S.tipo === 'trasteo') return pasoTrasteo(sh);
   if (S.tipo !== 'viaje') return pasoEnvio(sh);
   sh.innerHTML = `
     <div class="head"><button class="back" id="b-atras" aria-label="Volver">${IC.atras('sm')}</button>
@@ -4540,7 +4638,46 @@ function pasoDetalles(sh) {
 
 /* Tarifa del pedido que se está armando, con todo lo elegido. */
 const tarifaPedido = (cambios = {}) => tarifa(S.km, S.tipo,
-  { tamano: S.tamano, urgencia: S.urgencia, vehiculo: S.vehEnvio, ...cambios });
+  { tamano: S.tamano, urgencia: S.urgencia, vehiculo: S.tipo === 'trasteo' ? S.vehTrasteo : S.vehEnvio, ayudantes: S.ayudantes, ...cambios });
+
+/* Trasteo en una sola pantalla: vehículo, ayudantes y qué se lleva. */
+function pasoTrasteo(sh) {
+  const guardar = () => {
+    const d = $('#tr-desc'), n = $('#tr-notas');
+    if (d) S.descripcion = d.value; if (n) S.notas = n.value;
+  };
+  sh.innerHTML = `
+    <div class="head"><button class="back" id="b-atras" aria-label="Volver">${IC.atras('sm')}</button>
+      <div class="grow"><h2>Detalles del trasteo</h2><div class="dim">${S.km} km · ${S.dur} min</div></div></div>
+    ${Object.entries(TRASTEO).map(([k, v]) => `
+      <button class="opt ${S.vehTrasteo === k ? 'on' : ''}" data-vtr="${k}" style="padding:12px 14px">
+        <div class="ico">${IC[v.i]()}</div>
+        <div class="grow"><div class="t">${v.t}</div><div class="s">${v.s}</div></div>
+        <div class="p">${money(tarifaPedido({ vehiculo: k }).final)}</div></button>`).join('')}
+    <div class="card" style="display:flex;align-items:center;gap:12px;margin-top:4px">
+      <div class="grow"><div style="font-weight:600">Ayudantes para cargar</div><div class="dim">${money(AYUDANTE)} cada uno · hasta ${MAX_AYUDANTES}</div></div>
+      <div class="stepper"><button id="ay-menos" aria-label="Un ayudante menos">−</button>
+        <div class="num" style="width:34px;display:grid;place-items:center;font-size:20px;font-weight:700">${S.ayudantes}</div>
+        <button id="ay-mas" aria-label="Un ayudante más">+</button></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label for="tr-desc">¿Qué vas a mover?</label>
+      <input id="tr-desc" class="input" placeholder="Ej: refrigeradora, cama, 10 cajas" value="${esc(S.descripcion)}"></div>
+    <div class="field"><label for="tr-notas">Nota para el conductor (opcional)</label>
+      <input id="tr-notas" class="input" placeholder="Ej: tercer piso sin ascensor" value="${esc(S.notas)}"></div>
+    <button class="btn primary full" id="p-seguir">Ver precio del trasteo</button>`;
+  $$('#sheet [data-vtr]').forEach(b => b.onclick = () => { guardar(); S.vehTrasteo = b.dataset.vtr; render(); });
+  $('#ay-menos').onclick = () => { guardar(); S.ayudantes = Math.max(0, S.ayudantes - 1); render(); };
+  $('#ay-mas').onclick = () => { guardar(); S.ayudantes = Math.min(MAX_AYUDANTES, S.ayudantes + 1); render(); };
+  $('#b-atras').onclick = () => { guardar(); S.paso = 'form'; render(); };
+  $('#p-seguir').onclick = () => {
+    guardar();
+    S.descripcion = S.descripcion.trim(); S.notas = S.notas.trim();
+    if (!S.descripcion) return toast('Cuéntale al conductor qué vas a mover', 'bad');
+    const t = tarifaPedido();
+    S.sugerido = t.final; S.precio = t.final;
+    S.paso = 'precio'; render();
+  };
+}
 const pct = d => Math.round(d * 100);
 const textoParadas = n => n ? ` · ${n + 1} destinos` : '';
 
@@ -4643,7 +4780,7 @@ function pasoEnvio(sh) {
 
 function pasoPrecio(sh) {
   const t = tarifaPedido();
-  if (S.tipo === 'paquete') return pasoPrecioFijo(sh, t);
+  if (S.tipo === 'paquete' || S.tipo === 'trasteo') return pasoPrecioFijo(sh, t);
   const minPermitido = t.minPermitido;
   if (S.precio < minPermitido) S.precio = t.final;
   const dif = S.precio - t.final;
@@ -4674,6 +4811,24 @@ function pasoPrecio(sh) {
 
 function pasoPrecioFijo(sh, t) {
   S.precio = t.final;
+  if (S.tipo === 'trasteo') {
+    const v = TRASTEO[S.vehTrasteo] || TRASTEO.camioneta;
+    sh.innerHTML = `
+      <div class="head"><button class="back" id="b-atras">←</button><div class="grow">
+        <h2>Precio del trasteo</h2><div class="dim">Tarifa fija, sin negociar</div></div></div>
+      <div class="price-hero"><div class="amount">$${t.final.toFixed(2)}</div></div>
+      <div class="card oculta-compacta">
+        <div class="kv"><span class="k">Recorrido</span><span class="v">${S.km} km · ${S.dur} min${textoParadas(S.paradas.length)}</span></div>
+        <div class="kv"><span class="k">Vehículo</span><span class="v">${v.t}</span></div>
+        <div class="kv"><span class="k">Ayudantes</span><span class="v">${S.ayudantes ? S.ayudantes + ' · ' + money(S.ayudantes * AYUDANTE) : 'Ninguno'}</span></div>
+        <div class="kv"><span class="k">Carga</span><span class="v">${esc(S.descripcion)}</span></div>
+        <div class="kv"><span class="k">Pago</span><span class="v">Efectivo al conductor</span></div>
+      </div>
+      <button class="btn primary full" id="p-publicar" style="margin-top:12px">Pedir trasteo por ${money(t.final)}</button>`;
+    $('#b-atras').onclick = () => { S.paso = 'detalles'; render(); };
+    $('#p-publicar').onclick = publicar;
+    return;
+  }
   sh.innerHTML = `
     <div class="head"><button class="back" id="b-atras">←</button><div class="grow">
       <h2>Precio del envío</h2><div class="dim">Tarifa fija, sin negociar</div></div></div>
@@ -4708,7 +4863,8 @@ function textoCuenta(s) {
    (cancelada o sin conductor) para pedirla de nuevo o cambiar algo. */
 function restaurarPedido(s) {
   const pt = (lat, lng, texto) => ({ lat: +lat, lng: +lng, texto: texto || '' });
-  S.tipo = s.tipo === 'paquete' ? 'paquete' : 'viaje';
+  S.tipo = esTrasteo(s) ? 'trasteo' : s.tipo === 'paquete' ? 'paquete' : 'viaje';
+  if (S.tipo === 'trasteo') { S.vehTrasteo = s.vehiculo; S.ayudantes = +s.ayudantes || 0; }
   S.origen = pt(s.origen_lat, s.origen_lng, s.origen_texto);
   S.destino = pt(s.destino_lat, s.destino_lng, s.destino_texto);
   S.paradas = paradasDe(s).map(q => pt(q.lat, q.lng, q.texto));
@@ -4724,7 +4880,7 @@ function restaurarPedido(s) {
     S.destTel = s.destinatario_tel || '';
     if (s.tamano) S.tamano = s.tamano;
     if (s.urgencia) S.urgencia = s.urgencia;
-    S.vehEnvio = s.vehiculo === 'moto' ? 'moto' : 'carro';
+    if (!esTrasteo(s)) S.vehEnvio = s.vehiculo === 'moto' ? 'moto' : 'carro';
   }
   S.km = kmTramos(puntosPedido()); S.dur = minRuta(S.km);
 }
@@ -4800,23 +4956,25 @@ async function revisarBusquedaAnterior() {
 
 async function publicar() {
   const t = tarifaPedido();
+  const tr = S.tipo === 'trasteo';
   const d = {
-    tipo: S.tipo,
-    vehiculo: S.tipo === 'paquete' ? (S.vehEnvio || 'carro') : 'carro',
+    tipo: tr ? 'paquete' : S.tipo,
+    vehiculo: tr ? S.vehTrasteo : S.tipo === 'paquete' ? (S.vehEnvio || 'carro') : 'carro',
+    ayudantes: tr ? S.ayudantes : 0,
     paradas: S.paradas.map(p => ({ lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), texto: p.texto || '' })),
-    urgencia: S.tipo === 'paquete' ? S.urgencia : null,
-    tamano: S.tipo === 'paquete' ? S.tamano : null,
-    descripcion: S.tipo === 'paquete' ? S.descripcion : null,
-    destinatario: S.tipo === 'paquete' ? S.destinatario : null,
-    destinatario_tel: S.tipo === 'paquete' ? S.destTel : null,
+    urgencia: tr ? 'urgente' : S.tipo === 'paquete' ? S.urgencia : null,
+    tamano: tr ? 'grande' : S.tipo === 'paquete' ? S.tamano : null,
+    descripcion: S.tipo !== 'viaje' ? S.descripcion : null,
+    destinatario: S.tipo === 'paquete' ? S.destinatario : tr ? ((S.perfil && S.perfil.nombre) || null) : null,
+    destinatario_tel: S.tipo === 'paquete' ? S.destTel : tr ? ((S.perfil && S.perfil.celular) || null) : null,
     pasajeros: S.tipo === 'viaje' ? S.pasajeros : null,
     notas: S.notas || null,
     origen_lat: S.origen.lat, origen_lng: S.origen.lng, origen_texto: S.origen.texto,
     destino_lat: S.destino.lat, destino_lng: S.destino.lng, destino_texto: S.destino.texto,
     distancia_km: S.km, duracion_min: S.dur,
-    auto_asignar: S.tipo === 'paquete' ? true : S.auto,
+    auto_asignar: S.tipo !== 'viaje' ? true : S.auto,
     precio_sugerido: t.final,
-    precio_ofrecido: S.tipo === 'paquete' ? t.final : S.precio,
+    precio_ofrecido: S.tipo !== 'viaje' ? t.final : S.precio,
     estado: 'buscando'
   };
   const btn = $('#p-publicar');
@@ -4829,7 +4987,7 @@ async function publicar() {
     /* Listo para armar el siguiente: el destino se borra, la recogida se
        queda (lo normal es mandar varios envíos desde el mismo sitio). */
     S.destino = null; S.paradas = []; S.ultimoPunto = S.origen;
-    S.descripcion = ''; S.destinatario = ''; S.destTel = ''; S.notas = '';
+    S.descripcion = ''; S.destinatario = ''; S.destTel = ''; S.notas = ''; S.ayudantes = 0;
     enfocar(nueva);
     sincronizarSeguimiento();
   } catch (e) {
@@ -5360,7 +5518,7 @@ function tarjetaSolicitudDidi(s, idx, total) {
         <div class="didi-plata">
           <div class="didi-price">${money(precio)}</div>
           <div class="didi-tags">
-            <span class="badge solid">${esEnvio ? IC.caja('sm') : IC.carro('sm')}${esEnvio ? (s.vehiculo === 'moto' ? 'Envío en moto' : 'Envío') : 'Viaje'}</span>
+            <span class="badge solid">${esTrasteo(s) ? IC[s.vehiculo]('sm') : esEnvio ? IC.caja('sm') : IC.carro('sm')}${esTrasteo(s) ? `Trasteo en ${TRASTEO[s.vehiculo].t.toLowerCase()}${s.ayudantes ? ` · ${s.ayudantes} ayudante${s.ayudantes > 1 ? 's' : ''}` : ''}` : esEnvio ? (s.vehiculo === 'moto' ? 'Envío en moto' : 'Envío') : 'Viaje'}</span>
           </div>
         </div>
       </div>
@@ -5379,6 +5537,9 @@ function tarjetaSolicitudDidi(s, idx, total) {
               ${esEnvio ? 'Tomar el envío por ' + money(precio) : 'Aceptar por ' + money(precio)}
             </button>
             ${!esEnvio ? `<button class="btn suave full oculta-compacta" data-otro="${s.id}">Pedir otro precio</button>` : ''}
+            ${esDespachador() && !s.liberada && S.ajustes && !S.ajustes.solicitudes_para_todos
+              ? `<button class="btn full" data-liberar="${s.id}">Enviar a todos los conductores</button>`
+              : esDespachador() && s.liberada ? '<p class="fine" style="margin:6px 0 0">Ya la ven todos los conductores</p>' : ''}
            </div>`}
 
       ${total > 1 ? `
@@ -5417,7 +5578,9 @@ function pasoSolicitudes(sh) {
     sh.innerHTML = `
       <div class="empty"><div class="big">${IC.poder()}</div>
         <h3 style="margin-bottom:6px;color:var(--text)">Estás fuera de línea</h3>
-        <p class="dim">${miVehiculo() === 'moto'
+        <p class="dim">${TRASTEO[miVehiculo()]
+          ? `Ponte en línea para ver los trasteos pedidos en ${TRASTEO[miVehiculo()].t.toLowerCase()} de cualquier parte de la ciudad.`
+          : miVehiculo() === 'moto'
           ? 'Ponte en línea para ver los envíos en moto de cualquier parte de la ciudad. Puedes llevar 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.'
           : `Ponte en línea para ver los viajes a menos de ${RADIO_VIAJES_KM} km de ti y los envíos de cualquier parte de la ciudad. Puedes llevar 1 viaje, 1 envío urgente, hasta 3 envíos de 2 horas y todos los de 5 horas que quieras a la vez.`}</p></div>
       <button class="btn primary full" id="c-online">Ponerme en línea</button>`;
@@ -5432,7 +5595,7 @@ function pasoSolicitudes(sh) {
    de la ruta, para sumar servicios mientras se trabaja. */
 function seccionCercanas(sola) {
   const mias = new Set(S.activos.map(s => s.id));
-  S.cercanas = (S.todasCercanas || []).filter(s => !mias.has(s.id) && cupoPara(s));
+  S.cercanas = (S.todasCercanas || []).filter(s => !mias.has(s.id) && (esDespachador() || cupoPara(s)));
   const total = S.cercanas.length;
   const ocultas = (S.todasCercanas || []).length - total;
   const nota = ocultas > 0 ? `<p class="fine" style="margin:6px 0 0">${ocultas} solicitud${ocultas > 1 ? 'es' : ''} oculta${ocultas > 1 ? 's' : ''} porque llegaste a tu cupo de ese tipo.</p>` : '';
@@ -5446,6 +5609,16 @@ function seccionCercanas(sola) {
 }
 function armarCercanas() {
   const off = $('#c-off'); if (off) off.onclick = alternarLinea;
+  $$('#sheetbody [data-liberar]').forEach(b => b.onclick = async () => {
+    b.disabled = true; b.textContent = 'Enviando...';
+    try {
+      await S.api.liberarSolicitud(b.dataset.liberar);
+      const x = (S.todasCercanas || []).find(q => q.id === b.dataset.liberar);
+      if (x) x.liberada = true;
+      toast('Listo: ahora la ven todos los conductores');
+      render();
+    } catch (e) { toast(e.message || 'No se pudo enviar', 'bad'); b.disabled = false; b.textContent = 'Enviar a todos los conductores'; }
+  });
   const total = S.cercanas.length;
   if (!total || !$('#didi-sol-card')) return;
   // Navegación por la lista (flechas anterior / siguiente)
@@ -6174,7 +6347,7 @@ function pintarPerfil(sh) {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <h3 class="grow" style="flex:1">Vehículo</h3>
         <button class="btn sm suave" id="pf-veh-ed">Editar</button></div>
-      <div class="kv"><span class="k">Tipo</span><span class="v">${v.tipo === 'moto' ? 'Moto · solo envíos' : 'Carro'}</span></div>
+      <div class="kv"><span class="k">Tipo</span><span class="v">${v.tipo === 'moto' ? 'Moto · solo envíos' : TRASTEO[v.tipo] ? TRASTEO[v.tipo].t + ' · trasteos' : 'Carro'}</span></div>
       <div class="kv"><span class="k">Placa</span><span class="v">${esc(v.placa)}</span></div>
       <div class="kv"><span class="k">Vehículo</span><span class="v">${esc([v.marca, v.modelo, v.color].filter(Boolean).join(' ') || '—')}</span></div>
       <div class="kv"><span class="k">Año</span><span class="v">${esc(v.anio || '—')}</span></div>
@@ -6338,17 +6511,21 @@ function normalizarPlaca(p, tipo) {
 }
 const AYUDA_PLACA = { carro: 'La placa va con tres letras y tres o cuatro números, como PBA-1234',
                       moto: 'La placa de la moto va como IB-123A (dos letras, tres números y una letra)' };
-const NOTA_TIPO = { carro: 'Con carro haces viajes y envíos.', moto: 'Con moto solo haces envíos (los que el cliente pide en moto).' };
+AYUDA_PLACA.camioneta = AYUDA_PLACA.camion = AYUDA_PLACA.carro;
+const NOTA_TIPO = { carro: 'Con carro haces viajes y envíos.', moto: 'Con moto solo haces envíos (los que el cliente pide en moto).',
+  camioneta: 'Con camioneta haces trasteos pedidos en camioneta.', camion: 'Con camión haces trasteos pedidos en camión.' };
 
 function modalVehiculo(existente) {
   const v = existente || {};
-  let tipo = v.tipo === 'moto' ? 'moto' : 'carro';
+  let tipo = NOTA_TIPO[v.tipo] ? v.tipo : 'carro';
   modal(`<div class="grip"></div><h2>${existente ? 'Editar vehículo' : 'Tu vehículo'}</h2>
     <p class="dim" style="margin:6px 0 14px">Un administrador revisa estos datos antes de habilitarte para recibir solicitudes.</p>
     <div class="field"><label>Tipo de vehículo</label>
       <div class="segmented" id="v-tipo">
         <button type="button" data-vt="carro" class="${tipo === 'carro' ? 'on' : ''}">${IC.carro('sm')}Carro</button>
         <button type="button" data-vt="moto" class="${tipo === 'moto' ? 'on' : ''}">${IC.moto('sm')}Moto</button>
+        <button type="button" data-vt="camioneta" class="${tipo === 'camioneta' ? 'on' : ''}">${IC.camioneta('sm')}Camioneta</button>
+        <button type="button" data-vt="camion" class="${tipo === 'camion' ? 'on' : ''}">${IC.camion('sm')}Camión</button>
       </div>
       <p class="fine" id="v-tipo-nota" style="margin:6px 0 0">${NOTA_TIPO[tipo]}</p></div>
     <div class="row">
@@ -6444,7 +6621,7 @@ $$('#rg-tipo button').forEach(b => b.onclick = () => {
   $('#rg-tipo-nota').textContent = NOTA_TIPO[b.dataset.vt];
   $('#rg-placa').placeholder = b.dataset.vt === 'moto' ? 'IB-123A' : 'PBA-1234';
 });
-[['#rg-tipo [data-vt="carro"]', 'carro'], ['#rg-tipo [data-vt="moto"]', 'moto']].forEach(([sel, ic]) => {
+[['#rg-tipo [data-vt="carro"]', 'carro'], ['#rg-tipo [data-vt="moto"]', 'moto'], ['#rg-tipo [data-vt="camioneta"]', 'camioneta'], ['#rg-tipo [data-vt="camion"]', 'camion']].forEach(([sel, ic]) => {
   const el = $(sel); if (el) el.insertAdjacentHTML('afterbegin', IC[ic]('sm'));
 });
 $('#btn-login').onclick = ingresar;
